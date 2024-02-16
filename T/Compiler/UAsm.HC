@@ -270,7 +270,7 @@ U0 Ui(U8 *buf,U8 **_rip,I64 seg_size=64,I64 *_jmp_dst=NULL,Bool just_ins=FALSE)
   }
   *arg1_st=0;
   *arg2_st=0;
-  if (!0 && PutSrcLink(rip,1,line1))
+  if (!IsRaw && PutSrcLink(rip,1,line1))
     CatPrint(line1,"\n");
   else
     *line1=0;
@@ -670,12 +670,12 @@ I64 Un(U8 *rip,I64 cnt=0x80,I64 seg_size=64)
   U8 buf[1024],*end_rip=rip(I64)+cnt;
   if (seg_size==16)
     PrintWarn("16-bit unassembly is not well supported.\n");
-  "$$HL,1$$";
+  if (!IsRaw) "$$HL,1$$";
   while (rip<end_rip) {
     Ui(buf,&rip,seg_size);
     "%s",buf;
     i++;
   }
-  "$$HL,0$$";
+  if (!IsRaw) "$$HL,0$$";
   return i;
 }
