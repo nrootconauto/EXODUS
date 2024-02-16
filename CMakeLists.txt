@@ -17,7 +17,7 @@ set(VERSION_SIMPLE "${PROJECT_MAJOR_VERSION}.${PROJECT_MINOR_VERSION}.${PROJECT_
 project(exodus
   VERSION ${VERSION_SIMPLE}
   DESCRIPTION "Executable Divine Operating System in Userspace"
-  LANGUAGES CXX C ASM
+  LANGUAGES C ASM
 )
 
 set(default_build_type "Release")
@@ -144,17 +144,22 @@ target_include_directories(${PROJECT_NAME}
 add_subdirectory(asm)
 add_subdirectory(vendor)
 
-include (CheckCXXSourceCompiles)
-check_cxx_source_compiles(
+include (CheckCSourceCompiles)
+check_c_source_compiles(
   "#include <stdint.h>
    #include <stddef.h>
-   #include <type_traits>
+   #include <stdbool.h>
    typedef unsigned int __attribute__((mode(DI))) u64;
+   #define T(A,B) _Generic(A, typeof(B): true, default: false)
    int main() {
-     static_assert(std::is_same_v<size_t,u64>);
-     static_assert(std::is_same_v<size_t,uint64_t>);
-     static_assert(std::is_same_v<size_t,uintptr_t>);
-   }" SANE_INTEGERS)
+     uint64_t ui;
+     size_t sz;
+     u64 u;
+     uintptr_t up;
+     _Static_assert(T(u,ui));
+     _Static_assert(T(u,sz));
+     _Static_assert(T(u,up));
+  }" SANE_INTEGERS)
 if (NOT SANE_INTEGERS)
   message(FATAL_ERROR "Your compiler's integer declarations are not sane")
 endif ()
