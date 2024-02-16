@@ -51,6 +51,16 @@ cd ..
 ```
 5. You will see the `exodus` binary in the directory
 
+# Running EXODUS
+
+Execute the following to run EXODUS:
+
+```sh
+./exodus -t T
+```
+
+Consult `./exodus -h` for more command-line options such as CLI mode.
+
 # Features
 - Host filesystem integration (T:/ is the root drive)
 - Documentation in T:/Server (run `#include "run";` after `Cd("Server");`, on localhost:8080)
