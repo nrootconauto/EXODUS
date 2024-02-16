@@ -1,0 +1,69 @@
+*.zip
+# Prerequisites
+*.d
+
+# Object files
+*.o
+*.ko
+*.obj
+*.elf
+
+# Linker output
+*.ilk
+*.map
+*.exp
+
+# Precompiled Headers
+*.gch
+*.pch
+
+# Libraries
+*.lib
+*.a
+*.la
+*.lo
+
+# Shared objects (inc. Windows DLLs)
+*.dll
+*.so
+*.so.*
+*.dylib
+
+# Executables
+*.exe
+*.out
+*.app
+*.i*86
+*.x86_64
+*.hex
+
+# Debug files
+*.dSYM/
+*.su
+*.idb
+*.pdb
+
+# Kernel Module Compile Results
+*.mod*
+*.cmd
+.tmp_versions/
+modules.order
+Module.symvers
+
+*~
+T/T/**
+T/TempleOS.ISO.C
+T/HCRT.BIN
+T/HCRT.DBG.Z
+T/Registry.HC.Z
+T/@TMP
+T/Tmp.DD.Z
+T/WikiBackups
+HCRT.BIN
+.ccls-cache
+T/Headers.HH
+T/unfound.DD
+T/AutoComplete/ACDefs.DATA
+build
+tine
+exodus

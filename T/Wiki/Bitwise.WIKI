@@ -1,0 +1,115 @@
+= Bitwise Operators
+Computers store numbers as 1's and 0's. Numbers are stored with 2 digits. Like base-10,each digit we go up increases by a power of 2.
+Let's see it in action:
+ "%d\n",0b1;
+ "%d\n",0b10;
+ "%d\n",0b100;
+Here we can see that each 0 we add,it raises by a power of 2. What happens when we combine multiple 1's on a number
+ "%d\n",0b1;
+ "%d\n",0b100;
+ "+      \n";
+ "____\n"
+ "%d\n",0b101;
+Whoa,If we combine the bits,we add them together(that's how values are composed).
+== Bitwise operators
+Numbers are fun,but sometimes we want to keep track of the individual 1's and 0's
+To do this,we use bitwise operators. These operators are very fast and operate on each bit at once
+=== AND operator
+The AND operator will return 1 for both items are 1,else it is 0. Here is what it looks like in table form
+|A|B|Result
+|1|1|1
+|1|0|0
+|0|1|0
+|0|0|0
+ U0 DumpBits(U16 bits) {
+ 	I64 i=16;
+ 	while(--i>=0) {
+ 		if(Bt(&bits,i))
+ 			"1";
+ 		else
+ 			"0";
+ 	}
+ 	"\n";
+ }
+ DumpBits(0b111&0b101);
+
+=== OR operator
+The OR operator will set a bit if one(or both) is set.*This is useful for adding items to a set.*. Here is what it looks like in table form
+|A|B|Result
+|1|1|1
+|1|0|1
+|0|1|1
+|0|0|0
+ U0 DumpBits(U16 bits) {
+ 	I64 i=16;
+ 	while(--i>=0) {
+ 		if(Bt(&bits,i))
+ 			"1";
+ 		else
+ 			"0";
+ 	}
+ 	"\n";
+ }
+ DumpBits(0b1|0b101);
+
+=== XOR operator
+The XOR operator will set a bit if one is set,*otherwise the result is 0. It is useful for toggling a bit*. Here is what it looks like in table form
+|A|B|Result
+|1|1|0
+|1|0|1
+|0|1|1
+|0|0|0
+ U0 DumpBits(U16 bits) {
+ 	I64 i=16;
+ 	while(--i>=0) {
+ 		if(Bt(&bits,i))
+ 			"1";
+ 		else
+ 			"0";
+ 	}
+ 	"\n";
+ }
+ DumpBits(0b1^0b101); //Toggle bit 1
+(*Use this for toggling a flag in a bitset.*)
+=== NOT operator
+This is an easy one,it will invert the bits of a value
+|A|Result
+|1|0
+|0|0
+
+ U0 DumpBits(U16 bits) {
+ 	I64 i=16;
+ 	while(--i>=0) {
+ 		if(Bt(&bits,i))
+ 			"1";
+ 		else
+ 			"0";
+ 	}
+ 	"\n";
+ }
+ DumpBits(~0b101);
+=== LEFT SHIFT operator
+This one will move the bits /X/ bits to the left.
+ U0 DumpBits(U16 bits) {
+ 	I64 i=16;
+ 	while(--i>=0) {
+ 		if(Bt(&bits,i))
+ 			"1";
+ 		else
+ 			"0";
+ 	}
+ 	"\n";
+ }
+ DumpBits(0b101<<3);
+Because binary is a base 2 number system,adding /X/ digits will multiply the value by a power of 2,let's see it in action
+ "%d\n",14<<1; //14*2
+ "%d\n",14<<2; //14*4
+ "%d\n",14<<4; //14*8
+=== RIGHT SHIFT operator
+This operator will take off bits from the start and discard them. This effectively divides by a power of 2. Because of this behavior,there is a version for unsigned and signed divides
+Let's see it in action 
+ I64 x=-14;
+ "%d\n",x>>1; //Divde by 2 signed(depends on type being shifted)
+ U64 x=128;
+ "%d\n",x>>1; //Divde by 2 unsigned(depends on type being shifted)
+These may appear identical at first,but negative numbers have a sign bit,the signed version will fill the sign bit with a 1 if it is negative to preserve the sign(See [https://en.wikipedia.org/wiki/Two's_complement])

@@ -1,0 +1,41 @@
+= Meta Data
+Meta data is juicy data that you can store in your classes. However they can only be obtained JIT.
+To get a class's meta data,do
+* Use /HashFind/ to get the metadata of a class by name
+* Use /CHashClass.member_lst_and_root/ to get the first member
+* Check for existance with /MemberMetaFind/
+* Get the pointer to the meta-value using /MemberMetaData/
+ class CMeta {
+ 	I64 a fmt "A:%d\n";
+ 	I64 b fmt "B:%d\n";
+ 	F64 c fmt "C:%n\n";
+ };
+ CMeta abc={1,2,3};
+ U0 Main(U8 *ptr,U8 *cls=lastclass) {
+ 	CHashClass *findc=HashFind(cls,Fs->hash_table,HTT_CLASS);
+ 	CMemberLst *ml;
+ 	U64 sf;
+ 	if(!findc) return;
+ 	ml=findc->member_lst_and_root;
+ 	for(;ml;ml=ml->next) {
+ 		sf=(ptr+ml->offset)[0](U64);
+ 		if(MemberMetaFind("fmt",ml)) {
+ 			Print(MemberMetaData("fmt",ml),sf);
+ 		} 
+ 	}
+ }
+ Main(&abc); //Here we use lastclass to get the class of abc
+== Forms
+Meta data can be used to create input forms
+ class CInput {
+	//Be sure to use -P with strings
+ 	U8 name[STR_LEN] format "$$DA-P,A=\"NAME:%s\"$$\n";
+	I64 age format "$$DA,A=\"AGE:%d\"$$\n";
+	Bool is_tall format "$$CB,\"Is_tall\"$$\n";
+ };
+ CInput inp;
+ PopUpForm(&inp);
+ "%s is %d years old\n",inp.name,inp.age;
+ if(inp.is_tall)
+      "Tall!\n";
+

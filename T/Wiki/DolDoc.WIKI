@@ -1,0 +1,288 @@
+= DolDoc
+== DolDoc Basics
+DolDoc means dollar sign documents. It's uses a notation of dollar signs to specifiy the layout of a document
++You will need to press $ twice in TempleOS as pressing it normally puts it in escape mode.+
+Let's see some basic usage of DolDoc
+ "$$BG,BLUE$$$$FG,YELLOW$$I am yellow.$$FD$$$$BD$$\n";
+[dd_yellow.png]
+Here we see we have yellow on a blue background. We use *FD* *BD* to set the forground and background to their defualt colors.
+=== Attributes
+DolDoc entries can have attributes and arguments. For example *BG* here takes a color argument.
+ "$$BG,BLUE$$I am blue,$$FD$$";
+Some arguments take names,like *LM*(left macro) takes a string that is inputed to the terminal when pressed.
+ "\n\n$$BT,\"ONIONS\",LM=\"Beep;\n\"$$\n\n"; //We specified a \n in LM to simulate pressing enter.
+[dd_button.png]
+There are attributes too,they start with the plus or minus sign. Lets see an example.
+ "$$TX+CX,\"CENTER\"$$";
+Now we can see that the text is centered:
+
+=== List of DolDoc codes
+|Code|Meaning
+|TX|Text
+|CR|Newline
+|SR|Wordwrap line
+|CU|Cursor pos
+|TB|Tab
+|CL|Clear items without +H
+|PB|Page break
+|PL|Page length
+|LM|Left margin
+|RM|Right margin
+|HD|Header margin 
+|FO|Bottom margin
+|ID|Indents X indents,can be negative
+|FD|Use(or change) default foreground color
+|BD|Use(or change) default background color
+|FG|Set foreground color
+|BG|Set background color
+|PT|Prompt
+|WW|Use 1 to trigger word wrap, 0 to disable word wrap
+|UL|Use 1 to trigger underline, 0 to disable it
+|IV|Use 1 to trigger inverting the text's colors,0 to disable it
+|BK|Turn blink on or off with 1 or 0
+|SX|Pick a number -7 through 7 to shift the text
+|SY|Pick a number -7 through 7 to shift the text
+|CM|Takes 2 arguments X movement and Y movement
+|LK|Link,will be explained later
+|BT|Button, +surround with newlines to make space for the button border+
+|CB|Checkbox
+|LS|Define a define list with *D* and DefineLstLoad,this will let you select items from a list.
+|MA|Macro,will run code with is clicked,use *LM* to set the macro text
+|TR|Tree,use indent to nest the trees and use a negative indent to un-nest the trees.
+|HL|Turn syntax highlighting on with 1 or 0.
+=== List of DolDoc attributes
+To use an attribute,use a plus or minus sign to add/remove the flag from the item.
+Example:
+ "$$TX+CX+H,\"I have CX and H flags.\"$$\n";
+|Attribute|Descrition
+|H|Will prevenet CL from deleteing it
+|L|Will tell the thing to behave as a link 
+|TR|Will tell the thing to behave as a tree
+|LS|Will tell the thing to act as a list
+|PU|Will cuase macro text to run in a popup window.
+|C|Will cuase a tree to e collapsed
+|X|Will set the exit and save flag on a macro
+|Q|Will set a exit and not-save flag on a macro
+|RD| Refresh data on screen update
+|UD| Update data on typing
+=== Argument codes
+You use a comma and the name to specify an argument value.
+|T|The tag(displayed text) is set with this
+|LEN|LEN sets the length of the DA field 
+|A|Links use this for link location
+|D|LS and list-likes use this for setting the DefineLstLoad'ed string that has the list items in it.
+|LE|Left expression,will evaluate this expression's value when left clicked.
+|RE|Right expression,will evaluate this expression
+|LM|Left macro text,will put the text in input buffer when clicked.
+|RM|Right macto text,will put the text in input buffer when clicked.
+|RT|Set the raw type of the data of the item,use I8-64,or U8-64 or F64
+|U|User data
+|SCX|Scroll X in col columns
+|SX| Shift plus or minux 7 pixels
+|SY| Same as above but for Y cordnates
+=== DolDoc Links
+In DolDoc,you can use links with the *LK* element with the *A* attribute. The most simple way to use it like is like this: 
+ "$$LK,\"TempleOS help\",A=\"T:/Doc/HelpIndex.DD\"$$";
+And it looks like this:
+[dd_link1.png]
+In DolDoc,links can have types. To use a type,prefix your string with /TYPE:/. To use an explicit file link,do this:
+ "$$LK,\"TempleOS help\",A=\"FL:T:/Doc/HelpIndex.DD\"$$\n";
+If you want to have a Link to a function,use /MN:/
+ "$$LK,\"Man(\\\"Man\\\");\",A=\"MN:Man\"$$\n";
+Here is a list of link types:
+|Link type|Meaning|Example
+|FI|Points to a file|A=\"FL:T:/Doc/HelpIndex.DD\"
+|FI(again)|Points to a line in afile|A=\"FL:T:/Doc/HelpIndex.DD,25\"
+|FF|Finds a string in a file|A=\"FF:T:/OpCodes.DD,MOV\"
+|FF(again)|Finds /nth/ string in a file(put a comma and a number)|A=\"FF:T:/OpCodes.DD,MOV,5\"
+|BF|Bible Find,you search for a verse number in a book|A="\BF:Acts,2:3\"
+|HI| Help index.|A=\"HI:Windows\"
+|A|Memory address|A=\"0x12345\"
+== Using DolDoc.
+=== Generating DolDoc
+Sometimes you will want to do more with DolDoc.
++To get the current DolDoc of the task use *DocPut*+, and use *DocPrint* to print to that document.
+ DocPrint(DocPut,"\n\n$$BT+CX,\"Hello\"$$\n\n");
+DocPrint will return a *CDocEntry*. We can poke at it's data to make it do stuff.
+Here are some of the instresting fields of CDocEntry
+ class CDocEntry:CDocEntryBase {
+ 	I64(*left_cb)(CDoc*,CDocEntry*)
+ 	I64(*right_cb)(CDoc*,CDocEntry*)
+ 	U8 *data;
+ };
+To use the left_cb/right_cb,we must set the DOCEF_LEFT_CB/DOCEF_RIGHT_CB flags in *de_flags*.
+Here is an example
+ I64 Beep2(CDoc *,CDocEntry *) {
+ 	Beep;
+ }
+ CDocEntry *de=DocPrint(DocPut,"\n\n$$BT+CX,\"Hello\"$$\n\n");
+ de->de_flags|=DOCEF_LEFT_CB;
+ de->left_cb=&Beep2;
+Make sure you print whole DolDoc commands with *DocPrint*,if you want to do otherwise use *DocPrintPartial*. If you want print multiple DolDoc commands at once,use *DocPrintAtomic*.
+If you want to type one file into another,use *DocType(doc,filename)*
+
+
+=== Saving/Loading DolDoc
+Say you want to save a DolDoc,we can do this 2 ways,we can save to memory or a file.
+To save to memory,do this,
+ I64 len;
+ U8 *mem=DocSave(DocPut,&len);
+ //Do whatever
+ Free(mem);
+Or to save to a file,do this
+ CDoc *doc=DocNew("Filename.DD"); //The document's filename detirmined at it's creation.
+ DocPrint("$$TX,\"Hello World\"$$");
+ DocWrite(doc);
+ DocDel(doc);
+=== Interacting with DolDoc(1)
+As DolDoc is the main interface that is used in TempleOS. You can want to make menu's with it. Let's say you want to make a menu of items. You can do this with *DocMenu* to get the value of button clicks. Let's see an example
+ U0 CreateDialog() {
+ 	CDocEntry *nums[3];
+ 	I64 i;
+ 	DocClear(DocPut);
+ 	"$$TX+CX,\"Pick a number:\"$$\n";
+ 	for(i=0;i!=3;i++) {
+ 		nums[i]=DocPrint(DocPut,"\n\n$$BT+CX,\"%d\",LE=%d$$\n\n",i,i);
+ 	}
+ 	DocBottom(DocPut);
+ 	switch(DocMenu(DocPut)) {
+ 	start:
+ 		DocClear(DocPut);
+ 		case 0:
+ 		"You picked nothing lol.\n";
+ 		break;
+ 		case 1:
+ 		"One is the one\n";
+ 		break;
+ 		case 2:
+ 		"Two is too good\n";
+ 		break;
+ 	end:
+ 	}
+ }
+ CreateDialog;
+
+[dd_menu1.png]
+=== Interacting with DolDoc(2): Epic Menus
+In TempleOS,you can get a Find menu in *Ed* by pressing /Ctrl+f/. Internally this is done through *DocForm*. This will take a class's [MetaData.WIKI metadata] and make an interactive form from it.
+
+Here's the obligitory example:
+ class CInput {
+	//Be sure to use -P with strings
+ 	U8 name[STR_LEN] format "$$DA-P,A=\"NAME:%s\"$$\n";
+	I64 age format "$$DA,A=\"AGE:%d\"$$\n";
+	Bool is_tall format "$$CB,\"Is_tall\"$$\n";
+ };
+ CInput inp;
+ PopUpForm(&inp);
+ "%s is %d years old\n",inp.name,inp.age;
+ if(inp.is_tall)
+      "Tall!\n";
+[dd_form1.png]
+=== Interacting with DolDoc(3) Popup Windows
+In TempleOS,you can make a Popup window. You can do this via *PopUpMenu* or *PopUpForm*,which act like our *DocMenu* and *DocForm*. In addition to this,we are given other cool functions for us. Let's get started,but first +PopUpMenu takes a document,wheres PopUpForm doesn't+
+  
+ I64 Menu(CDoc *,CDocEntry *) {
+   U8 *str=
+         "\n\n$$BT,\"Beep1\",LE=120$$\n\n" //2 adjacent strings in TempleOS merge togheter
+         "\n\n$$BT,\"Beep2\",LE=20$$\n\n";
+   CDoc *doc=DocNew;
+   DocPrint(doc,"%s",str);
+   Beep(PopUpMenu(doc));
+   DocDel(doc);
+ }
+ CDocEntry *de=DocPrint(DocPut,"\n\n$$BT+CX,\"Press for menu\"$$\n\n");
+ de->de_flags|=DOCEF_LEFT_CB;
+ de->left_cb=&Menu;
+[popup.png]
+We are also given other epic functions so we don't have to re!-invent the wheel,so here is a table for you
+|Function|Meaning
+|PopUpPrint(fmt,...)|Make a popup terminal with some text.
+|PopUpOk(msg,footer)|Ok,you did something epic
+|PopUpNoYes(msg,footer)|Gets a Yes or No dialog
+|PopUpCancelOk(msg,footer)|Gets a cancel or ok dialog 
+|PopUpGetStr(msg,dft)|Gets a string for you
+|PopUpGetI64(msg,dft,lo,hi)|Gets an I64
+|PopUpGetF64(msg,dft,lo,hi)|Gets an F64 
+== Registry
+In Exodus there is a file called /T:!/Registry.HC.Z/. It is used by the apps for storing data such as highscores and user information for the server. TempleOS gives us functions for editing the registry. So let's get started.
+=== Registry(1) System Registery
+The first thing you will want to do is assume a initial value for your apps registry,we can do this via *RegDft*. This will allow us to store HolyC code snippet for our app to run.
+ RegDft("/Game/HighScore","F64 high_score=0;");
+Once we do this,we can run our registry function at start using *RegExe*.When you update the score,you can write it to disk via *RegWrite*
+ RegDft("/Game/HighScore","F64 high_score=0;");
+ RegExe("/Game/HighScore");
+ "high_score is %n\n",high_score;
+ RegWrite("/Game/HighScore","F64 high_score=%n;",GetF64("what was your score: "));
+=== Registry(2) Custom Registry
+Sometimes you might want to make your own sort of reigstery,templeos gives you epic functions for that. There are 2 methods of doing this
+* By working on a *CDoc*(See the below API section)
+* Or by using a file
+I will use the second method for now. To use the second method,check for a tree path's existence via  *DocTreeFFind(filename,path);*. We can write to the tree via *DocTreeFWrite*,or we can run it via *DocTreeFExe*
+ //
+ //Run me twice to see the result
+ //
+ #define REGISTRY "Potato.DD"
+ if(!FileFind(REGISTRY))
+   FileWrite(REGISTRY,"",0);
+ 
+ if(!DocTreeFFind(REGISTRY,"Potato/One"))
+   DocTreeFWrite(REGISTRY,"Potato/One","1;\n"); 
+ else
+   "Potato/One is %d\n",DocTreeFExe(REGISTRY,"Potato/One");
+ 
+ if(!DocTreeFFind(REGISTRY,"Potato/Two"))
+   DocTreeFWrite(REGISTRY,"Potato/Two","2;\n");
+ else
+   "Potato/Two is %d\n",DocTreeFExe(REGISTRY,"Potato/Two"); 
+ 
+ if(!DocTreeFFind(REGISTRY,"Potato/Three"))
+   DocTreeFWrite(REGISTRY,"Potato/Three","3;\n");
+ else
+   "Potato/Three is %d\n",DocTreeFExe(REGISTRY,"Potato/Three");
+[ftree.png]
+
+== DolDoc API
+Programming the DolDoc is quite simple The DolDoc things are a Circular Queue(See here for more on [ DataStructs..WIKI TempleOS data structures]).
+So without further ado,here is an API reference of the (notable) functions.
+=== Programmer Api(1)
+|Function|Meaning
+|DocBottom|Move to the bottom to the document
+|DocCenter|Center the view on *doc->cur_entry*|
+|DocClear|Clear all entities except for those with *+H* flags
+|DocCollapse(collapse,doc)|if /collapse/ is true,collapse the entities. Vice versa
+|DocDel|Delete the document in memory
+|DocEntryDel|Delete a doldoc entry
+|DocEntryCopy(doc,doc_e)|Copy a doc entry
+|DocInsDoc(to,from)|Insert a copy of /from/ into /to/.
+|DocLock|Lock a document for avoiding race conditons
+|DocUnlock|Unlock a document for avoiding race conditions
+|DocRst|Reset a document
+|DocTop| Goes to the top of a document
+|DocReadLine(filename,line)|Read /line/ from /filename/ and return it
+|DocWriteLine(filename,line,text)|Write /line/ at /line/ in /filename/
+|DocLoad(into_doc,src,len)| Load a document binary at /src/(of /len/ bytes) into /into_doc/
+|DocRead|Read a document from a file and return it|
+|DocSave(doc,size)|Write a document into a binary buffer,and stores the length in /size/|
+|DocWrite|+Writes a document into the filename detirmined at DocNew(filename)+
+|DocMenu|Interact with a document until a thing is value is found
+|DocForm(ptr)|Make a interactive form form /ptr/'s class's metadata and write the result into /ptr/
+|DocNew(filename)|Make a new document with filename
+|DocGR(doc,gr_file)| Insert a /GR/ file into the document
+|DocPrint(doc,fmt,...)| Prints stuff into a document and returns a *CDocEntry* of the last inserted item
+|DocType(doc,filename)| Type text from a filename into a doc
+|DocPut|+Get the current *CDoc* for the task+
+=== Programer API(2) Registry stuff
+Sometimes you may want to make files with trees in them,you can use these functions fo them
+|Function|Meaning
+|DocTreeWrite(doc,path,write_to_file,fmt)|Makes the tree path in the document have the fmted string(/write_to_file/ will write to disk if true)
+|DocTreeAppend(doc,path,write_to_file,fmt)| Does the same as above but appends
+|DocTreeFWrite(filename,path,fmt)|Modifes tree at doc in /filename/
+|DocTreeFAppend(filename,path,fmt)|Appends data to a tree in /filename/
+|DocTreeExe(doc,path)|Runs the tree entry in /doc/ at /path/
+|DocTreeFExe(filename,path)|Runs the tree entry in /filename/ at /path/
+=== User API
+|Function|Meaning
+|Collapse(filename)|Collapses all the trees in /filename/
+|CursorRem(filename)|Removes the TempleOS cursor in /filename/
+|Ed(filename)| Edit a /filename/

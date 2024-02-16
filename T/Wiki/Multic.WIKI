@@ -1,0 +1,156 @@
+= Multithreading.
+TempleOS is non-preemptive. *This means the tasks must explicitly tell the operating system when to swap out to another task on the core.*
+In TempleOS,"threads" are called *CTask*s and you can get the current *CTask* via *Fs*.
+To swap out to the next task on the core,do this
+ Yield;
+You should always keep this in mind. If you need to interupt a core,press /Ctr!l+Alt!+C/.
+== Tasks
+=== Spawning threads
+To spawn a thread,do this.
+ U0 Foo(U8 *data) {
+   Beep;
+ }
+ Spawn(&Foo,"Some_data","TaskName");
+This will spawn a process on the current cpu.
+To spawn it on another CPU,do this
+ U0 Foo(U8 *data) {
+   Beep;
+ }
+ I64  cpu=1;
+ Spawn(&Foo,"Some_data","TaskName",cpu);
+(*Keep in mind that only CTasks on core 0 have windows.*) 
+
+=== Simulating User Input
+Say we want to actually talk to a Thread,we could spawn a user terminal with *User* and use *XTalk* to send input to it.
+ CTask *u=User;
+ XTalk(u,"\"Exiting in 5 seconds\\n\";\n"); //Be sure to put a semi-colon at the end as we are "the-user".
+ Sleep(5000);
+ XTalk(u,"Exit;\n");
+
+=== Waiting for Task's to Complete
+In TempleOS,you can use *DeathWait* to wait for a task to end. It offically takes a pointer to a pointer,but the first member in a *CTask* is a pointer to itself,but you should still use it like this:
+ CTask *t=User;
+ DeathWait(&t); //Note address of t
+ Beep; //Will beep when you exit the User task 
+You can also wait for a *CTask* to be born(again it takes a pointer to a pointer).
+ CTask *t=User;
+ BirthWait(&t); //Note address of t
+ Beep; //We beep almost as soon as you run it 
+== Keeping Things in Sync
+When you have multiple threads,you may want to make sure they dont try to access the same data at the same time or things may get messy [https://en.wikipedia.org/wiki/Race_condition]. 
+
+In TempleOS,we use spinlocks. How this works  is we loop until a value changes(Be sure to use *LBts*,*Bt*,and *LBtr* which lock the memory across CPU cores). *LBts* will set a bit at a memory address,but it will return the old value. +If that old value is 0,it means the lock is ok to use,but at the same time the bit is set to 1 so no other core can use it+. When we are done with the lock,we will set the bit to 0 with *LBtr* which will lock the memory address reset the bit .
+
+Here is an example:
+ I64 beep_lock=0;
+ U0 OneThread(I64 snd) {
+   //This will spin until bit 0 is reset(look at the end of the function) 
+   while(LBts(&beep_lock,0)) //LBts has a side effect of setting the bit after it is checked
+     Yield; //We are going to be beeping for awhile so Yield out control to other tasks
+   Beep(snd);
+   //We reset bit 0 of beep_lock to signify we are done with it.
+   LBtr(&beep_lock,0);
+ }
+ I64 i;
+ for(i;i!=10;i++) {
+   Spawn(&OneThread,i*7+10);
+   "Spawned a thread!!\n";
+ }
+If we dont want to *Yield* control to other threads we can use *PAUSE* which tells he CPU that it is in a spinlock. Only use this in "mission critical" sections of code as the CPU will spin not give other tasks a time to jam out.
+ I64 add_lock=0;
+ I64 total=0;
+ U0 Add(I64 i) {
+   while(LBts(&add_lock,0))
+      PAUSE; //"Mission critical" so just wait to the other threads to be done 
+   total+=i;
+    LBtr(&add_lock,0);
+ }
+ I64 i,t=0;
+ CTask *wait_for[10];
+ for(i=0;i!=10;i++) {
+   t+=i;
+   wait_for[i]=Spawn(&Add,i,"Adder",i%mp_cnt); //Spawn on multiple cores(mp_cnt is the number of cores and we % to always get a core below the total number of cores)
+ }
+ for(i=0;i!=10;i++) {
+   DeathWait(wait_for[i]); //Make sure we wait for the threads to finish.
+ }
+ "Total is %d(expected %d)\n",total,t;
+As we just saw,we can use *DeathWait* to wait for a thread to be done! Here we wait 5 seconds for the sleep thread to finish
+ CTask *sleep=Spawn(&Sleep,5000);
+ DeathWait(sleep);
+== Jobs
+=== Jobs(1) Talking to other Tasks
+This section is kind of advanced. A certian type of thread (*SrvCmdLine*) will run a thread that accepts jobs What are *CJob*s? They are created with *TaskExe* and friends.
+We can get a job's result with *JobResGet*
+Lets see it in action
+ CTask *parent=Fs;
+ CTask *jobber=Spawn(&SrvCmdLine,NULL,"Jobber",,parent);
+ I64 res;
+ CJob *job=TaskExe(jobber,parent,"1+1;;;",0);
+ res=JobResGet(job);
+ Kill(jobber);
+ "I got %d\n",res;
+
+=== Jobs(2) Spawing jobs on other cores.
+On each CPU core,there is a *seth_task*. This seth task will do things like terminate killed tasks,but... It also runs jobs. You can tell it to do a job like this(*Gs* is the current cpu core).
+
+ CTask *parent_task=Fs;
+ CJob *job=TaskExe(Gs->seth_task,parent_task,"Beep;;",0);
+ JobResGet(job); //Wait for end
+
+If you want to run the Job on another CPU core,you can use *cpu_structs![n!].seth_task*. The current *CPU* core for code running on a core is at *Gs*. +You can get the current cpu number via *Gs->num*+. The number of cores in your CPU is returned by *mp_cnt*.
+
+Here's an example:
+ CTask *parent_task=Fs;
+ I64 core=0;
+ //mp_cnt is the number of cpus 
+ CJob *jobs[mp_cnt];
+ for(core=0;core!=mp_cnt;core++) {
+   jobs[core]=TaskExe(cpu_structs[core].seth_task,Fs,
+      "Sleep(RandI64%1000);"
+      "Gs->num;;", //Gs is the current CCPU for the core,->num is the cpu number
+   0);
+ }
+ for(core=0;core!=mp_cnt;core++) {
+   "Core %d return %d\n",core,JobResGet(jobs[core]);
+ }
+=== Jobs(3) Waiting and more
+Sometimes you might want to wait for a job to be done without having to calling *JobResGet*. You can suspend the parent task until a job ends with the *JOBf_WAKE_MASTER* Flag.(+Be sure to shift any flag with a lowercase "f" as it is a raw bit+)
+
+ CTask *parent_task=Fs;
+ //Things ending in a lowecase f as bits(and need to be shifted to be flags)
+ TaskExe(Gs->seth_task,parent_task,"Play(\"EGBDF\");",(1<<JOBf_WAKE_MASTER));
+
+Waiting for a job can get boring,and when you want to have tons of jobs running,you may want to do other stuff while you wait If you want to check if a Job is done,use *JobScanRes*(it will return *TRUE* if the job is done). In our below example,i have a list of jobs,and I check if they are done(They sometimes may not complete in the order you *TaskExe* them).
+
+ CTask *parent_task=Fs;
+ #define JOB_CNT 100
+ CJob *jobs[JOB_CNT];
+ I64 i,i2;
+ U8 *task_str;
+ for(i=0;i!=JOB_CNT;i++) {
+ //This will make the  seth_task sleep,so we only sleep for 100milli-seconds at most
+   task_str=MStrPrint("I64 x=%d;Sleep(x);x;",RandU64%100);
+ //We use the % operator to get the remainder of mp_cnt,
+ //this will ensure that "i%mp_cnt" is below our core count
+   jobs[i]=TaskExe(cpu_structs[i%mp_cnt].seth_task,parent_task,task_str,0);
+   Free(task_str);
+ }
+ //We will store the current job count in i,but i'll decrease it every 
+ //time a job completes.
+ //We will scan the job's for a result and when they all end i will be
+ //0 so we'll exit the loop
+ i=JOB_CNT;
+ I64 result;
+ while(i) {
+   for(i2=0;i2!=JOB_CNT;i2++) {
+     if(jobs[i2]) {
+       if(JobResScan(jobs[i2],&result)) {//Returns true if the job ended
+         jobs[i2]=NULL;  //Remove the job from our list
+         "Job %d ended with value %d\n",i2,result;
+         i--;
+       } 
+     }
+   }
+   Yield; 
+ } 

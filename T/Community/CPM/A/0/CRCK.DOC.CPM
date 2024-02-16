@@ -1,0 +1,21 @@
+CRCK.COM
+--------
+
+A Checksum program, CRCK.COM, is provided to verify that all files in
+the BDS C package survived shipment intact.
+
+The usage of CRCK.COM is as follows:
+
+CRCK <afn>		--  displays checksum for all files that match the
+			    specification
+
+CRCK <afn> f		--  If a second parameter being the letter "F" follows
+			    the <afn>, then a file named CRCKLIST.CRC is
+			    written to disk containing all the checksum info
+			    that was displayed on the console.
+
+Note that you should have backed up the original distribution disks before
+running CRCK with the "f" option, or else the new CRCKLIST.CRC might wipe
+out the original copy supplied on the master distribution disks.
+
+

@@ -1,0 +1,157 @@
+= Using the TempleOS FileSystem
+Like any Operating System,you probably want to manage files. TempleOS's API for this is very easy. File's in TempleOS are normally read/writen to at once. But first let's learn how to navigate the folders in your system.
+
+== Navigating your system
+In TempleOS each,*CTask* has it's current folder(aka directory) stored in *->cur_dir*,and a pointer to the (internal) drive is at *->cur_dv*. As an end user,you probaly just want to know what drive and folder you are in(which you can get via *DirCur*),or just look at the command prompt.
+
+[DirCur.png]
+
++In TempleOS all files paths are relative to the current folder you are in+(unless your filename starts with '!/'). For example,in EXODUS The file *GrScrn.HC* is located in /T:!/GR!/GrScrn.HC/. So if you want to edit /GrScrn.HC/,you must first goto the /T:!/GR/ folder.
+
+To change our task's current folder,use *Cd*(Change Directories).  In our below example,I we *Cd* itno the absolute absolute path /"T:!/GR"/,Then we can edit /"T:!/GR!/GrScrn.HC"/ using *Ed*.
+
+[cd.png]
+
+If you are wondering what is in your current folder,you can type *Dir;*(like *MS-DOS*)
+
+[dir.png]
+
+You can also supply wildcards with *Dir*,but more on that later
+
+== Reading and Writing from Files
+=== FileWrite
+Writing to a file is quite easy in TempleOS. Simple use FileWrite
+
+ U8 *str="Hello World";
+ I64 len=StrLen(str);
+ FileWrite("Hello.TXT",str,len);
+ //Trigger the editor
+ Ed("Hello.TXT");
+
+*FileWrite* takes 3 arguments the *filename*,*data*,and *length*. 
+=== FileRead
+To read from a file use *FileRead*
+
+ FileWrite("abc.TXT","abc",3);
+ U8 *str=FileRead("abc.TXT"); //FileRead Includes a NULL terminator for us
+ "%s\n",str;
+
+If we want  to get the length of our data,we can provide a pointer to an *I64*. This will fill the I64 with the length of the file.
+
+ FileWrite("abc.TXT","abcdef\01234",11);
+ I64 len;
+ U8 *str=FileRead("abc.TXT",&len);
+ "abc.TXT is %d bytes big\n",len;
+=== FOpen(Not like C)
+In TempleOS,we work very close to hardware. Older hardisks had a Block sector size of 512 bytes,so to make things easier,+we only can write BLK_SIZE bytes at a time(512 bytes).+
+
+Opening a file is simple,do *FOpen* with a filename and either /"w"/ to write or /"r"/ to read from a file. *FBlkRead*!/*FBlkWrite* will take the /file/,/buffer/,/sector number/,and /the amount of blocks to use/.
+
+Enough talk,here's an example(OH,also be sure to *FClose* the file)
+
+ //
+ // Files opened with FOpen MUST WRITE BLK_SIZE bytes at once
+ // A BLK is the size of a hard-disk sector
+ //
+ CFile *file=FOpen("Database.BIN","w");
+ class CFileEnt {
+   U8 name[STR_LEN];
+   U8 password[STR_LEN];
+ };
+ #assert sizeof(CFileEnt)<=BLK_SIZE
+ CFileEnt clayton={"Clayton","123"};
+ CFileEnt root={"Root","toor"};
+ U8 buffer[BLK_SIZE];
+ MemCpy(buffer,&root,sizeof(CFileEnt));
+ FBlkWrite(file,buffer,0,1); //Write 1 blk at the first block(blk 0)
+ MemCpy(buffer,&clayton,sizeof(CFileEnt));
+ FBlkWrite(file,buffer,1,1); //Write 1 blk at the second block(blk 1)
+ FClose(file);
+ //
+ // Now we read
+ //
+ file=FOpen("Database.BIN","r");
+ CFileEnt user;
+ while(FBlkRead(file,buffer,,1)) {
+   MemCpy(&user,buffer,sizeof(CFileEnt));
+   "Got  user \"%s\" with password \"%s\"\n",user.name,user.password;
+ }
+ FClose(file);
+
+== Files and Folders
+=== Parent Folder: ".."
+In TempleOS,there are 2 special folder names. *"."* and *".."*. The first one means the current Folder,and the *".."* Is the parent folder. 
+
+So,let's say you are in /T:!/Home/,and you want to get to the root directory. You can type:
+ Cd(".."); //Change Directory(Folder) to the parent Folder.
+Here's the result
+[parent_folder.png]
+
+=== Finding Files
+==== WildCards
+In TempleOS,you use the *CDirEntry* class for managing files and folders. To get this class,use *FilesFind*. But before we can do this epicly,we should know about wildcards first. +Wildcards match patterns in a filename+. There are 2 of them That are epic(you can se files that match a wildcard using *Dir*).
+|Wildcard|Meaning |Example
+|*!**|This will match 0 or more charactors in a filename| *!**.TXT will match /ABC.TXT/ or /DEF.TXT/
+|*?*|This will match 1 of any charactor| *A?C.TXT* will match /ABC.TXT/,but not /AbbbbbC.TXT/
+
+[wildcard.png]
+
+With wildcards out of the way,we can move to our next part:
+==== FilesFind and FileFind
+FilesFind will look for files for you. At the most basic level,it returns a list of files in the form of a *CDirEntry* class(the next item in this list is called *->next*)
+
+In our below example,we also supply a flag called *FUF_JUST_FILES*,which will only choose files and not directories. Be sure to free the memory of the list by calling *DirEntryDel* on the first item in the list
+ 
+ FileWrite("abc.TXT","abc",3);
+ FileWrite("def.TXT","def",3);
+ FileWrite("ghi.TXT","ghi",3);
+ CDirEntry *cur,*root=FilesFind("*.TXT",FUF_JUST_FILES);
+ for(cur=root;cur!=NULL;cur=cur->next) {
+   "I Found %s\n",cur->full_name;
+ }
+ DirEntryDel(root);
+
+[filesfind.png]
+
+If you want to easily check for a file's existence,you can use *FileFind*.
+ if(FileFind("abc.TXT"))
+   "I found abc.TXT\n";
+ else
+   "abc.TXT is missing\n";
+
+With that out of the way,you may want to know what flags do what in *FilesFind*,so without further ado,here is a list of your typicall *FUF_!** flags:
+|Flag|Meaning
+|*FUF_RECURSE*|This will search in the child folders for the pattern too
+|*FUF_JUST_DIRS*|This will only match directories(aka folders)
+|*FUF_JUST_FILES*|This will only match files and not folders
+|*FUF_JUST_TXT*|This will only match text files
+|*FUF_JUST_DD*|This will only match [DolDoc DolDoc] files
+|*FUF_JUST_SRC*|This will only match source files
+|*FUF_Z_OR_NOT_Z*|This will only files,also checking if it has a /.Z/ extension
+|*FUF_SCAN_PARENTS*|Will look in parent diretories for the file too.
+|*FUF_FLATTEN_TREE*|Use this with *FUF_RECURSE* to make all items in the tree easy to access via *->next*
+
+== Creating and Deleting files.
+Sometimes you want to delete files that you made(Probably through *Ed* or *FlleWrite*). You can do this through *Del*
+ Del("File.TXT");
++Del doesnt work on folders+, If you have a folder you would like to delete,use *DelTree*,but first you need to make a Folder First,you can do this via *DirMk("Folder")*,let's see an example:
+ DirMk("Folder");
+ FileWrite("Folder/abc.TXT","abc",3);
+ FileWrite("Folder/123.TXT","123",3);
+ Dir("Folder"); //List the contents of folder
+ DelTree("Folder");
+ if(FileFind("Folder"))
+   Dir("Folder");
+ else
+   "Folder deleted!\n";
+== Copying Files
+Sometimes you want to copy a File,simply enough,you can use *Copy*
+ FileWrite("abc.TXT","abc",3);
+ Copy("abc.TXT","abc2.TXT");
+ Dir;
+If you want to copy Folders,use *CopyTree*
+ DirMk("Folder");
+ FileWrite("Folder/abc.TXT","abc",3);
+ FileWrite("Folder/123.TXT","123",3);
+ CopyTree("Folder","Folder2");
+ Dir("Folder2"); //List the contents of folder

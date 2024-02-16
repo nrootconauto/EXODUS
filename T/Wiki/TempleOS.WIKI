@@ -1,0 +1,8 @@
+==TempleOS
+TempleOS is the operating system that Terry Davis made in his life. It features a 640x480 resolution software-rendered display output scheme. TempleOS has these following interesting features:
+
+* Ring-0 mode
+* Everything is written in HolyC
+* Can embed graphics inside plaintext(DolDoc), like PDF files
+* Single address space, no linker needed
+

@@ -1,0 +1,22 @@
+EXAMPLES.LBR	CRC = EDCF
+C       .CCC	CRC = BE99
+C       .SUB	CRC = B68C
+SOURCES .LBR	CRC = D853
+CC      .COM	CRC = D3C4
+CC2     .COM	CRC = 6CE1
+CRCK    .COM	CRC = 6A0F
+CRCK    .DOC	CRC = B69F
+LDIR    .COM	CRC = FB59
+CHARIO  .C  	CRC = 169D
+CLIB    .COM	CRC = F655
+CLINK   .COM	CRC = B3AF
+-READ   .ME 	CRC = 2C76
+DEFF    .CRL	CRC = 97CC
+DEFF2   .CRL	CRC = 422C
+--BDSC-1.60C	CRC = 0000
+-LBR    .NOT	CRC = 0C9B
+CCONFIG .COM	CRC = 1F6E
+FILES   .DOC	CRC = 9379
+LBREXT  .COM	CRC = F6A4
+ZCASM   .LBR	CRC = B247
+

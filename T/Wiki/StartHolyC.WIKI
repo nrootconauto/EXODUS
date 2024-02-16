@@ -1,0 +1,24 @@
+==Getting started with HolyC development
+HolyC is currently available on all machines that could emulate an AMD64 generic machine, aarch64 and riscv64 specifically are natively supported by Aiwnios.
+
+==Running stock TempleOS
+===Virtual machine
+TempleOS' ISO is available on [https://templeos.org/Downloads/TempleOS.ISO TemplsOS.ORG].
+ SHA256SUM = 5d0fc944e5d89c155c0fc17c148646715bc1db6fa5750c0b913772cfec19ba26
+Using the orthodox TempleOS ISO from TempleOS.org is the most standard way to experience TempleOS, and all of this wiki's source code is vanilla orthodox HolyC and does not use any dialects of HolyC like [https://github.com/Zeal-Operating-System/ZealOS ZealC]. 
+
+For Linux QEMU is highly recommended.
+ qemu-img create -f qcow2 TempleOS.qcow2 2G
+ qemu-system-x86_64 -machine pc,kernel-irqchip=off,pcspk-audiodev=snd0,accel=kvm \
+                    -audiodev sdl,id=snd0 \
+                    -cdrom=<YOUR TEMPLEOS ISO> \
+                    -hda TempleOS.qcow2 \
+                    -m 2G \
+                    -smp $(nproc) \
+                    -rtc base=localtime
+For Windows, VMWare Workstation is highly recommended. Keep in mind you /must/ disable anything Hyper!-V related(Virtual machine platform, Hyper!-V, Windows Subsystem for Linux) or else VMWare Workstation will perform very poorly because it becomes a Hyper!-V wrapper instead of using its own hypervisor. VMWare Workstation 16.0.0 supports PCSpeaker emulation. 16.2.3 has a hypervisor bug. Make sure you choose 'Compatible with Workstation 8.x' in the custom configuration menu.
+
+===Bare metal
+While TempleOS can be booted on any generic PC with BIOS boot, an AMD64 CPU, an IDE CDROM, and an IDE hard drive, and a 640x480 4:3 display, it is not easy to find a machine that fits all these requirements. The closest machine to this is the ThinkPad T60 with a 4:3 screen.
+
+With TinkerOS, this could be partially solved. TinkerOS supports multiple display resolutions, and can boot on PCs that do not have a CDROM or an IDE hard drive. TinkerOS has been bare metal tested on a ThinkPad X200 with compatibility mode turned on for emulating an IDE hard drive for installation. You can download the USB boot image from [https://github.com/tinkeros/tinkeros/releases here]. Keep in mind that it still needs CSM or BIOS boot in order to boot.

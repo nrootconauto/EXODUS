@@ -1,0 +1,46 @@
+= Sound
+TempleOS makes sounds(no no it's true).
+Lets get started using an ONA(which is not a frequency in hertz,use Freq2Ona(hz)).
+ I64 o;
+ for(o=60;o!=100;o++) {
+     Snd(o);
+     Sleep(33);
+ }
+ Snd; //Turn off sound
+This is fun and all,but what about music. For that we typeically use Play
+Here is an example scale
+ Play("wChDqEeFwGwAwB");
+The notes of a music scale start with C through G,then A and B go on top.
+What are the letters before the notes,they are note-lengths
+|Letter|Note length
+|w| whole
+|h| half 1/2
+|q| quarter 1/4
+|e| eigth 1/8
+|t| 2/3's of current duration
+|.| 1.5 times the current duration
+Sharp notes are denoted with a # after the note
+== Tempo
+The tempo(speed) of the music can be set with /music.tempo/
+ music.tempo=8;
+ Play(
+     "hEhEwEhChEwGqG"
+     "wCqGqEqAqBqA#qAqGhEhGwAhFhGwEhChDqB"
+     "wCqGqEqAqBqA#qAqGhEhGwAhFhGwEhChDqB"
+     "hGhF#hFhD#wEqG#qAhCqAhChD"
+     "hGhF#hFhD#wE.wC.wC.wC"
+     "hGhF#hFhD#wEqG#qAhCqAhChDwD#wDwC"
+     "hGhF#hFhD#wEqG#qAhCqAhChD"
+     "hGhF#hFhD#wE.wC.wC.wC"
+     "hGhF#hFhD#wEqG#qAhCqAhChDwD#wDwC"
+ );
+Staccato is the spacing between the notes,it can be set via /music.stacatto_factor/ . It ranges from 0.0 to 1.0
+ F64 s=0.;
+ for(;s<=1.0;s+=0.25) {
+     music.stacatto_factor=s;
+     Play("hChDqEeFhGhAeB");
+ }
+
+= Noise
+This makes a noise that is epic and sounds like an atari game. Use *Noise*
+ Noise(500,1,100); //Make a noise for 500 milliseconds between 1 and 100 ona's

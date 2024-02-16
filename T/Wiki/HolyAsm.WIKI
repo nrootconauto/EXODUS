@@ -1,0 +1,912 @@
+= TempleOS Assembler Guide
+== Registers and RAM
+X86_64 has *registers* and *RAM*. Registers are variables built into the computer,and RAM is a giant array of memory
+
+In X86_64 assembly,you can set a registers value with *MOV*. RAX is the return register
+
+ asm {
+ _HELLO::
+ 	MOV RAX,104
+ 	INT3 //Trigger debugger
+ 	RET1 0 //Return from the function call
+ }
+ _extern _HELLO I64 Hello();
+ "Hello returns %d\n",Hello;
+
++INT3 WILL TRIGGER A DEBUGGER IN THIS EMULATOR+
+
+* DFs is the debugged task,and you can view *RAX* in the /->rax/ member
+
+[dfsrax.png]
+
+
+In TempleOS,you can use ceritain registers as variables and they will be saved across function calls. *BE SURE TO SAVE THE SAVED REGISTER VALUES TO THE STACK AND RESTORE THEM LATER*(more on that later). Wtihout further ado,here is a list of the registers and their purposes
+
+| Register | Purpose  |Saved across Called
+|RAX|Tmp Register/Return Value| No
+|RBX|Tmp Register|No
+|RCX|Tmp Regiser,used for bitshifts|No
+|RDX|Tmp Regiser|No
+|RSP|Stack Pointer|+Yes+
+|RBP|Function Base Pointer|+Yes+
+|RSI|Memory Move Source Pointer|+Yes+
+|RDI|Memory Move Destination Pointer|+Yes+
+|R8|Tmp Register|No
+|R9|Tmp Register|No
+|R10|Tmp Register|+Yes+
+|R11|Tmp Register|+Yes+
+|R12|Tmp Register|+Yes+
+|R12|Tmp Register|+Yes+
+|R13|Tmp Register|+Yes+
+|R14|Tmp Register|+Yes+
+|R15|Tmp Register|+Yes+
+
+In our example,we will store the first argument in R15,and add 100 to it then return it.
+
+ asm {
+   _HELLO::
+ //More on this later
+ 	PUSH RBP
+ 	MOV RBP,RSP
+ //
+    	PUSH R15 //This stores our register to the stack
+ 	MOV R15,SF_ARG1[RBP] //SF_ARG1 is the first argument
+ 	ADD R15,100 //Add 100 to R15
+ 	MOV RAX,R15 //Put R15 in RAX 
+ 	POP  R15 //This takes it off the stack
+ //More on this  later
+ 	LEAVE
+ 	RET1 1*8 //Pop the 1 argument off  the stack and return
+ }
+ _extern _HELLO I64 Hello(I64);
+ "Hello(8) is %d\n",Hello(8);
+
+=== The Stack(1)
+The stack is a unchanging array of memory used by the functions. *It has a pointer called RSP*. We can access put stuff on the stack with PUSH,and we can restore the stuff on the stack via POP.
+
+How does it work... Well,it looks like a pile of rocks(or like a stack). *PUSH*ing adds an item,and *POP*ing removes an item from the top. +In a stack,you cant remove an item from the center or all the rocks will fall down,SO ONLY TAKE ITEMS OFF THE TOP+
+
+Let's see what it looks like(in X86!_64 the stack grows down)
+
+PUSH does this
+
+[push_123.jpeg]
+
+Which is eqivalent to
+
+ RSP-=8; //The stack grows down
+ *RSP=value;
+
+And POP does this
+
+[pop_123.jpeg]
+
+Which is eqivalent to
+
+ return_value=*RSP;
+ RSP+=8;
+
+Let’s see some pushing in action
+
+ U0 PushPop() {
+   I64 reg R15 x,reg R14 y,reg R13 z;
+   x=10;
+   PUSH 1;
+   PUSH 2;
+   PUSH 3;
+ 
+   //Stack has:
+   //1<==RSP+16
+   //2<==RSP+8
+   //3<==RSP+0
+ 
+   INT3 //Trigger debugger(type StkRep)
+  
+   POP R15; //x 
+ 
+   //Stack has:
+   //1<==RSP+8
+   //2<==RSP+0
+ 
+   POP R14; //y 
+ 
+   //Stack has:
+   //1<==RSP+0
+ 
+   //We popped everthing off the stack
+   POP R13; //z
+  
+   "x=%d,y=%d,z=%d\n",x,y,z;
+ }
+ PushPop;
+
+After the *PUSH*es,our stack looks like this:
+[stk123.png]
+
+After *POP R15*,R15 has 3 and our stack has this:
+
+[stkpop.png]
+
+=== The Stack(2)
+We can do more than PUSH/POP to the stack,but before this we need a base address. *This register is called RBP: This is called the Base Pointer*. We need to set it first to a stack address,*BUT WE MUST ALSO SAVE THE OLD RBP* ,so our prolog will look like this:
+
+ asm {
+ _HELLO::
+ 	PUSH RBP //Save old RBP to the stack
+ 	MOV RBP,RSP //Make RBP point to the stack
+ 
+ 	INT3
+ 	
+	MOV RAX,1 
+ 
+ 	POP RBP //Restore our old RBP
+ 	RET1 0*8 //0 arguments
+ }
+ _extern _HELLO I64 Hello();
+ U0 Main() {
+   "HEllo is %d\n",Hello;
+ }
+ Main;
+
+The First item on the stack in the old RBP,the second item is the Return address
+
+[prolog.png]
+
+*If we run out of register variables, WE MUST MAKE ROOM ON THE STACK FOR VARIABLES. *
+
++Because the stack grows down, we must subtract the VARIABLE(S) size from the RSP,+ and we can use RBP to figure out where the variables are in the current function’s frame
+
+ asm {
+ //VARIABLE#offsets are negative as the stack grows down
+ #define VAR_X_OFF -4
+ #define VAR_Y_OFF -8
+ #define VAR_Z_OFF -12
+ _HELLO::
+ 	PUSH RBP //Save old RBP to the stack
+ 	MOV RBP,RSP //Make RBP point to the 
+ 	
+ 	SUB RSP,3*4 //x,y and z
+ 
+ 	MOV U32 VAR_X_OFF[RBP],1
+ 	MOV U32 VAR_Y_OFF[RBP],2
+ 	MOV U32 VAR_Z_OFF[RBP],3
+ 
+ 	MOV RAX,0 //We will sum our variables into the return register
+ 	ADD EAX,U32 VAR_X_OFF[RBP] //EAX is the 32bit version of RAX
+ 	ADD EAX,U32 VAR_Y_OFF[RBP]
+ 	ADD EAX,U32 VAR_Z_OFF[RBP]
+ 
+ 
+ 	ADD RSP,3*4 //Remove x,y and z from the stack
+ 	POP RBP //Restore the old RBP
+ 	RET1 0*8 //0 arguments
+ }
+ _extern _HELLO I64 Hello();
+ "Hello is %d\n",Hello;
+
+=== Registers(In-Depth)
+In X86,all of your normal registers can be divided into sections. The 64 bit registers have 32bit versions of them(and also 16bit versions). *EAX* for example is the first 32bits of *RAX*,and the first 16bits of *RAX* is *AX*. Its pretty fabulous.
+
++Also... Writing into the 32bit version of a register will 0 the upper 32bits+
+
+asm {
+   _CLEAR_HIGH32::
+   PUSH RBP
+   MOV RBP,RSP  
+   MOV RAX,U64_MAX //All of RAX's bits are 1
+   MOV EAX,0 //Writing the low 32bits will 0 the upper ones
+   ADD RAX,1
+   LEAVE
+   RET1 0*8
+ };
+ _extern _CLEAR_HIGH32 I64 Demo();
+ "I Got %d\n",Demo;
+
+It get's strange with the 8bit parts. All of the 64bit normal registers have 8bit versions,+but AX/BX/CX/DX have the upper 8 bits avaible as AH/BH/CH/DH(the H is for high)+. 
+
+Here is a table to clear up info
+
+[rax_dia.jpeg]
+(Writing into eax will zero the upper 32bits of RAX)
+
+== Addressing Modes
+
+In TempleOS,all function arguments are stored on the stack,and because RBP points to a stack address,we can get the function arguments from RBP via the *SF_ARG1-9* macros
+
+ MOV RAX,U64 SF_ARG1[RBP]
+
+Which boils down to 
+
+ MOV RAX,16[RBP] //RAX=RBP[16];
+
+This is where we derefence the pointer in RBP into RAX. In this instruction there are 2 addressing modes in use. *Register Addressing Mode* and *Indirect Addressing Mode*.
+these will be explained later)
+
+* Register
+* Immediate(Number)
+* Indirect
+** ![Reg]
+** ![Reg+Reg*(1,2,4 or 8)]
+** ![label/ptr]
+** Offset ![Reg]
+** Offset ![Reg+Reg*(1,2,4 or 8)]
+
++All registers except for RBP/R13 can be used in ![Reg!+Reg*(1,2,4 or 8)] mode+
+
+=== Addressing Mode Examples(Offset[Reg])
+
+Because RBP points to an address on the stack and function arguments are pushed to the stack,we can get arguments from the RBP pointer like this
+
+ MOV REG,U64 SF_ARG1[RAX]
+
++Computers generally can only access only address at once,so you CANNOT do this+
+
+ MOV U64 [addr_2],U64 [addr_1] //IMPOSSIBLE
+
+Ok,enough talk,here’s an example:
+
+ asm {
+ //VARIABLE#offsets are negative as the stack grows down
+ #define VAR_X_OFF -4
+ #define VAR_Y_OFF -8 
+ #define VAR_Z_OFF -12
+ _HELLO::
+ 	PUSH RBP //Save old RBP to the stack
+ 	MOV RBP,RSP //Make RBP point to the 
+ 	
+ 	SUB RSP,3*4 //Make room for x,y and z
+ 
+ 	MOV RAX,SF_ARG1[RBP]
+ 	MOV U32 VAR_X_OFF[RBP],EAX
+ 
+ 	MOV RAX,SF_ARG2[RBP]
+ 	MOV U32 VAR_Y_OFF[RBP],EAX
+ 
+ 	MOV RAX,SF_ARG3[RBP]
+ 	MOV U32 VAR_Z_OFF[RBP],EAX
+ 
+ 	MOV RAX,0 //We will sum our variables into the return register
+ 	ADD EAX,U32 VAR_X_OFF[RBP] //EAX is the 32bit version of RAX
+ 	ADD EAX,U32 VAR_Y_OFF[RBP]
+ 	ADD EAX,U32 VAR_Z_OFF[RBP]
+ 
+ 	ADD RSP,3*4 //Remove x,y and z from the stack
+ 	POP RBP//Restore the old RBP
+ 	RET1 3*8 //3 arguments
+ }
+ _extern _HELLO I64 Hello(I64,I64,I64);
+ "HEllo is %d\n",Hello(1,2,3);
+
+=== Addressing Mode Examples([Reg+Reg*4])
+We can add a Register to another Register(that may be multiplied by 1,2,4,or 8). It is useful for arrays
+Let’s see an example:
+ I64 array[10]={1,2,3,4,5,6,7,8,9,10};
+ asm {
+ _SUM_ARRAY::
+ 	MOV RAX,0 //Return value
+ 	MOV RCX,10 //Count
+ 	MOV RDX,&array
+ loop:
+ 	DEC RCX
+ 	ADD RAX,U64[RDX+RCX*8] //RDX has address of array,RCX has the index 
+ 
+ 	CMP RCX,0
+ 	JNE loop
+ 
+ 	RET1 8*0 //POP 0 arguments off the stack
+ };
+ _extern _SUM_ARRAY I64 SumArray();
+ "SumArray is %d\n",SumArray;
+
+== Control Flow
+
+=== Making Decisions
+There is a special register called the +RFLAGS +register,but you can’t use it like a normal register. It is used with jump instructions,but before that we need to know what they are
+* JE (Jump Equal)
+* JG (Jump Greater Signed)
+* JL (Jump Lesser Signed)
+*  JLE (Jump Lesser Equal)
+*  JGE (Jump Greater Equal)
+*  JA (Jump Above Unsigned)
+*  JB (Jump Below Unsigned)
+*  JAE (Jump Above Equal)
+*  JBE (Jump Below Equal)
+*  JZ (Jump if zero)
+*  JS(Jump if sign)
+*  JNE (Jump not Equal)
+*  JNG (Jump not Greater Signed)
+*  JNL (Jump not Lesser Signed)
+*  JNA (Jump not Above Unsigned)
+* JNB (Jump not Below Unsigned)
+* JNZ (Jump if not zero)
+* JNS(Jump if not sign)
+
++Use *CMP* to set the flags register+,(be aware that most arithmetic instructions invalidate the *RFLAGS* register too)
+
+ U0 Say(U8 *a) {
+   "%s",a;
+ } 
+ asm {
+ _CMP_TEST::
+ 	PUSH RBP
+ 	MOV RBP,RSP
+ 	PUSH R10
+ 	PUSH R11
+ 	MOV R10,U64 SF_ARG1[RBP]
+ 	MOV R11,U64 SF_ARG2[RBP] 
+ 
+ 	CMP R10,R11
+ 	JNL ltf
+ 	PUSH _msg_lt
+ 	CALL &Say
+ ltf:
+ 	CMP R10,R11
+ 	JNG gtf
+ 	PUSH _msg_gt
+ 	CALL &Say
+ gtf:
+ 	CMP R10,R11
+ 	JNA af
+ 	PUSH _msg_a
+ 	CALL &Say
+ af:
+ 	CMP R10,R11
+ 	JNB bf
+ 	PUSH _msg_b
+ 	CALL &Say
+ bf:
+ 	CMP R10,R11
+ 	JNE ef
+ 	PUSH _msg_eq
+ 	CALL &Say
+ ef:
+ 	CMP R10,R11
+ 	JNZ zf
+ 	PUSH _msg_zero
+ 	CALL &Say
+ zf:
+ 	POP R11
+ 	POP R10
+ 	POP RBP
+ 	RET1 2*8
+ _msg_lt:
+ 	DU8 "Less than pass\n",0;
+ _msg_gt:
+ 	DU8 "Greater than pass\n",0;
+ _msg_b:
+ 	DU8 "Less than pass(unsigned)\n",0;
+ _msg_a:
+ 	DU8 "Greater than pass(unsigned)\n",0;
+ _msg_eq:
+ 	DU8 "Equal to pass(unsigned)\n",0;
+ _msg_zero:
+ 	DU8 "Zero pass(unsigned)\n",0;
+ };
+ _extern _CMP_TEST U0 CmpTest(I64 a,I64 b);
+ "CmpTest(1,2);\n";
+ CmpTest(1,2);
+ "CmpTest(2,1);\n";
+ CmpTest(2,1);
+ "CmpTest(0,-1);\n";
+ CmpTest(0,-1); //-1 is the largest unsigned value
+ "CmpTest(-1,0);\n";
+ CmpTest(-1,0); //-1 is the largest unsigned value
+ "CmpTest(3,3);\n";
+ CmpTest(3,3);
+
+=== Looping
+
+You have probably seen something like this in HolyC
+
+ I64 n=10;
+ do
+   "I Got %d\n",n;
+ while(--n>0) 
+
+In assembly,we can use *LOOP* along with *RCX*(the Count register) to *LOOP* a certian amount of times. *LOOP* will decrease RCX then jump to a label if it is not 0
+
+ U0 PutNum(I64 n) {
+   "I Got %d\n", n;
+ }
+ asm {
+   _COUNT_DOWN::
+   PUSH RBP
+   MOV RBP,RSP
+   MOV RCX,SF_ARG1[RBP]
+@@enter:
+   //PUSH RCX TO SAVE IT(FUNCTION CALLS CAN DESTROY RCX)
+   PUSH RCX
+   //PUSH RCX again to pass it to PutNum
+   PUSH RCX
+   CALL &PutNum //This will POP off the second RCX we pushed
+   POP RCX //Restore our first RCX
+   //This will decrease RCX,THEN check if it is 0. It will loop if not 0
+   LOOP @@enter
+   LEAVE
+   RET1 1*8
+ };
+ _extern _COUNT_DOWN U0 CountDown(I64);
+ CountDown(10); 
+
+== Floating Points
+In the old days,there was the *X87 FPU*. It was an add!-on processor that would allow your computer for work with decimals(instead of just integers). +It works with a stack of registers(Called ST0!-ST7).+ The registers are actually locations on the FPU stack,*ST0* is the bottom most item on the stack,and *ST7* is the farthest from the current stack item
+
+Many of the awesome FPU instructions end in _P_. This means the instruction *POP*s an item from the FPU stack ,which is very useful. In our below example,we use +FADDP+ to add ST0,ST1. We *POP* off one of our registers from the stack,and we store the result at *ST0*
+
+ U0 SayF64(F64 f) {
+   "I Got %n\n",f;
+ }
+ asm {
+ _MAIN::
+    PUSH RBP
+    MOV RBP,RSP
+    FLD U64 [@@a]
+    FLD U64 [@@b]
+ 
+    //FPU Stack is
+    //  ST1=>a
+    //  ST0=>b
+    FADDP ST1,ST0 //This POPs ST0(b) and stores the result in ST0(a)
+    //  ST0=>a+b
+ 
+    SUB RSP,8 //Make room on (RSP)stack for a+b 
+  
+   //This Pop's the FPU stack and stores the result
+    FSTP U64 [RSP] //STore+Pop the FPU stack
+    // FPU Stack is now empty
+ 
+    CALL &SayF64    
+ 
+    LEAVE
+    RET1 0
+ @@a:
+   DU64 3.5;
+ @@b:
+   DU64 1.5123;
+ }
+ _extern _MAIN I64 Main();
+ Main;
+
+=== Mixing it up: Floating-Points with Integers
+Mixing Integers and Floating!-Points is quite easy. We are given the *FILD* instruction for loading integers into the *X87 FPU*. If we want to store a floating point into an integer,we can use *FISTP*(which *POP*s for us). +We can "FLD ST0" to clone the first FPU stack item by loading it onto the stack(again)+
+
+ U0 SayF64(F64 f) {
+   "I Got %n\n",f;
+ }
+ I64 integer=0;
+ asm {
+ _MAIN::
+    PUSH RBP
+    MOV RBP,RSP
+    FILD U64 SF_ARG1[RBP] //I64 a 
+    FILD U64 SF_ARG2[RBP] //I64 b
+ 
+    //FPU Stack is
+    //  ST1=>a
+    //  ST0=>b
+    FSUBP ST1,ST0 //This POPs ST0(b) and stores the result in ST0(a)
+    //  ST0=>a-b
+ 
+    SUB RSP,8 //Make room on stack for a+b
+ 
+    //ST0=>a-b
+ 
+    FLD ST0 //We "clone" ST0 onto the FPU stack 
+ 
+    //ST1=>a-b
+    //ST0=>a-b
+ 
+    //Here we store ST0 into integer
+    FISTP [&integer] 
+ 
+    //ST0=>a-b
+ 
+    //This Pop's the FPU stack and stores the result
+    FSTP U64 [RSP] //STore+Pop the FPU stack
+    // FPU Stack is now empty
+ 
+    CALL &SayF64    
+ 
+    LEAVE
+    RET1 2*8
+ }
+ _extern _MAIN I64 Main(I64,I64);
+ Main(5,3);
+ 
+  "integer is now %d\n",integer; 
+
+=== Making Declsions(2): Floating Point edition
+Your best freind when it comes to making (float!-ing point) decisions is +FCOMIP+. This will set the *EFlags* register. +BE SURE TO USE THE "UNSIGNED" STYLE JUMPS AFTER FCOMIP+. This is because *FCOMIP* doesnt set all the flags needed for _signed_ style jumps.
+
+ U0 Say(U64 ch) {
+   "%c\n",ch;
+ }
+ asm {
+ _MAIN::
+    PUSH RBP
+    MOV RBP,RSP
+    FLD U64 SF_ARG1[RBP] //F64 a 
+    FLD U64 SF_ARG2[RBP] //F64 b
+ //we want to compare a,b(we current have b,a on the stack)
+    FXCH ST1 //(Exchanges ST0 with STn)
+    FCOMIP ST0,ST1
+    FSTP ST0 //Pop ST0(storing into itself does nothing)
+ //>
+    JNA @@gt
+    PUSHFD //Push the flags to the stack
+    PUSH '>' //This argument will be eaten by Say
+    CALL &Say
+    POPFD //Restore the flags from the stack
+ @@gt:
+ //'<'
+    JNB @@lt
+    PUSHFD
+    PUSH '<'
+    CALL &Say
+    POPFD
+ @@lt:
+ //==
+    JNE @@eq
+    PUSHFD
+    PUSH '=='
+    CALL &Say
+    POPFD
+ @@eq:
+ //!=
+    JE @@ne
+    PUSHFD
+    PUSH '!='
+    CALL &Say
+    POPFD
+ @@ne:
+ //>=
+    JNAE @@ge
+    PUSHFD
+    PUSH '>='
+    CALL &Say
+    POPFD
+ @@ge:
+ //<=
+    JNBE @@le
+    PUSHFD
+    PUSH '<='
+    CALL &Say
+    POPFD
+ @@le:
+    LEAVE
+    RET1 2*8
+ }
+ _extern _MAIN U0 Main(F64,F64);
+ "=== %n,%n ===\n",-1.,5.;
+ Main(-1.,5.);
+ "=== %n,%n ===\n",5.,-1.;
+ Main(5.,-1.);
+ "=== %n,%n ===\n",5.,5.;
+ Main(5.,5.);
+
+=== Floating Point Operations list
+* FCHS //+Make ST0 negative+(CHange Sign)
+* FADDP STn,ST0 (Add)
+* FMULP STn,ST0 (Multiply)
+* FDIVP STn,ST0 (Divide)
+* FPREM //+Modulo for Floating Points+
+* FLD U64 ![addr] //Load a floating point
+* FILD U64 ![addr] //Load an integer as a floating point
+* FST U64 ![addr] //Store a floating point
+* FIST U64 ![addr] //Store a floating point as an integer
+* FXCH STn //Swap ST0 with STn
+
+The FPU lacks an exponet operation,so call Pow from assembly
+== TempleOS ABI
+In programming,an *ABI* means an *A*pplication *B*inary *I*nterface. It tells us numerous things like how to call functions,what registers to save across functions calls and more,so let's get started to our first section which is
+=== TempleOS ABI(1) What Registers to save
+In TempleOS,you must call functions in a specific way. The most import part about this is +Saving these registers across function calls!+
+
+* RSI
+* RDI
+* R10
+* R11
+* R12
+* R13
+* R14
+* R15
+
+To save these registers,*PUSH*  them to the stack and then *POP* them when you are done.
++Any Register that is not RDI/RSI/R10-15 MAY  BE CHANGED ACROSS FUNCTION CALLS+. In our below example,we use *R8/R9/RCX/RDX* as temporary registers and after a call to SomeFunction,they get mutated.
+
+ I64 SomeFunction() {
+   I64 r1=1,r2=2,r3=3,r4=4,r5=5,r6=6,r7=7;
+   Beep; //Invalidate some tmp registers
+   return r1+r2+r3+r4+r5+r6+r7;
+ }
+ asm {
+ _ABI_DEMO1::
+   PUSH RBP
+   MOV RBP,RSP
+  
+   MOV RCX,1
+   MOV RDX,2
+   MOV R8,3
+   MOV R9,4
+  
+   CALL &SomeFunction
+  
+   //Some of our temp registers are mutated
+   INT3
+  
+   MOV RAX,RCX //RAX is the return register
+   ADD RAX,RDX
+   ADD RAX,R8
+   ADD RAX,R9
+  
+   LEAVE
+   RET1 0
+ };
+ _extern _ABI_DEMO1 I64 ABIDemoBroken();
+ "ABIDemoBroken is %d\n",ABIDemoBroken;
+
+[abibroken.jpg]
+(Our registers were DESTROYED across call to *SomeFunction*)
+
+To remedy this,*we use the registers that are saved across function calls for variables.*
+
+ I64 SomeFunction() {
+   I64 r1=1,r2=2,r3=3,r4=4,r5=5,r6=6,r7=7;
+   Beep; //Invalidate some tmp registers
+   return r1+r2+r3+r4+r5+r6+r7;
+ }
+ asm {
+ _ABI_DEMO2::
+   PUSH RBP
+   MOV RBP,RSP
+ // We must save RDI/RSI/R10-R15 if we modify them
+   PUSH RDI
+   PUSH RSI
+   PUSH R10
+   PUSH R11
+  
+   MOV RDI,1
+   MOV RSI,2
+   MOV R10,3
+   MOV R11,4
+  
+   CALL &SomeFunction
+  
+   //Some of our temp registers are mutated
+   INT3
+  
+   MOV RAX,RDI //RAX is the return register
+   ADD RAX,RSI
+   ADD RAX,R10
+   ADD RAX,R11
+  
+ //Restore RDI/RSI/R10-R15,OR BAD THINGS WILL HAPPEN
+   POP R11
+   POP R10
+   POP RSI
+   POP RDI
+   LEAVE
+   RET1 0
+ };
+ _extern _ABI_DEMO2 I64 ABIDemoGood();
+ "ABIDemoGood is %d\n",ABIDemoGood;
+
+[abigood.jpg]
+(Our registers were saved across call to *SomeFunction*)
+
+=== TempleOS ABI(2) How to Pass/Get arguments
+In TempleOS,all arguments are put on the stack. As you may recall from eariler,we use RBP to figure out where our stack arguments are. +TempleOS gives us the macros SF_ARG1-8 to find the argument from RBP after a (proper) Prolog+. 
+
+When we are done with the function,we must also *POP* off the arguments that were supplied to the function. To do this,we use *RET1 8!*argc*. This will return from the function and remove however many bytes from the stack(each argument is 8 bytes in TempleOS so we multiply by 8)
+ asm {
+   _LOTS_OF_ARGS::
+   PUSH RBP
+   MOV RBP,RSP
+   //RAX is the return register
+   MOV RAX,U64 SF_ARG1[RBP]
+   ADD RAX,U64 SF_ARG2[RBP]
+   ADD RAX,U64 SF_ARG3[RBP]
+   ADD RAX,U64 SF_ARG4[RBP]
+   ADD RAX,U64 SF_ARG5[RBP]
+   ADD RAX,U64 SF_ARG6[RBP]
+   ADD RAX,U64 SF_ARG7[RBP]
+   ADD RAX,U64 SF_ARG8[RBP]
+   LEAVE
+   RET1 8*8 //We must POP off 8 arguments from the stack(which are 8 bytes wide each)
+ };
+ _extern _LOTS_OF_ARGS I64 LotsafArgs(
+       I64 a1,I64 a2,I64 a3,I64 a4,
+       I64 a5,I64 a6,I64 a7,I64 a8
+ );
+ "1+2+3...+8 is %d\n",LotsOfArgs(1,2,3,4,5,6,7,8);
+
+=== TempleOS ABI(3) How to Pass/Get arguments with Variable Length-Argument Functions
+In TempleOS,Variable length argument functions are kind of strange as +Variable Length Argument functions do not POP their arguments from the stack for you,so you must do it after you call a function+. Because the stack grows down,we *ADD* to the stack after we call the function. 
+
+Also,Variable Length Functions need a hidden *argc* to be pushed to the stack.+And the stack arguments are passed from Right to Left ALWAYS+. Enough talk let's see an example:
+
+ //U0 Print(U8 *fmt,...);
+ asm {
+  _VARGS_CALL::
+   PUSH RBP
+   MOV RBP,RSP
+   PUSH 0x300   //300
+   PUSH 0x200   //200
+   PUSH 0x100   //100
+   PUSH 3     //argc
+   PUSH @@msg //fmt
+   CALL &Print
+   //We must clean up the arguments from the stack
+   ADD RSP,8*5 //We pushed 5 things on stack,so move the pointer up 5 items
+   LEAVE
+   RET //We have no arguemnts so we dont need to POP off the stack
+ @@msg:
+   DU8 "Hello %x,%x,%x\n",0; //We must provide a NULL byte in assembly
+ };
+ _extern _VARGS_CALL U0 VargsCall();
+ VargsCall;
+
+[vargs_abi1.jpg]
+(After our call to *Print*,the arguemnts are still on the stack,so we add to the stack pointer to remove the arguments)
+
+== Integers (of Various Sizes)
+Integers are numbers that don't have a decimal point. They come in various sizes like this:
+* 8 bits(Byte)
+* 16 bits(Word)
+* 32 bits(DWord)
+* 64 bits(QWord)
+Each of these come in 2 variants:
+* Signed(Last bit is the sign bit)
+* Unsigned(There is no sign)
+In HolyC,you see types like _ U8 _ _ I8 _ _ I64 _, _ U32 _ etc... These are moved around (in memory) via *MOV*. 
+
+Eariler you saw something like:
+ MOV RAX,U64 SF_ARG1[RBP]
+This moves a 64 bit value from RBP.If we want to move a 16bit value into the *A* register(*AX*),we would do this
+ MOV AX,U16 SF_ARG1[RBP]
+
++This will leave the upper 48 bits unassigned. So we need to EXTEND AX to a larger value if we plan on using RAX+. Because there are 2 types of integers(signed and unsigned),there are 2 types of *extensions*
+* *Zero extend*(Fill the rest of the bits with 0s)
+* *Sign extend*(Make the 16bit signed value into a larger signed value)
+
+To do zero extends we use *MOVZX*,and to do sign extends we do *MOVSX*. Enough talk,here's a complicated example
+
+ asm {
+   _STRCMP2::
+   PUSH RBP
+   MOV RBP,RSP
+ #define A_PTR RBX
+ #define B_PTR RCX
+   MOV A_PTR,SF_ARG1[RBP]
+   MOV B_PTR,SF_ARG2[RBP]
+ @@loop:
+  //We load the whole U8 into I64 RDX(filling rest with 0s)
+   MOVZX DX,U8 [B_PTR] 
+   INC B_PTR //a_ptr++ 
+   //We load the whole U8 into I64 RAX(filling rest with 0s)
+   MOVZX AX,U8 [A_PTR] 
+   INC A_PTR //b_ptr++
+   //This will be signed
+   //AX-=DX
+   SUB AX,DX
+   JNZ @@exit //If there is a difference(RAX-RDX!=0) goto @@exit
+   //AX==DX if here
+   //Check for NULL terminator
+   CMP DX,0 //DX has the a byte(check if NULL)
+   JNE @@loop 
+ @@exit:
+   MOVSX RAX,AX //Move with sign extend(convert the 16bit AX into RAX)
+   LEAVE
+   RET1 2*8
+ };
+ _extern _STRCMP2 I64 StrCmp2(U8 *a,U8 *b);
+ "\"abc\",\"abd\" is %d\n",StrCmp2("abc","abd");
+ "\"abd\",\"abc\" is %d\n",StrCmp2("abd","abc");
+ "\"abc\",\"abc\" is %d\n",StrCmp2("abc","abc");
+ //"\"abc\",\"abd\" is %d\n",StrCmp("abc","abd");
+ //"\"abd\",\"abc\" is %d\n",StrCmp("abd","abc");
+ //"\"abd\",\"abc\" is %d\n",StrCmp("abc","abc");
+
+In our example *StrCmp2* takes 2 *U8!**s as arguments. We zero extend them as they are unsigned. We subtract the values and use a signed comparsion. Because we used *AX*,we sign extend them 64bits for our final *I64*
+
+== TempleOS Cool Assembly Features
+=== DUxx Directives
+TempleOS assembly let's you do more than put opcodes into the computer,it also let's you put data in. Here are some directives
+
+|Directive|Meaning
+|*DU8*| Put byte(s) into the code,also can take a string,but it needs a *NULL* byte
+|DU16| Puts *U16*'s into the code
+|DU32| Puts *U32*'s into the code
+|DU64| Puts *U64*'s into the code. You can also put floating points here and they will be *F64*'s
+
+In this example,we do 2 things with *DU8*,we put raw bytes as charactors,and then we use a string. I also supply a *NULL* byte at the end to tell  _ Say _ where the string ends.
+ 
+ U0 Say(U8 *st) {
+   "%s\n",st;
+ }
+ asm {
+ _DataDemo::
+   PUSH @@string
+   CALL &Say
+   RET
+ @@string:
+   DU8 'h','e','l','l','o'," world!!!",0; //Must manually include a NULL byte
+ };
+ _extern _DataDemo U0 DataDemo();
+ DataDemo;
+ DataDemo;
+
+=== Including Binary Data into the Assembly
+Sometimes we have gaint peices of data we want to include into our assembly. TempleOS gives us an *BINFILE* directive to do this,which will take the bytes from a file and put it in the code.
+
+ U0 Say(U8 *st) {
+   "%s\n",st;
+ }
+ //Write "Hello World" into Hello.TXT
+ FileWrite("Hello.TXT","Hello World",StrLen("Hello World"));
+ asm {
+ _BinDemo::
+   PUSH @@string
+   CALL &Say
+   RET
+ @@string:
+   BINFILE "Hello.TXT";
+   DU8 0; //NULL byte
+ };
+ _extern _BinDemo U0 BinDemo();
+ BinDemo; 
+
+=== Local Labels
+In TempleOS, you may think to yourself "How do I have 2 Labels of the same name". You will probably encounter this when writing multiple functions in 1 #asm block
+
+Luckily for you,TempleOS let's you use local labels to avoid name collisions.
+
+To use a local label,prefix a name with "*@@*". This label will be valid until another non-local label is encountered
+
+In our below example,we have multiple assembly functions in 1 block,but we use *@@fin*  as the exit for both of our functions,and each function (*_Hello* and *_Bye*) has it's own unique message
+
+ U0 Say(U8 *st) {
+   "%s\n",st;
+ }
+ asm {
+ _Hello::
+   PUSH RBP
+   MOV RBP,RSP
+   PUSH R15
+   MOV R15,10
+ @@loop:
+   CMP R15,0
+   JE @@fin
+   DEC R15
+   PUSH @@msg
+   CALL &Say
+   JMP @@loop;
+ @@fin:
+   POP R15
+   LEAVE
+   RET
+ @@msg:
+   DU8 "Hello",0;
+ _Bye::
+   PUSH RBP
+   MOV RBP,RSP
+   PUSH R15
+   MOV R15,10
+ @@loop:
+   CMP R15,0
+   JE @@fin
+   DEC R15
+   PUSH @@msg
+   CALL &Say
+   JMP @@loop;
+ @@fin:
+   POP R15
+   LEAVE
+   RET
+ @@msg:
+   DU8 "Bye!!!",0; 
+ };
+ _extern _Hello U0 Hello();
+ _extern _Bye U0 Bye();
+ Hello;
+ Bye;

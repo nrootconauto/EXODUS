@@ -1,0 +1,323 @@
+= Data structures
+Data structures are cool structures that store data.
+== HashTable
+=== Introduction
+Hash tables(*CHashTable*) are dictionaries that are stored in memory. They work by making a unique number from it's name and putting it in a bucket. This bucket contains a list of items with the same /hash-bucket/.They look like this:
+[hashtable.png]
+
+There is a reason you would want to do this:Instead of looking through 100 items,you can re!-generate the bucket index from the string's hash,then just look in that bucket.
+As you can see in the above image. /green/ and /cyan/ are both stored in bucket in bucket 0. So instead of checking buckets 1,2,3 you only need to check bucket 0. This is especially usefull when you have lots of buckets.
+
+=== HashTable API Introduction
+Each Hash table item has a base class of *CHash*. Which looks like this 
+ public class CHash
+ {
+   CHash *next;
+   U8 *str;
+   U32 type, use_cnt; // inc'ed every time search found, never dec'ed.
+ };
+In *CHash*s,*->next* points to the next item in the bucket,but *->str* is the item's name. The most  weird one is *->type*. In a hash table,each item has a type,so you can store /functions/,/classes/,/variables/ and just about anything in a *CHashTable*. This helps us from having ton of hash tables.
+
+To get an item out of the hashtable,we use *HashFind(/str/,/table/,/type/);*. All Task's have a *CHashTable* in *Fs->hash_table*. In our below example,we check for a define using *HTT_DEFINE_STR* as the type. The result is stored in d and we print it's value.
+
+ #define ONION 10
+ CHashDefineStr *d=HashFind("ONION",Fs->hash_table,HTT_DEFINE_STR);
+ "%s\n",d->data;
+
+In TempleOS,you can add items to the table,we first need to MAlloc an item first, then fill in the table
+ CHashDefineStr *d=CAlloc(sizeof(CHashDefineStr));
+ d->str=StrNew("Hello"); //Must allocate string on heap
+ d->type=HTT_DEFINE_STR;
+ d->data=StrNew("10");
+ HashAdd(d,Fs->hash_table);
+ //We added the macro Hello into the hash table
+ "%d\n",Hello;
+You can make your own hash-tables via /HashTableNew/. +The size must be a power of 2+. You can free it with /HashTableDel/.
+ CHashTable *ht=HashTableNew(0x100);
+ CHashGeneric *ent=CAlloc(sizeof CHashGeneric);
+ ent->user_data0=1;
+ ent->user_data1=2;
+ ent->user_data2=3;
+ ent->type=HTT_FRAME_PTR;
+ ent->str=StrNew("look");
+ HashAdd(ent,ht);
+ CHashGeneric *g=HashFind("look",ht,HTT_FRAME_PTR);
+ "%d,%d,%d\n",g->user_data0,g->user_data1,g->user_data2;
+ HashTableDel(ht);
+As you may have seen,each /CHash/ item has a type.
+Here is a list of he some of the /HTT/ types and what class they use
+|Type|Class|Notes
+|HTT_INVALID|None| Cannot be selected
+|HTT_GLBL_VAR|CHashGlblVar*|->data_addr points to data
+|HTT_CLASS|CHashClass*|Can be used for metadata
+|HTT_FRAME_PTR|CHashGeneric*|This can be set with FramePtrAdd(use FramePtr to get)
+
+=== Iterating through a CHashTable
+In this section I will show the code that created the above example,but first we need to know how a *CHashTable* is layed out. There is the *->mask*(+the number of buckets in the HashTable minus 1+),and there is the *->body*,the actuall buckets. So the simplest way to iterate through a *CHashTable* is to /for/ loop through the mask and check the buckets.
+
+To list the names in the current hash table,do this:
+ I64 idx;
+ CHash *h;
+ //Put random stuff in the hash table 
+ #define ABC 'abc'
+ #define DEF 'def'
+ #define XYZ 'xyz'
+ //
+ // ->mask is the number of buckets -1 ,so I 
+ // add 1
+ //
+ for(idx=0;idx<1+Fs->hash_table->mask;idx++) {
+   //
+   // If a bucket is empty,it has NULL
+   // There is a linked list of items otherwise(check )
+   //
+   for(h=Fs->hash_table->body[idx];h;h=h->next) {
+     "I got %s\n",h->str;
+   }
+ }
+
+Our complete example is this:
+
+ CHashTable *table=HashTableNew(4);
+ U0 AddItemToTable(U8 *name,I64 value,I64 color) {
+   CHashGeneric *i=CAlloc(sizeof CHashGeneric);
+   //All Hash items have a type,HTT_FRAME_PTR is a CHashGeneric
+   i->type=HTT_FRAME_PTR;
+   i->str=StrNew(name);
+   i->user_data0=value;
+   i->user_data1=color;
+   HashAdd(i,table);
+ }
+ AddItemToTable("red",1,LTRED);
+ AddItemToTable("blue",2,LTBLUE);
+ AddItemToTable("cyan",3,LTCYAN);
+ AddItemToTable("green",4,LTGREEN);
+ AddItemToTable("purple",5,LTPURPLE);
+ #define DISP_H 12
+ #define DISP_GAP 30
+ U0 DispHashTable(CTask *,CDC* dc) {
+   I64 i;
+   U8 *text;
+   CHashGeneric *h;
+   I64 x=20,y=40,lastx=20;
+   for(i=0;i<=table->mask;i++) {
+     x=20;
+     dc->color=BLACK;
+     text=MStrPrint("Bucket:%4d",i);
+     GrPrint(dc,x,y,text);
+     x+=FONT_WIDTH*StrLen(text)+DISP_GAP;
+     Free(text);
+     for(h=table->body[i];h;h=h->next) {
+       lastx=x;
+       x+=DISP_GAP;
+       dc->color=h->user_data1;
+       text=MStrPrint("%s(%d)",h->str,h->user_data0);
+       GrTextBox3(dc,x,y-FONT_HEIGHT/2,0,text);
+       Free(text);
+       dc->color=BLACK;
+       GrArrow3(dc,lastx,y,0,x-2,y,0,5);
+       x+=StrLen(text)*FONT_WIDTH;
+     }
+     y+=DISP_H;
+   }
+ }
+ Fs->draw_it=&DispHashTable;
+=== HashTable API Reference
+Here's a table for you:
+|Function|Meaning
+|HashAdd(item,table)|Add /item/ to the /table/
+|HashAdd(str,table,type)|Find the first /str/ whose type matches /type/ in /table/
+|HashFindSingle(str,table,type)|Find the first /str/ whose type matches /type/ in /table/+DOES NOT CHECK PARENT TABLE(in *CHashTable->next*)+
+|HashRemDel(node,table)|Delete /node/ from /table/(node is a *CHash*)
+|HashTableNew(sz)|Create a new hash table of size /sz/. +/sz/ must be a power of 2+
+|HashTableDel(table)|Delete a hash table
+== Fifo
+=== Introduction
+Fifo means "First In First Out".It's like an orginized pile of papers,the first paper you put in is the first one you get out. It's used for keyboard buttons as the first key you put into the FIFO is first one that comes out.+In TempleOS,CFifo's must be aligned to a power of 2.+
+
+Let's see an example:
+
+ CFifoI64 *fifoI64=FifoI64New(4);
+ FifoI64Ins(fifoI64,1);
+ FifoI64Ins(fifoI64,2);
+ FifoI64Ins(fifoI64,3);
+
+[fifo.png]
+/(The first item we put in is on top)/
+
+We can get an item out of them fifo with *FifoI64Rem(/fifo/,/ptr/)*. This will store the top item into /ptr/
+[fiforem.png]
+
+=== Fifo API
+There are 2 variants of Fifo's in TempleOS,the *CFifoI64*,*CFifoU8*. One hold's I64's and the other holds U8's. In our below example that I use to display a FIFO,I use a *CFifoI64*. In my below example,I use *FifoI64Cnt* to count the number of items in the Fifo,and then I *FifoI64Rem* the items into an array then I put them back in with *FifoI64Ins*.
+
+ CFifoI64 *fifoI64=FifoI64New(4);
+ FifoI64Ins(fifoI64,1);
+ FifoI64Ins(fifoI64,2);
+ FifoI64Ins(fifoI64,3);
+ U0 DispFifo(CTask *,CDC *dc) {
+    I64 ocnt=FifoI64Cnt(fifoI64),top,cnt;
+    I64 *items=MAlloc(8*ocnt),val; 
+    I64 y=60;
+    U8 *text;
+    cnt=0;
+    while(FifoI64Rem(fifoI64,&val)) {
+      items[cnt++]=val;
+      dc->color=LTBLUE+(ocnt-cnt);
+      text=MStrPrint("Item(%d)",val);
+      GrTextBox3(dc,100,y,0,text);
+      y+=15;
+      Free(text);
+    }
+    //Put items back on fifo
+    for(cnt=0;cnt!=ocnt;cnt++)
+      FifoI64Ins(fifoI64,items[cnt]);
+    Free(items);
+ }
+ Fs->draw_it=&DispFifo;
+ DocClear;
+[fifo.png]
+
+Here's a table,just replace *FifoI64* with *FifoU8* to use *U8*s
+|Function|Meaning
+|FifoI64New(sz)| Create a fifo with /sz/ elements,+/sz/ must be a power of 2+.
+|FifoI64Del| Deletes a fifo
+|FifoI64Ins(/fifo/,/item/)| Insert /item/ into the /fifo/
+|FifoI64Rem(/fifo/,/ptr/)| Remove the first item on the fifo into /ptr/,returns *TRUE* if an item was written
+|FifoI64Rem(/fifo/,/ptr/)| Peeks at the first item and if one is avialbe,it is written to /ptr/. Returns *TRUE* if there is an item on top
+|FifoI64Flush| Removes all items from a fifo
+|FifoI64Cnt| Return the number of items currently in the fifo
+== Circular Queues 
+=== Introduction
+In TempleOS *Circular Queues are used everwhere*. But first,we need to know what one is. It is an item that has a pointer to the *next* and *previous(last)* item in the Queue.  The twist is that these *CQue*'s wrap around like circle. Here is an image that may help vizualize it
+
+[cque.png]
+
+Before I jump into the source code,i'll have to explain how to iterate through a *Circular* queue. Because the first element is the last element,we want start at *head->next* and loop until we hit *head* again. It looks like this(*QueInit* and *QueIns* will be explained later):
+
+ CQue *head=MAlloc(sizeof CQue),*one=MAlloc(sizeof CQue),*two=MAlloc(sizeof CQue),*cur;
+ QueInit(head);QueIns(one,head);QueIns(two,one);
+ for(cur=head->next;cur!=head;cur=cur->next)
+   "Current element(excuding HEAD):%P\n",cur;
+
+Becuase a *CQue* is circular,we need make it so *->next* and *->last* point to the HEAD node. We can do this a *CQue* with *QueInit*
+ CItem *head=MAlloc(sizeof CItem); 
+ QueInit(head);
+ head->value=0;
+ head->color=BLACK;
+
+[queinit.png]
+
+To insert a node after a node,we use *QueIns(/new/,/after/)*
+ one=MAlloc(sizeof CItem);
+ one->value=1;
+ one->color=LTRED;
+ QueIns(one,head);
+
+[queins.png]
+
+Now it is time for the full example:
+
+ //
+ // All items in the circular queue have CQue as the base type
+ // 
+ class CItem:CQue {
+   I64 value;
+   I64 color;
+ };
+ CItem *head=MAlloc(sizeof CItem),*one,*two,*three;
+ //
+ // All Ques need to be initialzed with QueInit
+ //
+ QueInit(head);
+ head->value=0;
+ head->color=BLACK;
+ //
+ // Now i will make the nodes
+ //
+ one=MAlloc(sizeof CItem);
+ one->value=1;
+ one->color=LTRED;
+ two=MAlloc(sizeof CItem);
+ two->value=2;
+ two->color=LTGREEN;
+ three=MAlloc(sizeof CItem);
+ three->value=3;
+ three->color=LTBLUE;
+  
+ //First arg is the thing we are inserting
+ //Second arg is the item we are inserting after
+ QueIns(one,head);
+ QueIns(two,one);
+ QueIns(three,two);
+ DocClear;
+ U0 RectArrow(CDC *dc,I64 x1,I64 y1,I64 x2,I64 y2,I64 h=100) {
+  GrLine(dc,x1,y1,x1,y1+h);
+  GrLine(dc,x1,y1+h,x2,y1+h);
+  GrArrow3(dc,x2,y1+h,0,x2,y2,0,5);
+ }
+ U0 DispQue(CTask *,CDC *dc) {
+   //
+   // Both the end and start of a CQue is the HEAD NODE
+   // so when we do this "do" statement,we test to see if we are at the
+   // head node.
+   //
+   CItem *cur=head;
+   U8 *text;
+   I64 first_x=25,first_y=25,gap=25;
+   I64 x=first_x,y=first_y,lastx,lasty;
+   do {
+     dc->color=cur->color;
+     text=MStrPrint("%p(%d)",cur,cur->value);
+     GrTextBox3(dc,x,y,0,text);
+     if(cur!=head) {
+        dc->color=RED;
+        GrArrow3(dc,x,lasty-4,0,lastx,lasty-4,0,5);
+        dc->color=GREEN;
+        GrArrow3(dc,lastx,lasty+4,0,x,lasty+4,0,5);
+     }
+     lastx=x+StrLen(text)*FONT_WIDTH;
+     lasty=y+FONT_HEIGHT/2;
+     x=gap+lastx;
+     Free(text);
+     // To goto the next node,I use ->next
+     cur=cur->next;
+     // We check against head to see if we are at the end of node.
+   } while(cur!=head);
+   //Head starts at 100,100
+   lastx=first_x,y=lasty=first_y+8;
+   x-=gap; //We added gap last time
+   dc->color=RED;
+   RectArrow(dc,lastx+10,lasty+4,x,y);
+   dc->color=GREEN;
+   RectArrow(dc,x-10,lasty,lastx,y,150);
+   dc->color=GREEN;
+   GrPrint(dc,(x-lastx)/2,y+60,"Green is ->next");
+   dc->color=RED;
+   GrPrint(dc,(x-lastx)/2,y+70,"Red is ->last");
+ }
+ Fs->draw_it=&DispQue;
+=== Misc Functions for CQue's
+Sometimes you want to insert an item before a node,you can do this via *QueInsRev*.
+ QueIns(one,head);
+ QueInsRev(two,one);
+[queinsrev.png]
+
+Because all *->last* member of a *CQue* points the previous item,you can also do this
+ QueIns(one,head);
+ QueIns(two,one->last);
+
+If you want to remove an item from the *CQue*,you can use *QueRem*.
+ QueIns(one,head);
+ QueIns(two,one);
+ QueRem(one); //This will remove one from the CQue,But we have yet to Free it
+ Free(one); 
+[querem.png]
+=== CQue Reference
+|Function|Meaning
+|QueIns(new,after)|Insert /new/ after /after/
+|QueInsRev(new,before)|Insert /new/ before /before/
+|QueRem(node)|Remove /node/ from the queue;it doesnt free it
+|QueDel(head)| *Free* all items in the queue +except for the head node+
+|QueCnt|Get the number of items in a queue
+|QueCopy|*MAlloc* a copy of the CQue.

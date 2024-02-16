@@ -1,0 +1,131 @@
+List of all files in the v1.6 pre-release distribution package
+
+read.me		- general intro
+
+cc.com		- core compiler package
+cc2.com
+clink.com
+clib.com
+deff.crl
+deff2.crl
+c.ccc
+
+c.sub		- submit file for trivial compilation
+
+stdio.h		- standard header file
+stdlib1.c	- Source to C-coded libary functions
+stdlib2.c
+stdlib3.c
+
+bds.lib		- source to assembly-language library functionsy
+deff2a.csm
+deff2b.csm
+deff2c.csm
+
+casm.c		- assembly language preprocessorp
+casm.sub
+cload.c
+
+ccc.asm		- run-time package source
+
+cconfig.h	- new configuration program. Run with CC.COM and CLINK.COM
+cconfig.c	  present in the current directory to configure CC and CLINK.
+cconfig2.c
+
+l2.c		- Alternate linker
+chario.c
+
+dio.h		- Directed I/O package
+dio.c
+
+wildexp.c	- Wild-card expansion package
+
+hardware.h	- Hardware-dependent port definitions (for CMODEM package)
+cmodem.h	- MODEM7-compatible telecommunications package
+cmodem.c
+cmodem2.c
+
+noboot.c	- More miscellaneous utilities
+tail.c
+ucase.c
+lpr.c
+date.c
+cp.c		- General purpose file-copy utility. Replaces PIP.r
+di.c
+
+  ***** CDB Debugger ***
+
+cdbupdat.doc
+cdb.h
+cdb.com
+cdb1.h
+cdb.c
+build.c
+cdb2.ovl
+cdb2.h
+cdb2.c
+atbreak.c
+break.c
+command.c
+print.c
+parse.c
+util.c
+null.sym
+dasm.csm
+dasm.crl
+cdbconfg.c
+target.c
+
+  ***** RED package ****
+
+red-read.me
+red.h
+redbuf.h
+red1.h
+red2.c
+red3.c
+red4.c
+red5.c
+red6.c
+red7.c
+red8.c
+red9.c
+red10.c
+red11.c
+red12.c
+red13.c
+red14.c
+cred.sub
+lred.sub
+l2red.sub
+rconfig.com	- RED configuration program
+
+   ***	BCD package ***
+
+mconfig.h
+bcd1.csm
+bcd2.csm
+bmath.c
+bcd.crl
+demo1.c
+lmath.c
+tstinv.c
+
+long.c		- Long Integer package C source
+
+  *** Checksum utility ***
+
+crck.doc	- Documentation for CRCK.COM
+crck.com	
+crcklist.crc	- Checksum list for all files in the package
+ 
+  *** v1.50a compatibility package ***
+
+bdscio.h
+deff15.crl
+
+  *** Additional files ***
+
+bugs.doc	- Bug fix history of this version
+(cconfig.com)	- Executable form of CCONFIG program (may not be included)
+

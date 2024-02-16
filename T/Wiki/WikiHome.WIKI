@@ -1,0 +1,19 @@
+{no-toc}
+==HolyC wiki
+
+* [WikiHome Home]
+* Topics
+** [StartHolyC Getting started]
+** HolyC
+*** Graphics
+**** [GraphicsBasic Basic graphics]
+*** [Sound]
+*** [HolyAsm HolyC Assembly]
+*** [MetaData Class meta-data]
+*** [DolDoc DolDoc and fun]
+*** [Input User Input from Keyboard and Mouse]
+*** [Multic Multithreading]
+*** [DataStructs Useful Data Structures]
+*** [Strings]
+**** [Print Displaying Strings]
+*** [FileSystem Files and FileSystem stuff]

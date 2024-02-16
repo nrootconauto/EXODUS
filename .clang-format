@@ -1,0 +1,40 @@
+---
+BasedOnStyle: LLVM
+TabWidth: '2'
+UseTab: Never
+Language: Cpp
+#
+AlignAfterOpenBracket: Align
+AlignArrayOfStructures: Left
+AlignConsecutiveMacros: Consecutive
+AlignEscapedNewlines: Left
+AlignOperands: AlignAfterOperator
+AlignEscapedNewlines: Left
+AlignTrailingComments: true
+AllowShortBlocksOnASingleLine: Empty
+AllowAllArgumentsOnNextLine: false
+AllowAllParametersOfDeclarationOnNextLine: false
+AllowShortCaseLabelsOnASingleLine: false
+AllowShortEnumsOnASingleLine: false
+AllowShortFunctionsOnASingleLine: Empty
+AllowShortLambdasOnASingleLine: Empty
+AllowShortIfStatementsOnASingleLine: Never
+AlwaysBreakAfterReturnType: None
+BinPackArguments: true
+BinPackParameters: true
+EmptyLineAfterAccessModifier: Never
+EmptyLineBeforeAccessModifier: Never
+Standard: c++20
+LambdaBodyIndentation: Signature
+IndentPPDirectives: BeforeHash
+IndentCaseLabels: false
+# fuck you bill gates
+IncludeCategories: [
+  {Regex: '<winsock.*\.h>', Priority: -3},
+  {Regex: '<windows\.h>'  , Priority: -2},
+  {Regex: '<winbase\.h>'  , Priority: -1},
+  {Regex: '<win.*\.h>'    , Priority:  0},
+  {Regex: '<sys/types\.h>', Priority:  1},
+  {Regex: '<sys/stat\.h>', Priority:   2},
+]
+...

@@ -1,0 +1,2 @@
+This is an example file.
+You can edit this file to display the message of the day.

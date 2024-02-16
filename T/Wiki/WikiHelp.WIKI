@@ -1,0 +1,55 @@
+=Quick Guide 
+You can do cool stuff in TempleOS Tiki
+== Formating
+At the heart of the wiki is the formatting. Here is a list of stuff you can do
+=== Horizontal Rule
+-----
+ -----
+=== Bold
+I am *bold*
+ I am *bold*
+=== Italic
+I am /italic/
+ I am /italic/
+=== Underline
+I am _underline_
+ I am _underline_
+=== Highlight
+I am +highlighted+
+ I am +highlighted+
+=== Headers
+These will make a table of contents(can be disabled with !{no-toc!})
+ = Header 1
+ == Header 2
+ === Header 3
+ ==== Header 4
+=== Escape sequences 
+Use ! to escape a formatting character 
+I64 !*Foo(I64 !* foo=1!/3);
+ I64 !*Foo(I64 !* foo=1!/3);
+=== Lists
+* 1
+** 2
+** 3
+*** 4
+** 5
+
+ * 1
+ ** 2
+ ** 3
+ *** 4
+ ** 5
+
+== Management
+=== Begining your server
+To make an account of a newly created sever +password!/username as root!/root+
+=== Administration
+Once you are logged in as an admin account,you can click a name in the *Admin Panel* section 
+
+[admin.jpg]
+
++This will let you allow people into your server,ban them,and change their roles+
+=== Administration(2)
+Once you are an admin,you can /salt/ pages. This will make it so only admins can edit the page,this is a feature to prevent trolls from damaging your server
+
+Banning a user will revert their edits. You can also look in the *Change-Log* item in the menu to revert a change

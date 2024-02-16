@@ -1,0 +1,53 @@
+= Print
+Printing in TempleOS means printing to the screen(not to paper).
+If you want to print a string,just type the string like this:
+ "Hello World\n";
+You could also type 
+ Print("Hello World\n");
+[print1.png]
+== Basic formatting
+The print routine in TempleOS takes some (or no) arguments,you provide arguments like this:
+ "%d,%d,%d\n",1,2,3;
+The arguments are 1,2, and 3 here and the format code is *d*(Integer decimal). 
+There are various formatting codes for different types of data,to use a floating point number,use *n*
+ "Pi is %n\n",3.14;
+The basic formatting codes are:
+|Code| Meaning |Type 
+|d|Integer|I64
+|S|Define string|U8*
+|C|Uppercase charactor|U8/U64
+|p or P|Pointer to named symbol|Pointer
+|x or X|Hexidecimal|Pointer/I64
+|D|Date|CDate
+|T|Time|CDate
+|q|Quoted string(turns '/" into escape sequences)|U8*
+|Q|Reverse quoted string|U8*
+|Z|DefineLst entry(Takes 2 arguments)|U8 * and I64 
+|z|Sub-entry of \0 terminated string(Takes 2 arguments)|U8 * and I64 
+== z/Z Formating
+/DefineLst/'s are things whose items are separated by "\0"s,they look like this
+ DefineLstLoad("SOME_LIST","a\0b\0c\0");
+We can use the list like this:
+ DefineLstLoad("SOME_LIST","a\0b\0c\0");
+ I64 i;
+ for(i=0;i!=3;i++)
+   "HERE:%Z\n",i,"SOME_LIST";;
+== Auxiliary value
+The auxiliary value does various things for different format codes.
+For *c*,it repeats the character X times,we can do it like this:
+ "c%h3cl\n",'o';
+For numbers,it will set the decimal point of the number(useful for F64's).
+For example if we want to view a number in units of 1000,we can do this
+ "%h3n\n",1234567.;
+We get do negative numbers too for "milli" units
+ "%h-3n\n",0.123456;
+We can have the Print routine choose auxiliary for us using "?".
+ "%h?n\n",1234567.;
+This is really cool. We can use an arbitrary value as the auxiliary value using "*".
+ I64 repeat=10;
+ "t%h*cn\n",repeat,'e';
+== Other Print Routines
+Somtimes you may want to Print text to a variable and use it elsewhere. For this we have *MStrPrint*,which will print a string to a *MAlloc*ed string and we can use elsewhere.(Be sure to *Free* it)
+ U8 *str=MStrPrint("I have %d onions",123);
+ PopUpOk(str);
+ Free(str);

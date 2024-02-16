@@ -1,0 +1,35 @@
+#help_index "DolDoc"
+extern Bool DocEd(CDoc *doc,I64 dof_flags=0);
+extern I64 DocEntryRun(CDoc *doc,CDocEntry *doc_e,
+	Bool exited,I64 *_has_action=NULL);
+extern U0 DocFormBwd(CDoc *doc,Bool giveup=FALSE);
+extern Bool DocGoToLine(CDoc *doc,I64 line_num);
+extern U0 DocLoad(CDoc *doc,U8 *src2,I64 size);
+extern U0 DocPrintAtomic(CDoc *doc=NULL,U8 *fmt,...);
+extern U0 DocPrintPartial(CDoc *doc=NULL,U8 *fmt,...);
+extern CDocEntry *DocPutS(CDoc *doc,U8 *st);
+extern U8 *DocSave(CDoc *doc,I64 *_size=NULL);
+extern I64 EdLeftClickLink(CDoc *doc,CDocEntry *doc_e);
+extern I64 PopUpPickLst(U8 *lst);
+extern I64 TermRightClickLink(CDoc *doc,CDocEntry *doc_e);
+extern U0 DocDel(CDoc *);
+extern I64 DocSize(CDoc *);
+extern U8 *Doc2PlainText(CDoc*,CDocEntry*);
+extern CDoc *DocNew(U8*f=NULL,CTask* t=NULL);
+extern Bool DocUnlock(CDoc *);
+extern Bool DocLock(CDoc *);
+extern U8 *DC2Sprite(CDC *tmpb);
+extern U0 DocUpdateTaskDocs(CTask *task);
+extern CDocEntry *DocPrint(CDoc *doc=NULL,U8 *fmt,...);
+extern U0 DocBinDel(CDoc *doc,CDocBin *b);
+extern U0 DocBinsValidate(CDoc *doc);
+extern Bool DocHighlightCursor(Bool show=OFF,CDoc *doc=NULL);
+extern U0 DocDataFmt(CDoc *doc,CDocEntry *doc_e,I64 d=DOCM_CANCEL);
+extern U8 *EdSprite(I64 bin_num);
+extern Bool DocRecalc(CDoc *doc,I64 recalc_flags=RECALCt_NORMAL);
+extern U0 DocEntryDel(CDoc *doc,CDocEntry *doc_e);
+extern U0 ClipDel();
+extern CDoc *DocRead(U8 *name=NULL,I64 flags=0);
+extern U0 DocCenter(CDoc *doc=NULL,I64 recalc_flags=RECALCt_NORMAL);
+extern Bool Ed(U8 *link_st,I64 edf_dof_flags=0);
+extern U0 EdCodeTools(CDoc *doc);

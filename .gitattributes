@@ -1,0 +1,6 @@
+* text=auto
+*.HH linguist-language=HolyC
+*.HC linguist-language=HolyC
+vendor/** linguist-vendored
+cmake/** linguist-vendored
+T/Community/** linguist-vendored

@@ -1,0 +1,375 @@
+==HolyC
+HolyC is a programming language and a dialect of C. The most notable features of HolyC are:
+
+* Classes instead of structs
+* Cannot embed function inside class
+* Inheritance in classes
+* !PascalCase
+* 8-bit unsigned ASCII
+* Different type names from C
+* Typecastable lvalues
+* Self-manipulatable code(coming from the fact that HolyC is the JIT language powering the whole OS)
+* #exe
+* C89-style for statements
+
+==Features
+===On the fly manipulation of source code
+This is a simple hack that very elegantly demonstrates HolyC's flexibility:
+  #define SOME_DEFINE
+  #exe {HashRemDel(
+    HashFind("SOME_DEFINE",Fs->hash_table,HTT_DEFINE_STR),
+    Fs->hash_table
+  );}
+The code wrapped in #exe is equivalent to the ISO C preprocessor directive +#undef+.
+===#exe
+You can think of +#exe+ as constexpr in C++, but can manipulate the source code it's located in.
+This gives #exe immense powers, such as being able to implement unroll loops at compile-time like this, or generating useful helper code. This technique has been used in [https://github.com/contextswap/HolyTest HolyTest].
+  I64 arr[1024];
+  #exe {
+    I64 i;
+    for (i=0;i<1024;++i)
+      StreamPrint("arr[%d]=%d;\n",i,i+2);
+  }
+
+===Classes instead of structs
+In C you would define a struct like
+  typedef struct Man {
+  	int Age;
+  	char* Name;
+  } Man;
+and declare a struct clayton of type Man with
+  Man clayton;
+But in HolyC you use /classes/ like this:
+  class Man {
+  	I8 Age; 
+  	U8* Name; // As noted before, each char is U8(unsigned 8bit), not I8(signed 7bit), because 7bit signed ASCII is silly
+  };
+and declare a class clayton of type Man with
+  Man clayton;
+It's pretty straightforward. However they can /not/ have functions declared inside them, just like structs. Then what's the difference between a TempleOS class and a C struct? It's /inheritance/ . Inheritance lets another class already include another class' members. We would do that in HolyC like
+  class abc {
+  	I64 a, b, c;
+  };
+   
+  class abcdef:abc { // Inheritance, in which abcdef extends abd is defined here
+  	I64 d, e, f;
+  };
+  
+  abcdef six = {'a', 'b', 'c', 'd', 'e', 'f'};
+which would declare both the inherited and newly declared members of six.
+
+== Functions
+Functions are epic in HolyC. They can have default arguments(unlike C). To declare a function,we do this:
+ I64 Func(I64 a=1,I64 b=2,I64 c=3) {
+     return a+b+c;
+ }
+What we did was we provided a return type(I64),and we gave it 3 arguments(a,b and c).
+To call the function we do this:
+ Func(10,20,30);
+If we don't provide any arguments to the function,the function is called with the default arguments
+ Func;
+We can also omit arguments in the call too:
+ Func(10,,30);
+
+==Pointers
+=== Pointers(1)
+Every value (outside of small variables in registers) have locations in memory. RAM is like an array.
+ U8 RAM[1024];
+Imagine all values in memory  are stored in this *RAM* value(in reality this RAM value is spans the whole memory space);
+If we have 3 variables a,b,c,they could be stored at 8,16,24 in RAM. The reason they are 8 bytes apart,this is because I64 are 8 bytes wide
+We get get the address of a pointer like this
+ &a;
+You will should see a number in the TempleOS prompt,this is the location in *RAM* the value is at.
+We can store a value into the *RAM* array via an operator.
+ I64 a=1;
+ I64 *ptr=&a; //Load the address of a
+ *ptr=10; //Write into the address of a
+ "%d\n",a;
+=== Pointers(2)
+Functions are stored in RAM in TempleOS,you can get their address like any variable
+ I64 Foo() {
+     "HELLO WORLD\n";
+ }
+ I64(*func)()=&Foo; //Function pointers have parenthesis around them
+ (*func)();
+Why use function pointers? Glad you asked. You can use them as callbacks.
+For example,the window manager uses the function pointer *Fs->draw_it* as a callback.
+ U0 DrawIt(CTask *,CDC *dc) {
+     GrRect(dc,0,0,100,100);
+ }
+ Fs->draw_it=&DrawIt;
+
+=== Pointers (3)
+Aritmetic can be done on pointers, with a catch: The arithmetic is done in units(which are the size of the pointer).
+This makes sense,it we want to go one I64 ahead of pointer of type I64,we add 1 to it
+ I64 ten_i64s[10]={1,2,3,4,5,6,7,8,9,10};
+ I64 *ptr=&ten_i64s;
+ "Value at ptr+0:%d,ptr is %d\n",*ptr,ptr;
+ "Value at ptr+1:%d,ptr+1 is %d\n",*(ptr+1),ptr+1; 
+As we can see,adding 1 to the pointer increased the value by 8. This is because the the ptr has a type of I64(which is 8 bytes)
+This also applies to subtraction as well... *Unless we are subtracting 2 pointers*,in that case we substract and divide by the pointer size to get the distance between 2 pointers
+Here is an example:
+ I64 *ptr=0;
+ I64 *ptr2=24;
+ "Distance between ptr and ptr2 in 8 byte units is %d\n",ptr2-ptr;
+==Operators
+=== Precedence in C and HolyC
+C and HolyC have different precedence,the TempleOS one is less weird and makes more sense.
+Precedence means order of operations(like in math).
+Take this statement for example:
+ a*b+c*d;
+The multiplacation is done first,and the addition is done second. If we were to put parenthesis around them,it would look like this:
+ ((a*b)+(c*d)) 
+The order of operations on TempleOS is this order
+ 1  ` << >>
+ 2 * / %
+ 3 &
+ 4 ^
+ 5 |
+ 6 + -
+ 7 < > >= <=
+ 8 == !=
+ 9 &&
+ 10 ^^
+ 11 ||
+ 12 = += -= *= /= %= &= ^= <<= >>= |=
+The order of operations in C is this:
+ 1 * / %
+ 2 + -
+ 3 << >>
+ 5 < > >= <=
+ 6 == !=
+ 7 &
+ 8 ^
+ 9 |
+ 10 &&
+ 11 ||
+ 13 ? :
+ 14 = += -= *= /= %= <<= >>= &= ^= |=
+ 15 , 
+Unlike C,TempleOS lets you use ranges when comparing. See this example:
+ 1<=2<=3; //HolyC accepts this
+But in C,it would be interpreted as this
+ ToBool(1<=2)<=3  //C's interpretation of this
+Unary operators(that take 1 operand) are always done before other operators.
+Lets look at some examples:
+ !0+1; //Same as (!0)+1;
+ *ptr*2; //Same as (*ptr)*2; Multiply the value at ptr times 2
+It gets a bit more weird with ++ operators though
+ *x++; //Same as *(x++),not (*x)++ 
+=== Operator decriptions
+ a+b Adds a and b
+ a-b Subtracts b from a
+ a*b Multiplies a and b
+ a/b Divides a by b
+ a%b Gets the remainder of a and b
+ a<<b Does a [bitwise] shift left by b bits
+ a>>b Does a [bitwise] shift right by b bits
+ a<b Is a "lesser than" operator
+ a>b Is a "greater than" operator
+ a<=b Is a "lesser than or equal" operator
+ a>=b Is a "greater than or equal" operator
+ a==b Checks if a equals b
+ a!=b Checks if a does not equal b
+ a&b Does a [bitwise] AND operation
+ a|b Does a [bitwise] OR operation
+ a^b Does a [bitwise] XOR operation
+ a&&b Will be 1 if a AND b are not 0(else it's 0)
+ a||b Will be 1 if a AND/OR b are 1(else it's 0)
+ a^^b Will be 1 if a OR b are 1,if both are 1 then it's 0
+ a=b Assigns a's value with b's value. 
+ *ptr Gets the value in RAM pointed to by ptr
+ ~a Inverts the bits of a.
+ !a Will return 1 if a 0(else it returns 1)
+ ++a Will increment a's value by 1
+ --a Will decrement a's value by 1
+ &var Will get the address of RAM that var is in.
+Things get tricky here
+ a++ Will increment a's value by 1,but the old value is returned
+ a-- Same as above but we subtract
+Here is an example
+ I64 a=10;
+ I64 b=a++;
+ //b is 10,a is 11
+=== Comments
+Comments do nothing in your code(but they make it more readable).
+There are single line comments
+ //I do nothing
+And there are multi line comments
+ /*
+   Multi line comment
+ */
+
+=== Control structures
+==== If Statement
+HolyC can make descisions with data. The most simple of these is the "if" statement
+ I64 a=TRUE;
+ if(a) {
+      "True\n";
+ } else
+      "False\n";
+You can use any numeric or pointer  expression in the "if" condition
+ if(TRUE&&FALSE) { //AND operator
+     "AND passed\n";
+ } else
+     "AND failed\n";
+==== Goto statement.
+These apply to functions only.
+Try
+ U0 Foo() {
+     I64 x=10;
+     loop: //Label
+     if(x>=1) {
+         "countdown:%d\n",x--; //Subtrace 1 from x
+         goto loop; //Goto statement
+     }
+ }
+ Foo;
+==== Basic Switch Statement
+TempleOS gives us 2 types of switch statements(bounded and unbounded)
+Switch statements use cases and they jump to the case provided to by the condition
+The first type checks if our condition is in bounds
+ U0 Foo() {
+     I64 x=10;
+     loop:
+     switch(x) {
+         case 1:
+             "1\n";
+             break;
+         case 2:
+             "2\n";
+             break;
+         case 3:
+             "3\n";
+             break;
+         case 4:
+             "4\n";
+             break;
+         case 5:
+             "5\n";
+             break;
+         case 6...10:
+             "6-10\n";
+	     break;  //Use break to exit the switch
+     }
+     if(--x>=1)
+         goto loop;
+ }
+ Foo;
+If we dont have any matches,we can direct our jump to a /default/ location.
+U0 Foo() {
+     I64 x=5;
+     loop:
+     switch(x) {
+         case 1:
+             "1\n";
+             break;
+         case 3:
+             "3\n";
+             break;
+         case 5:
+             "5\n";
+             break;
+         default:
+             "Default\n";
+             break;  //Use break to exit the switch
+     }
+     if(--x>=1)
+         goto loop;
+ }
+ Foo;
+==== Sub-switchs
+If we put cases or a default surrounded a start and end label,the start and end code with be run on enter and exit(dont jump out of these are you may mess up the stack)
+ U0 Foo() {
+     I64 x=5;
+     loop:
+     switch(x) {
+         start:
+             "ODD[";
+         case 1:
+             "1";
+             break;
+         case 3:
+             "3";
+             break;
+         case 5: 
+            "5";
+             break;
+         end:
+             "]\n";
+             break;
+         start:
+             "EVEN(";
+         case 2:
+             "2";
+             break;
+         case 4:
+             "3";
+             break;
+         end:
+            ")\n";
+      }
+     if(--x>=1)
+         goto loop;
+ }
+ Foo;
+==== Unbounded switches
+These will mess up your day,they dont check if a value is out of range and will jump to a invalid pointer if the value is out of bounds.
+Use sqaure brackets instead of parenthesis to use an unbounded switch.
+U0 Foo() {
+     I64 x=5;
+     loop:
+     switch[x] { //Look here,use square brackets
+         start:
+             "ODD[";
+         case 1:
+             "1";
+             break;
+         case 3:
+             "3";
+             break;
+         case 5: 
+            "5";
+             break;
+         end:
+             "]\n";
+             break;
+         start:
+             "EVEN(";
+         case 2:
+             "2";
+             break;
+         case 4:
+             "3";
+             break;
+         end:
+            ")\n";
+      }
+     if(--x>=1)
+         goto loop;
+ }
+ Foo;
+==== While Statements
+while statements are a loop that continues if the condition is true,let's see an example.
+ I64 x=10;
+ while(x>=1) {
+     "Countdown %d\n",x--;
+ }
+If you want to check the condition at the end of the loop,use a do statement
+ do {
+     "Running once(we exit after the check.)\n";
+ } while(FALSE);
+==== For statements
+For statements are like while statements but have 2 extra fields,one for the starting a variable,and another for running code at the end of a loop
+The first item initializes the variable(optional)
+The second item is the condition.
+The last item is ran after the loop cycle.
+
+ I64 x;
+ for(
+     x=10 //Initialize
+     ;x>=1 //Condition
+     ;x-- //Modifier
+ ) {
+     "Countdown %d\n",x;
+ }
