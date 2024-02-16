@@ -97,10 +97,6 @@ DbgHelp;//help on how to debug
 Shutdown;
 ```
 
-# Todo
-
-- I broke undoing, I will fix it in the near future
-
 # Credits
 
 - [argtable3](https://github.com/argtable/argtable3)
