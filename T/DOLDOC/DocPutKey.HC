@@ -14,7 +14,7 @@ public U0 DocPutKey(CDoc *doc,I64 ch=0,I64 sc=0)
   unlock=DocLock(doc);
   if (!Bt(doldoc.clean_scan_codes,sc.u8[0]))
     doc->flags|=DOCF_UNDO_DIRTY;
-  DocCaptureUndo(doc,TRUE);
+  DocCaptureUndo(doc);
   if (Bt(char_bmp_printable,ch) && !(sc&(SCF_CTRL|SCF_ALT))) {
     if (sc&SCF_KEY_DESC) {
       st=Char2KeyName(ch,FALSE);
@@ -424,7 +424,7 @@ public U0 DocPutKey(CDoc *doc,I64 ch=0,I64 sc=0)
 	    if (sc&SCF_KEY_DESC)
 	      KeyDescSet("Char  /Back Space");
 	    else {
-	      DocCaptureUndo(doc,TRUE);
+	      DocCaptureUndo(doc);
 	      doc_ce=doc->cur_entry;
 	      if (doc->cur_col<=doc_ce->min_col) {
 		doc_ce=doc->cur_entry=doc_ce->last;
