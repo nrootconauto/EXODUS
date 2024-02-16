@@ -123,10 +123,12 @@ return task;
   LBtr(&(Gs->cpu_flags),CPUf_DYING_TASK_QUE);
   return tmpt;
 }
+
 U0 Exit() {
-	LBts(&(Fs->task_flags),TASKf_KILL_TASK);
-	Yield();
+  LBts(&Fs->task_flags,TASKf_KILL_TASK);
+  Yield;
 }
+
 U0 SrvTaskCont()
 {//Act as server task in a loop handling commands.
   I64 old_flags=0;

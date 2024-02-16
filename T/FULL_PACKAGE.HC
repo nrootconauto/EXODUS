@@ -84,16 +84,12 @@ U0 __InitCPUs() {
       Yield;
 }
 __InitCPUs;
-try {
-  if (__IsCmdLine)
-    Drv('Z');
-  ExePrint("%s;\n",__CmdLineBootText);
-} catch PutExcept;
 U0 _InitUI() {
   CTask *u;
   if (__IsCmdLine) {
+    Drv('Z');
     PCSpkInit;
-    User;
+    u=User;
     DeathWait(&u);
     Shutdown;
   } else {

@@ -25,10 +25,10 @@ public U0 DocPutKey(CDoc *doc,I64 ch=0,I64 sc=0)
   } else {
     doc_ce=doc->cur_entry;
     x=doc->x; y=doc->y;
-    if (sc&SCF_ALT)
+    if (sc&SCF_ALT) {
       switch (ch) {
 	case CH_BACKSPACE: //<CTRL-H>
-	  if (!(sc&(SCF_SHIFT|SCF_CTRL))) {
+          if (!(sc&(SCF_SHIFT|SCF_CTRL))) {
 	    if (sc&SCF_KEY_DESC)
 	      KeyDescSet("Edit/Undo");
 	    else
@@ -36,6 +36,7 @@ public U0 DocPutKey(CDoc *doc,I64 ch=0,I64 sc=0)
 	  }
 	  break;
       }
+    }
     else
       switch (ch) {
 	case 0:

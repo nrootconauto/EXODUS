@@ -5,13 +5,13 @@
 EXODUS is a port of the TempleOS kernel to user space for Linux, Windows and FreeBSD.
 EXODUS makes HolyC a user-space general programming language that
 isn't just an exclusivity of virtual machines. It contains a mostly
-full-featured GUI of stock TempleOS, and a CLI mode which has found
+full-featured GUI from stock TempleOS, and a CLI mode which has found
 uses for running the networked servers automatically and building
 EXODUS' kernel itself.
 
 EXODUS is similar to [Aiwnios](https://github.com/nrootconauto/Aiwnios) in that
 it provides a TempleOS experience in user space, but EXODUS runs TempleOS' orthodox
-compiler and has less divergences from vanilla TempleOS, and Aiwnios runs on other
+compiler and has less divergences from stock TempleOS, and Aiwnios runs on other
 architectures than x86_64 through its own compiler backend, such as aarch64/riscv64.
 If you're feeling experimental I recommend you try both.
 
@@ -66,11 +66,12 @@ Consult `./exodus -h` for more command-line options such as CLI mode.
 - Documentation in T:/Server (run `#include "run";` after `Cd("Server");`, on localhost:8080)
 - Mostly orthodox TempleOS GUI
 - CLI mode
+- Networking (Take a look at T:/Community/{gihon,HolyIRC} and T:/Server's code)
 - Community software in T:/Community
 
-# Changes from vanilla TempleOS
+# Changes from stock TempleOS
 - The Windows key functionality has been replaced with the Alt key
-- Context switching is slower than a VM or native hardware because it runs in a VM, but it does not contribut to the general performance.
+- Context switching is slower than a VM or native hardware because it runs in Ring 3, but it does not contribut to the general performance.
 - Ring-0 opcodes (HLT, etc) and routines (InU8, etc) are not available
 
 # Contributing
@@ -90,6 +91,7 @@ Unzip("file.HC.Z");
 Zip("file.HC");
 Find("str",,"-i");//"-i" is for case-sensitivity (grep -rn . -e str)
 FF("file.*");//find .|grep file
+RedSeaISO("Something.ISO.C","Community");//archive folder into an ISO
 MountFile("Something.ISO.C");//defaults to M
 Cd("M:/");
 *0=0;//Raise the debugger

@@ -72,12 +72,28 @@ public U0 ClipCut(CDoc *doc)
 
 public U0 ClipPaste(CDoc *doc)
 {//Insert copy of clip at insert pt, cur_entry.
-  U8 *plain;
-  I64 c;
-  Bool unlock_doc=DocLock(doc);
+  CDoc *doc2=sys_clip_doc,*tdoc;
+  U8 *cb;
+  Bool unlock_doc=DocLock(doc),
+        unlock_doc2=DocLock(doc2);
   CDocEntry *doc_ce=doc->cur_entry,*doc_e;
-  if (plain=GetClipboardText)
-    DocPutS(doc,plain);
+  if (cb=GetClipboardText) {
+    tdoc=DocNew;
+    DocLoad(tdoc,cb,StrLen(cb));
+    if (doc_ce->type_u8==DOCT_DATA) {
+      doc_e=tdoc->head.next;
+      while (doc_e!=tdoc) {
+        if (doc_e->de_flags&DOCEF_TAG)
+      DocPrintPartial(doc,"%s",doc_e->tag);
+        doc_e=doc_e->next;
+      }
+    } else
+      DocInsDoc(doc,tdoc);
+    DocDel(tdoc);
+    Free(cb);
+  }
+  if (unlock_doc2)
+    DocUnlock(doc2);
   if (unlock_doc)
     DocUnlock(doc);
 }

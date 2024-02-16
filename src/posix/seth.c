@@ -33,9 +33,6 @@
 #include "types.h"
 #include "vfs.h"
 
-// note: these cores will never be destructed because this is
-// basically an emulation of a real CPU core, CoreAPSethTask never terminates,
-// instead let the host OS clean it up and do whatever with it
 typedef struct {
   pthread_t thread;
   /*
@@ -106,10 +103,11 @@ static void *ThreadRoutine(void *arg) {
  * ========HOW I DO IT=======
  * We do not use FS directly. The host operating system occupies it already
  * so we will simply make changes to the compiler to allow &Fs->code_heap.
- * ================= TRIVIA ================= 
+ * ================= TRIVIA =================
  * I tried copying the machine code of these routines because they're called
- * so frequently (3~400k/s), but TLS on Windows calls a function to get the thread-local
- * variable so I really can't because it messes up all the registers.
+ * so frequently (3~400k/s), but TLS on Windows calls a function to get the
+ * thread-local variable so I really can't because it messes up all the
+ * registers.
  */
 static _Thread_local void *Fs, *Gs;
 

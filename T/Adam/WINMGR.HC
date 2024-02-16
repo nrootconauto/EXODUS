@@ -373,10 +373,16 @@ Bool WinKeyNavMenu()
       //If we have a Alt+"non-arrow-key",use that
       while(FifoI64Cnt(kbd.scan_code_fifo)) {
 	FifoI64Rem(kbd.scan_code_fifo,&sc);
-	if('A'<=ToUpper(ScanCode2Char(sc))<='Z') {
-	  FifoI64Ins(kbd.scan_code_fifo,sc);
-	  KbdMsgsQue;
-	  goto fin;
+	switch(sc.u8[0]) {
+	  case SC_CURSOR_UP:
+	  case SC_CURSOR_DOWN:
+	  case SC_CURSOR_LEFT:
+	  case SC_CURSOR_RIGHT:
+	    break;
+	  default:
+	    FifoI64Ins(kbd.scan_code_fifo,sc);
+	    KbdMsgsQue;
+	    goto fin;
 	}
       }
       WinMgrSleep(TRUE);

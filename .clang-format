@@ -17,18 +17,12 @@ AllowAllParametersOfDeclarationOnNextLine: false
 AllowShortCaseLabelsOnASingleLine: false
 AllowShortEnumsOnASingleLine: false
 AllowShortFunctionsOnASingleLine: Empty
-AllowShortLambdasOnASingleLine: Empty
 AllowShortIfStatementsOnASingleLine: Never
 AlwaysBreakAfterReturnType: None
 BinPackArguments: true
 BinPackParameters: true
-EmptyLineAfterAccessModifier: Never
-EmptyLineBeforeAccessModifier: Never
-Standard: c++20
-LambdaBodyIndentation: Signature
 IndentPPDirectives: BeforeHash
 IndentCaseLabels: false
-# fuck you bill gates
 IncludeCategories: [
   {Regex: '<winsock.*\.h>', Priority: -3},
   {Regex: '<windows\.h>'  , Priority: -2},

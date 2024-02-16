@@ -252,7 +252,7 @@ Bool DocCaptureUndo(CDoc *doc,Bool force=FALSE)
     time_stamp=__GetTicks;
     //dont use cnts.time_stamp_freq because we are using __GetTicks
     if (doc->flags&DOCF_UNDO_DIRTY &&
-	  time_stamp>doc->undo_head.last->time_stamp+1000<<4 ||
+	  time_stamp>doc->undo_head.last->time_stamp+1000 ||
 	  force) {
       u=CAlloc(sizeof(CDocUndo),doc->mem_task);
       u->time_stamp=time_stamp;

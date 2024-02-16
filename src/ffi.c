@@ -224,14 +224,16 @@ static void STK___BootstrapForeachSymbol(void **stk) {
  * all args are 8 bytes
  * no returning structs (no secret parameters)
  * Calling a variadic function:
+ *
  * U0 f() {
- *   U8 noreg s[]="string %d\n";
- *   LEA  RBX,&s[RBP]
+ *   U8 noreg *s="%d\n";
+ *   MOV RBX,&s[RBP]
  *   PUSH 2
  *   PUSH 1 // num of varargs
  *   PUSH RBX
- *   CALL &Print // Print() pops it for you
+ *   CALL &Print // Print pops it for you
  * }
+ * f;
  *
  * THUS WE NEED STK+2 TO GET THE VARARGS
  */
