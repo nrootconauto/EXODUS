@@ -150,15 +150,11 @@ check_c_source_compiles(
    #include <stddef.h>
    #include <stdbool.h>
    typedef unsigned int __attribute__((mode(DI))) u64;
-   #define T(A,B) _Generic(A, typeof(B): true, default: false)
+   #define T(A,B) _Generic(*((A*)0), B: true, default: false)
    int main() {
-     uint64_t ui;
-     size_t sz;
-     u64 u;
-     uintptr_t up;
-     _Static_assert(T(u,ui));
-     _Static_assert(T(u,sz));
-     _Static_assert(T(u,up));
+     _Static_assert(T(u64,uint64_t));
+     _Static_assert(T(u64,size_t));
+     _Static_assert(T(u64,uintptr_t));
   }" SANE_INTEGERS)
 if (NOT SANE_INTEGERS)
   message(FATAL_ERROR "Your compiler's integer declarations are not sane")
