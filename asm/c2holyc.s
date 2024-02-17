@@ -7,6 +7,7 @@
 .intel_syntax noprefix
 .global __TOSTHUNK_START
 .global __TOSTHUNK_END
+.data
 // separate file because asm() in glbl scope will be deleted by LTO
 
 __TOSTHUNK_START:
@@ -48,6 +49,9 @@ __TOSTHUNK_START:
 /* F4h is HLT, a ring0 opcode, so we can safely assume this is the only instance */
     ret   0xF4F4
 __TOSTHUNK_END:
+
+// Richard, the fuck
+.section .note.GNU-stack,"",@progbits
 
 /* CITATIONS:
  * [1]

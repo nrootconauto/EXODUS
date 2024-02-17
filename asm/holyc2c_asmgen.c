@@ -38,6 +38,7 @@ static void preludeasm(FILE *fp) {
   for (int i = 0; i < NARGS; ++i)
     fprintf(fp, ".global FFI_CALL_TOS_%d\n", i);
   fprintf(fp, ".global FFI_CALL_TOS_0_ZERO_BP\n");
+  fprintf(fp, ".text\n");
 }
 static void ncallasm(FILE *fp, int nargs) {
   fprintf(fp, "FFI_CALL_TOS_%d:\n", nargs);
@@ -105,6 +106,7 @@ int main(int argc, char **argv) {
   for (int i = 0; i < NARGS; ++i)
     ncallasm(fp, i);
   zerobpasm(fp);
+  fputs(".section .note.GNU-stack,\"\",@progbits\n", fp);
   fclose(fp);
 }
 
