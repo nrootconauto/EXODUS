@@ -1,6 +1,6 @@
 # EXODUS: Executable Divine Operating System in Userspace
 
-![EXODUS](Exodus.png)
+![EXODUS](img/Exodus.png)
 
 EXODUS is a port of the TempleOS kernel to user space for Linux, Windows and FreeBSD.
 EXODUS makes HolyC a user-space general programming language that
@@ -66,8 +66,20 @@ Consult `./exodus -h` for more command-line options such as CLI mode.
 - Documentation in T:/Server (run `#include "run";` after `Cd("Server");`, on localhost:8080)
 - Mostly orthodox TempleOS GUI
 - CLI mode
+- Community software in T:/Community, such as Satania-buddy and games like BlazeItFgt2
 - Networking (Take a look at T:/Community/{gihon,HolyIRC} and T:/Server's code)
-- Community software in T:/Community
+
+There have been some disputes on whether TempleOS can have networking or not.
+To borrow the man's words, God did not ban networking.
+Terry didn't implement networking in stock TempleOS because of
+the line number restriction.
+
+["God did not ban networking"](https://old.reddit.com/r/TempleOS_Official/comments/2pzdy6/can_there_be_networking/cn1kshe/) [(archived)](https://archive.is/0epu3)
+
+Terry has also documented that the ideal TempleOS PC needs networking through a simple
+serial interface. 
+
+![Networking with serial](img/serialnetworking.png)
 
 # Changes from stock TempleOS
 - The Windows key functionality has been replaced with the Alt key
