@@ -42,12 +42,12 @@ u64 IsCmdLine(void) {
   return !!cli->count;
 }
 
-int GetFPS(void) {
-  return (!!_60fps->count) ? 60 : 30;
+char *CmdLineBootText(void) {
+  return boot_str;
 }
 
-char const *CmdLineBootText(void) {
-  return boot_str;
+int GetFPS(void) {
+  return _60fps->count ? 60 : 30;
 }
 
 int main(int argc, char **argv) {

@@ -104,7 +104,7 @@ public _extern _MEMSET U8 *MemSetU8(
 public _extern _HASH_REM_DEL Bool HashRemDel(CHash *tmph,CHashTable *table,
 	I64 instance=1);//instance must match tmph's
 
-#ifdef BOOT_TOS
+#ifdef BOOT_EXODUS
 _extern _HASH_ADD_AFTER U0 HashAddAfter(CHash *tmph,
         CHash *pred,CHashTable *table); //Add hash entry after entry.
 _extern _HASH_STR I64 HashStr(U8 *st); //Hash a string.

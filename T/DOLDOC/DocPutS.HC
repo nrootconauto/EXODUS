@@ -9,12 +9,11 @@ CDocEntry *DocPutS(CDoc *doc,U8 *st)
   Bool unlock;
   I64 ch,j;
   CDocEntry *doc_e=NULL,*res=NULL,*doc_ce;
-  if (__IsCmdLine && doc==DocPut) {
-    TOSPrint("%s\n",st);
-    return NULL;
-  }
   if (!st || !doc && !(doc=DocPut) || doc->doc_signature!=DOC_SIGNATURE_VAL)
     return NULL;
+  if (IsRaw && doc==DocPut) {
+    return TOSPrint("%s\n",st),NULL;
+  }
   unlock=DocLock(doc);
   if (doc->flags & DOCF_PLAIN_TEXT_TABS)
     char_bmp=char_bmp_zero_cr_nl_cursor;

@@ -143,10 +143,10 @@ U8 *CmdLinePmt()
   //if (IsDbgMode&&IsRaw) TODO RESTORE
   //  RawDr;
 
-  LBts(&(Fs->task_flags),TASKf_CMD_LINE_PMT);
+  LBts(&Fs->task_flags,TASKf_CMD_LINE_PMT);
   st=GetStr(res=MStrPrint("%s>",DirCur),,GSF_SHIFT_ESC_EXIT);
   Free(res);
-  LBtr(&(Fs->task_flags),TASKf_CMD_LINE_PMT);
+  LBtr(&Fs->task_flags,TASKf_CMD_LINE_PMT);
 
   i=StrLen(st);
   res=MAlloc(i+1+2);

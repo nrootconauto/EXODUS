@@ -60,12 +60,13 @@ MemSet(&doldoc,0,sizeof(CDolDocGlbls));
 #include "DocTerm.HC"
 
 I64 __GetStr2(I64 flags=0) {
-	return __GetStr;
+  no_warn flags;
+  return __GetStr;
 }
-if(!__IsCmdLine)
-	fp_getstr2=&DocGetStr2;
+if (!__IsCmdLine)
+  fp_getstr2=&DocGetStr2;
 else
-	fp_getstr2=&__GetStr2;
+  fp_getstr2=&__GetStr2;
 fp_doc_put=&DocPut;
 
 #exe {Cd("..");};;

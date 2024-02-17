@@ -1564,254 +1564,254 @@ U0 Bdos() {
   static CDirEntry *ents_static=NULL;
   Yield;
   switch(zC) {
-case 0: //Reboot
-  throw('Reboot');
-  break;
-case 1:
-  getch:
-  //Get a charactor
-  while(!FifoI64Rem(CPM.keys,&ch))
-    CPMScanKey;
-  TerminalWriteChr(ch);
-  zE=zHL=ch;
-  break;
-case 2:
-  //Write a charactor
-  TerminalWriteChr(zE);
-  break;
-case 6:
-  //Write a charactor or get one
-  if(zE==0x0ff) {
-    while(!FifoI64Rem(CPM.keys,&ch))
-      CPMScanKey;
-    zE=zHL=ch;
-  } else
-    TerminalWriteChr(zHL=zE);
-  break;
-case 9: //Write out
-  optr=zDE;
-  while(Fetch8(zDE)!='\d') {
-    TerminalWriteChr(Fetch8(zDE++));
-  }
-  zDE=optr;
-  break;
-case 10: //Read console line
-  optr=ptr=zDE;
-  cap=Fetch8(ptr);
-  ptr+=2;
-  buffer=TermGetStr;
-  for(i=0;buffer[i]&&i<cap;i++)
-    Write8(ptr+i,buffer[i]);
-  Write8(optr+1,i);
-  zHL=i;
-  Free(buffer);
-  break;
-case 11:
-  //Is key ready
-  if(FifoI64Cnt(CPM.keys))
-    zHL=0xff;
-  else
-    zHL=0x0;
-  break;
-case 12: //version
- zHL=0x22;
- break;
-case 14:
-  //Set drive
-  CPM.drive=zE;
-  break;
-case 15: //Open file
-  fcb=&z80->RAM[zDE];
-  buffer=FCBToHostname(fcb);
-  open:
-  zHL=HostnameToFCB(fcb,buffer,TRUE);
-  Free(buffer);
-  break;
-case 16:
-  //Close file
-  fcb=&z80->RAM[zDE];
-  buffer=FCBToHostname(fcb);
-  if(FileFind(buffer)) zA=0x0;
-  else zA=0xff;
-  Free(buffer);
-  break;
-case 17:
-  //Search for first
-  dir_pos=0;
-  fcb=&z80->RAM[zDE];
-  if(ents_static) DirEntryDel(ents_static);
-  buffer2=MStrPrint("%C/%d/*.CPM",CPM.drive+'A',CPM.user);
-  ents=ents_static=FilesFind(buffer2,FUF_JUST_FILES);
-  if(ents) {
-    MemCpy(&find_fcb,fcb,sizeof CFCB);
-    zHL=zA=0;
-  } else 
-    zHL=zA=0xff;
-  Free(buffer2);
-  break;
-case 18:
-  //Search for next
-  i2=dir_pos++;
-  fcb=&z80->RAM[zDE];
-  ents=ents_static;
-  buffer=NULL;
-  if(ents) {
-    i=0;
-    for(c_ent=ents;c_ent;c_ent=c_ent->next) {
-      if(StrIMatch(".CPM",c_ent->name)) {
-	if(!StrICmp(c_ent->name+StrLen(c_ent->name)-4,".CPM"))
-	  c_ent->name[StrLen(c_ent->name)-4]=0;
-      }
-      if(FCBMatchName(&find_fcb,c_ent->name)){
-        i++;
+    case 0: //Reboot
+      throw('Reboot');
+      break;
+    case 1:
+getch:
+//Get a charactor
+      while(!FifoI64Rem(CPM.keys,&ch))
+        CPMScanKey;
+      TerminalWriteChr(ch);
+      zE=zHL=ch;
+      break;
+    case 2:
+//Write a charactor
+      TerminalWriteChr(zE);
+      break;
+    case 6:
+//Write a charactor or get one
+      if(zE==0x0ff) {
+        while(!FifoI64Rem(CPM.keys,&ch))
+	  CPMScanKey;
+        zE=zHL=ch;
       } else
-        goto nextf;
-      if(i-1<i2)
-        ;
-      else{
-        break;
+        TerminalWriteChr(zHL=zE);
+      break;
+    case 9: //Write out
+      optr=zDE;
+      while(Fetch8(zDE)!='\d') {
+        TerminalWriteChr(Fetch8(zDE++));
       }
+      zDE=optr;
+      break;
+    case 10: //Read console line
+      optr=ptr=zDE;
+      cap=Fetch8(ptr);
+      ptr+=2;
+      buffer=TermGetStr;
+      for(i=0;buffer[i]&&i<cap;i++)
+        Write8(ptr+i,buffer[i]);
+      Write8(optr+1,i);
+      zHL=i;
+      Free(buffer);
+      break;
+    case 11:
+//Is key ready
+      if(FifoI64Cnt(CPM.keys))
+        zHL=0xff;
+      else
+        zHL=0x0;
+      break;
+    case 12: //version
+      zHL=0x22;
+      break;
+    case 14:
+//Set drive
+      CPM.drive=zE;
+      break;
+    case 15: //Open file
+      fcb=&z80->RAM[zDE];
+      buffer=FCBToHostname(fcb);
+open:
+      zHL=HostnameToFCB(fcb,buffer,TRUE);
+      Free(buffer);
+      break;
+    case 16:
+//Close file
+      fcb=&z80->RAM[zDE];
+      buffer=FCBToHostname(fcb);
+      if(FileFind(buffer)) zA=0x0;
+      else zA=0xff;
+      Free(buffer);
+      break;
+    case 17:
+//Search for first
+      dir_pos=0;
+      fcb=&z80->RAM[zDE];
+      if(ents_static) DirEntryDel(ents_static);
+      buffer2=MStrPrint("%C/%d/*.CPM",CPM.drive+'A',CPM.user);
+      ents=ents_static=FilesFind(buffer2,FUF_JUST_FILES);
+      if(ents) {
+        MemCpy(&find_fcb,fcb,sizeof CFCB);
+        zHL=zA=0;
+      } else 
+        zHL=zA=0xff;
+      Free(buffer2);
+      break;
+    case 18:
+//Search for next
+      i2=dir_pos++;
+      fcb=&z80->RAM[zDE];
+      ents=ents_static;
+      buffer=NULL;
+      if(ents) {
+        i=0;
+        for(c_ent=ents;c_ent;c_ent=c_ent->next) {
+	  if(StrIMatch(".CPM",c_ent->name)) {
+	    if(!StrICmp(c_ent->name+StrLen(c_ent->name)-4,".CPM"))
+	      c_ent->name[StrLen(c_ent->name)-4]=0;
+	  }
+	  if(FCBMatchName(&find_fcb,c_ent->name)){
+	    i++;
+	  } else
+	    goto nextf;
+	  if(i-1<i2)
+	    ;
+	  else{
+	    break;
+	  }
 nextf:
-    }
-    if(i-1!=i2)
-      goto find_fin;
-    zHL=zA=0;
-    buffer=MStrPrint("%C/%d/%s.CPM",'A'+CPM.drive,CPM.user,c_ent->name); 
-    goto open;
-  }
+        }
+        if(i-1!=i2)
+	  goto find_fin;
+        zHL=zA=0;
+        buffer=MStrPrint("%C/%d/%s.CPM",'A'+CPM.drive,CPM.user,c_ent->name); 
+        goto open;
+      }
 find_fin:
-  DirEntryDel(ents_static);
-  ents_static=NULL;
-  zHL=zA=0xff;
-  Free(buffer);
-  break;
-case 19:
-  //Delete
-  fcb=&z80->RAM[zDE];
-  buffer=FCBToHostname(fcb);
-  Del(buffer);
-  Free(buffer);
-  break;
-case 20:
-  //Read seq
-  fcb=&z80->RAM[zDE];
-  buffer=FCBToHostname(fcb);
-  i=Read(buffer,FCBOffset(fcb));
-  FCBNext(fcb);
-  Free(buffer);
-  zHL=i;
-  break;
-case 21:
-  //Write seq
-  fcb=&z80->RAM[zDE];
-  buffer=FCBToHostname(fcb);
-  i=Write(buffer,FCBOffset(fcb));
-  FCBNext(fcb);
-  Free(buffer);
-  zHL=i;
-  break;
-case 22:
-  //Make file
-  fcb=&z80->RAM[zDE];
-  buffer=FCBToHostname(fcb);
-  if(!FileFind(buffer)) {
-    FileWrite(buffer,"",0);
-  }
-  Free(buffer);
-  zHL=0;
-  break;
-case 23:
-  //Rename
-  fcb=&z80->RAM[zDE];
-  buffer=FCBToHostname(fcb);
-  buffer2=FCBToHostname(&z80->RAM[zDE+16]);
-  Move(buffer,buffer2);
-  Free(buffer),Free(buffer2);
-  zHL=0;
-  break;
-case 24:
-  //Login vector
-  zHL=0;
-  for(i=0;i!=16;i++) {
-    buffer=MStrPrint("%c",i+'A');
-    if(FileFind(buffer)&&IsDir(buffer))
-      Bts(&zHL,i);
-    Free(buffer);
-  }
-  break;
-case 25:
-  //GEt drive
-  zHL=CPM.drive;
-  break;
-case 26:
-  //Set dma
-  CPM.DMA_ADDR=zDE;
-  break;
-case 29:
-  zA=zHL=0;
-  break;
-case 31:
-  zA=zHL=CPM.DP_ADDR;
-  break;
-case 32:
-  //Set/get user code
-  if(zE==0xff)
-    zHL=CPM.user;
-  else
-    CPM.user=zE;
-  break;
-case 33:
-  //Read random
-  fcb=&z80->RAM[zDE];
-  buffer=FCBToHostname(fcb);
-  i=(fcb->R[2]<<16)|(fcb->R[1]<<8)|fcb->R[0];
-  zA=zHL=Read(buffer,i*0x80);
-  fcb->CR=i&0x7F;
-  fcb->EX=(i>>7)&0x1F;
-  Free(buffer);
-  break;
-case 34:
-  //Write random
-  fcb=&z80->RAM[zDE];
-  buffer=FCBToHostname(fcb);
-  i=(fcb->R[2]<<16)|(fcb->R[1]<<8)|fcb->R[0];
-  zA=zHL=Write(buffer,i*0x80);
-  fcb->CR=i&0x7F;
-  fcb->EX=(i>>7)&0x1F;
-  Free(buffer);
-  break;
-case 35:
-  //Compute filesize
-  fcb=&z80->RAM[zDE];
-  buffer=FCBToHostname(fcb);
-  if(FileFind(buffer)) {
-    i=VFsFSize(buffer); //TODO
-    i>>=7;
-    fcb->R[0]=i.u8[0];
-    fcb->R[1]=i.u8[1];
-    fcb->R[2]=i.u8[2];
-  }
-  Free(buffer);
-  break;
-case 36:
-  //Set random recrod
-  fcb=&z80->RAM[zDE];
-  i=fcb->CR&0x7f;
-  i+=(fcb->EX&0x1f)<<7;
-  fcb->R[0]=i.u8[0];
-  fcb->R[1]=i.u8[1];
-  fcb->R[2]=i.u8[2];
-  break;
-case 40:
-  //Write random(zero fill)
-  fcb=&z80->RAM[zDE];
-  buffer=FCBToHostname(fcb);
-  i=(fcb->R[2]<<16)|(fcb->R[1]<<8)|fcb->R[0];
-  zA=zHL=Write(buffer,i);
-  fcb->CR=i&0x7F;
-  fcb->EX=(i>>7)&0x1F;
-  Free(buffer);
-  break;
+      DirEntryDel(ents_static);
+      ents_static=NULL;
+      zHL=zA=0xff;
+      Free(buffer);
+      break;
+    case 19:
+//Delete
+      fcb=&z80->RAM[zDE];
+      buffer=FCBToHostname(fcb);
+      Del(buffer);
+      Free(buffer);
+      break;
+    case 20:
+//Read seq
+      fcb=&z80->RAM[zDE];
+      buffer=FCBToHostname(fcb);
+      i=Read(buffer,FCBOffset(fcb));
+      FCBNext(fcb);
+      Free(buffer);
+      zHL=i;
+      break;
+    case 21:
+//Write seq
+      fcb=&z80->RAM[zDE];
+      buffer=FCBToHostname(fcb);
+      i=Write(buffer,FCBOffset(fcb));
+      FCBNext(fcb);
+      Free(buffer);
+      zHL=i;
+      break;
+    case 22:
+//Make file
+      fcb=&z80->RAM[zDE];
+      buffer=FCBToHostname(fcb);
+      if(!FileFind(buffer)) {
+        FileWrite(buffer,"",0);
+      }
+      Free(buffer);
+      zHL=0;
+      break;
+    case 23:
+//Rename
+      fcb=&z80->RAM[zDE];
+      buffer=FCBToHostname(fcb);
+      buffer2=FCBToHostname(&z80->RAM[zDE+16]);
+      Move(buffer,buffer2);
+      Free(buffer),Free(buffer2);
+      zHL=0;
+      break;
+    case 24:
+//Login vector
+      zHL=0;
+      for(i=0;i!=16;i++) {
+        buffer=MStrPrint("%c",i+'A');
+        if(FileFind(buffer)&&IsDir(buffer))
+	  Bts(&zHL,i);
+        Free(buffer);
+      }
+      break;
+    case 25:
+//GEt drive
+      zHL=CPM.drive;
+      break;
+    case 26:
+//Set dma
+      CPM.DMA_ADDR=zDE;
+      break;
+    case 29:
+      zA=zHL=0;
+      break;
+    case 31:
+      zA=zHL=CPM.DP_ADDR;
+      break;
+    case 32:
+//Set/get user code
+      if(zE==0xff)
+        zHL=CPM.user;
+      else
+        CPM.user=zE;
+      break;
+    case 33:
+//Read random
+      fcb=&z80->RAM[zDE];
+      buffer=FCBToHostname(fcb);
+      i=(fcb->R[2]<<16)|(fcb->R[1]<<8)|fcb->R[0];
+      zA=zHL=Read(buffer,i*0x80);
+      fcb->CR=i&0x7F;
+      fcb->EX=(i>>7)&0x1F;
+      Free(buffer);
+      break;
+    case 34:
+//Write random
+      fcb=&z80->RAM[zDE];
+      buffer=FCBToHostname(fcb);
+      i=(fcb->R[2]<<16)|(fcb->R[1]<<8)|fcb->R[0];
+      zA=zHL=Write(buffer,i*0x80);
+      fcb->CR=i&0x7F;
+      fcb->EX=(i>>7)&0x1F;
+      Free(buffer);
+      break;
+    case 35:
+//Compute filesize
+      fcb=&z80->RAM[zDE];
+      buffer=FCBToHostname(fcb);
+      if(FileFind(buffer)) {
+        i=VFsFSize(buffer); //TODO
+        i>>=7;
+        fcb->R[0]=i.u8[0];
+        fcb->R[1]=i.u8[1];
+        fcb->R[2]=i.u8[2];
+      }
+      Free(buffer);
+      break;
+    case 36:
+//Set random recrod
+      fcb=&z80->RAM[zDE];
+      i=fcb->CR&0x7f;
+      i+=(fcb->EX&0x1f)<<7;
+      fcb->R[0]=i.u8[0];
+      fcb->R[1]=i.u8[1];
+      fcb->R[2]=i.u8[2];
+      break;
+    case 40:
+//Write random(zero fill)
+      fcb=&z80->RAM[zDE];
+      buffer=FCBToHostname(fcb);
+      i=(fcb->R[2]<<16)|(fcb->R[1]<<8)|fcb->R[0];
+      zA=zHL=Write(buffer,i);
+      fcb->CR=i&0x7F;
+      fcb->EX=(i>>7)&0x1F;
+      Free(buffer);
+      break;
   }
   zBC=0;
   zA=zL;
@@ -1823,32 +1823,32 @@ U0 Bios() {
   switch(call) {
     case 1:
     case 0:
-    throw('Boot');
+      throw('Boot');
     case 2:
-    if(FifoI64Cnt(CPM.keys))
-      zA=0xff;
-    else
-      zA=0;
-    break;
+      if(FifoI64Cnt(CPM.keys))
+        zA=0xff;
+      else
+        zA=0;
+      break;
     case 3:
-    while(!FifoI64Rem(CPM.keys,&ch))
-      CPMScanKey;
-    zA=ch;
-    break;
+      while(!FifoI64Rem(CPM.keys,&ch))
+        CPMScanKey;
+      zA=ch;
+      break;
     case 4:
-    TerminalWriteChr(zC);
-    break;
+      TerminalWriteChr(zC);
+      break;
     case 7:
-    zA=0x1a;
-    break;
+      zA=0x1a;
+      break;
     case 9:
-    CPM.drive=zC&0xf;
-    zHL=1;
-    break;
+      CPM.drive=zC&0xf;
+      zHL=1;
+      break;
     case 12:
-    zHL=zBC;
-    CPM.DMA_ADDR=zHL;
-    break;
+      zHL=zBC;
+      CPM.DMA_ADDR=zHL;
+      break;
   }
 }
 U0 CPM_Z80_Run() {

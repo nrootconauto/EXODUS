@@ -38,7 +38,7 @@ SetGs(mp_cores[0]);
 CCPU *Gs2() {
   return GetGs;
 }
-QueInit(&(Gs->next_dying));
+QueInit(&Gs->next_dying);
 TaskInit(Fs,0);
 CTask *Fs2() {
   return Fs;

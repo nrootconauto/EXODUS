@@ -387,19 +387,10 @@ I64 GetChar(I64 *_scan_code=NULL,Bool echo=TRUE,Bool raw_cursor=FALSE)
   return ch1;
 }
 
-static U8 *boot_text=__CmdLineBootText;
-
 U8 *GetStr(U8 *msg=NULL,U8 *dft=NULL,I64 flags=0)
 {//Returns a $LK,"MAlloc",A="MN:MAlloc"$()ed prompted string.  See $LK,"Flags",A="MN:GSF_SHIFT_ESC_EXIT"$.
   U8 *st,*bt2;
-  if (__IsCmdLine) {
-    if (boot_text) {
-      bt2=boot_text;
-      boot_text=StrFirstOcc(boot_text,"\n");
-      if (boot_text)
-        *boot_text++=0;
-      return StrNew(bt2);
-    }
+  if (IsRaw) {
     st=__GetStr(msg);
     if (!st) {
       if (dft)
@@ -484,10 +475,9 @@ I64 KbdMsgsQue()
   }
   return msg_code;
 }
+
 static I64 kb_mtx=0;
-static U0 _Exit() {
-	Exit;
-}
+
 static U0 KBCb(I64 s) {
   U8 *old_rip;
   F64 time_out;

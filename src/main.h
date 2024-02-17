@@ -9,10 +9,11 @@
 #include "types.h"
 
 /* AUTOEXEC.BAT */
-char const *CmdLineBootText(void);
+char *CmdLineBootText(void);
 
 u64 IsCmdLine(void);
 int GetFPS(void);
+
 
 /*═════════════════════════════════════════════════════════════════════════════╡
 │ EXODUS: Executable Divine Operating System in Userspace                      │

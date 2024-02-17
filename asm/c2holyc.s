@@ -7,8 +7,8 @@
 .intel_syntax noprefix
 .global __TOSTHUNK_START
 .global __TOSTHUNK_END
-.data
 // separate file because asm() in glbl scope will be deleted by LTO
+.data
 
 __TOSTHUNK_START:
     push   rbp

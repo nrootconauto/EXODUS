@@ -294,6 +294,19 @@ static void STK_SetClipboardText(char **stk) {
 }
 
 static char *STK___GetStr(char **stk) {
+  static char *boot_text;
+  static bool init;
+  if (!init) {
+    boot_text = CmdLineBootText();
+    init = true;
+  }
+  if (IsCmdLine() && boot_text) {
+      char *orig = boot_text;
+      boot_text = strchr(boot_text, '\n');
+      if (boot_text)
+        *boot_text++ = 0;
+      return HolyStrDup(orig);
+  }
   char cleanup(_dtor) *s = ic_readline(stk[0]);
   return HolyStrDup(s ?: "");
 }

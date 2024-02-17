@@ -307,13 +307,14 @@ public Bool DocType(CDoc *doc=NULL,U8 *filename,I64 trailing_new_lines=1)
   if (FilesFindMatch(filename,FILEMASK_TXT)) {
     doc2=DocRead(filename);
     DocInsDoc(doc,doc2);
+    if (IsRaw) DocDump(doc2,0);
     DocDel(doc2);
     res=TRUE;
   } else if (FilesFindMatch(filename,"*.GR*")) {
     DocGR(doc,filename);
     res=TRUE;
   }
-  if (res)
+  if (!IsRaw && res)
     DocPrint(doc,"%h*c",trailing_new_lines,'\n');
   return res;
 }
