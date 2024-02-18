@@ -223,10 +223,10 @@ Bool TaskValidate(CTask *task)
   //if(!cpu_structs) goto defacto;
   for (c=0;c!=mp_cnt;c++) {
     t=mp_cores[c]->seth_task;
-    if(!t) goto defacto;
-    if(t!=task) { 
-      for(t2=t->next_task;t2!=t;t2=t2->next_task) {
-        if(task==t2) {
+    if (!t) goto defacto;
+    if (t!=task) { 
+      for (t2=t->next_task;t2!=t;t2=t2->next_task) {
+        if (task==t2) {
           found=TRUE;
           break;
         }
@@ -236,7 +236,7 @@ Bool TaskValidate(CTask *task)
   }
   if(!found) return FALSE;
 defacto:
-  if(task->task_signature!=TASK_SIGNATURE_VAL)
+  if (task->task_signature!=TASK_SIGNATURE_VAL)
     return FALSE;
   else
     return ToBool(task);

@@ -106,7 +106,9 @@ int main(int argc, char **argv) {
   for (int i = 0; i < NARGS; ++i)
     ncallasm(fp, i);
   zerobpasm(fp);
+#ifndef _WIN32
   fputs(".section .note.GNU-stack,\"\",@progbits\n", fp);
+#endif
   fclose(fp);
 }
 

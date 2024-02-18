@@ -167,7 +167,7 @@ if (CMAKE_SYSTEM_NAME STREQUAL "Linux" OR
   target_link_libraries(${PROJECT_NAME} PRIVATE Threads::Threads)
 elseif (WIN32)
   target_link_libraries(${PROJECT_NAME} PRIVATE
-    ws2_32 synchronization shlwapi shcore dbghelp -static)
+    ws2_32 synchronization shlwapi shcore dbghelp winmm -static)
   # We don't need winpthreads
 endif ()
 

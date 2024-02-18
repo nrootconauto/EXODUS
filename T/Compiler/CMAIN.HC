@@ -706,7 +706,7 @@ I64 ExePutS2(U8 *buf,U8 *filename=NULL,I64 ccf_flags=0)
   if (!filename)
     filename=blkdev.tmp_filename;
   cc=CmpCtrlNew(buf,ccf_flags|CCF_DONT_FREE_BUF,filename);
-  if (Fs->last_cc!=&(Fs->next_cc))
+  if (Fs->last_cc!=&Fs->next_cc)
     cc->opts=Fs->last_cc->opts;
   QueIns(cc,Fs->last_cc);
   Lex(cc);

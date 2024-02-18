@@ -30,4 +30,4 @@ In T/FULL\_PACKAGE.HC:
 ```C
 #define GEN_HEADERS 1
 ```
-Rebulid HCRT -> Run EXODUS -> copy functoins from T/unfound.DD to T/KERNELA.HH
+Rebuild HCRT -> Run EXODUS -> copy functions from T/unfound.DD to T/KERNELA.HH

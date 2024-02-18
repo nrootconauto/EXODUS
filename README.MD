@@ -15,7 +15,7 @@ compiler and has less divergences from stock TempleOS, and Aiwnios runs on other
 architectures than x86_64 through its own compiler backend, such as aarch64/riscv64.
 If you're feeling experimental I recommend you try both.
 
-# Buliding EXODUS
+# Building EXODUS
 
 ## Linux/FreeBSD
 

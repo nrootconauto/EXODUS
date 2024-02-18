@@ -18,27 +18,24 @@ static u64 sample, freq;
 static SDL_AudioSpec have;
 static f64 volume = .1;
 
-static void AudioCB(argign void *ud, Uint8 *out, int len) {
+enum {
+  MAX = (1 << 15) - 1 /* headspace when volume = 1 */
+};
+
+static void AudioCB(argign void *ud, Uint8 *_out, int _len) {
+  Sint16 *out = (Sint16 *)_out;
+  int len = _len / 2;
   for (int i = 0; i < len / have.channels; ++i) {
     f64 t = (f64)++sample / have.freq;
-    Sint8 maxed = (sin(2 * M_PI * t * freq) > 0. ? 127 : -127) * volume;
+    Sint16 maxed = (sin(2 * M_PI * t * freq) > 0. ? MAX : -MAX) * volume;
     if (!freq)
       maxed = 0;
-    for (Uint8 j = 0; j < have.channels; ++j)
-      out[have.channels * i + j] = (Uint8)maxed;
+    for (int j = 0; j < have.channels; ++j)
+      out[have.channels * i + j] = maxed;
   }
 }
 
 void InitSound(void) {
-#ifdef __linux__
-  /* Spent two hours figuring out why there was static in the tunes.
-   * Linux devs, presumably a highly acclaimed group,
-   * cannot reach a consensus on how to push waves through speakers. */
-  SDL_SetHint(SDL_HINT_AUDIODRIVER, "pipewire");
-  if (SDL_Init(SDL_INIT_AUDIO))
-    SDL_SetHintWithPriority(SDL_HINT_AUDIODRIVER, NULL, SDL_HINT_OVERRIDE);
-    /* Calling init twice doesn't seem to impose a problem */
-#endif
   if (SDL_Init(SDL_INIT_AUDIO)) {
     flushprint(stderr,
                "Failed to init SDL_Audio: "
@@ -46,16 +43,15 @@ void InitSound(void) {
                SDL_GetError());
     terminate(1);
   }
-  SDL_AudioDeviceID out =
-      SDL_OpenAudioDevice(NULL, 0,
-                          &(SDL_AudioSpec){
-                              .freq = 24000,
-                              .format = AUDIO_S8,
-                              .channels = 2,
-                              .samples = 512,
-                              .callback = AudioCB,
-                          },
-                          &have, SDL_AUDIO_ALLOW_FREQUENCY_CHANGE);
+  SDL_AudioDeviceID out = SDL_OpenAudioDevice(NULL, 0,
+                                              &(SDL_AudioSpec){
+                                                  .freq = 24000,
+                                                  .format = AUDIO_S16,
+                                                  .channels = 2,
+                                                  .samples = 128,
+                                                  .callback = AudioCB,
+                                              },
+                                              &have, 0);
   SDL_PauseAudioDevice(out, 0);
 }
 

@@ -50,8 +50,10 @@ __TOSTHUNK_START:
     ret   0xF4F4
 __TOSTHUNK_END:
 
+#ifndef _WIN32
 // Richard, the fuck
 .section .note.GNU-stack,"",@progbits
+#endif
 
 /* CITATIONS:
  * [1]
