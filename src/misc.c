@@ -31,13 +31,12 @@ u32 char_bmp_hex_numeric[16] = {0x0000000, 0x03FF0000, 0x7E, 0x7E, 0, 0, 0, 0,
                                 0,         0,          0, 0, 0, 0, 0, 0};
 
 u64 Bt(void *addr, u64 idx) {
-  u64 ret;
-  asm("bt    %2,(%1)\n"
+  register u64 ret asm("rax");
+  asm("xorq  %%rax,%%rax\n"
+      "bt    %2,(%1)\n"
       "setb  %%al\n"
-      "movzx %%al,%0\n"
       : "=r"(ret)
-      : "r"(addr), "r"(idx)
-      : "al");
+      : "r"(addr), "r"(idx));
   return ret;
 }
 

@@ -123,4 +123,4 @@ Shutdown;
 
 People:
 
-- [nrootconauto](https://github.com/nrootconauto) for getting me started with HolyC code
+- [nrootconauto](https://github.com/nrootconauto) for getting me started with HolyC code and working on the Wiki
