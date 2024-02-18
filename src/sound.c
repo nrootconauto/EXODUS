@@ -16,10 +16,10 @@
 
 static u64 sample, freq;
 static SDL_AudioSpec have;
-static f64 volume = .1;
+static f64 volume = .2;
 
 enum {
-  MAX = (1 << 15) - 1 /* headspace when volume = 1 */
+  MAX = 1 << 14
 };
 
 static void AudioCB(argign void *ud, Uint8 *_out, int _len) {
@@ -47,8 +47,8 @@ void InitSound(void) {
                                               &(SDL_AudioSpec){
                                                   .freq = 24000,
                                                   .format = AUDIO_S16,
-                                                  .channels = 2,
-                                                  .samples = 128,
+                                                  .channels = 1,
+                                                  .samples = 512,
                                                   .callback = AudioCB,
                                               },
                                               &have, 0);
