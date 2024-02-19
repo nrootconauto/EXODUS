@@ -93,6 +93,9 @@ U0 _InitUI() {
   CTask *u;
   //DEBUGGING INFORMATION WILL BE APPENDED TO THESE SYMBOLS
   LoadImps;
+  // Load symbols into adam_task
+  if (FileFind("HCRT.DBG.Z"))
+    DbgInfoRead("HCRT.DBG.Z");
   if (__IsCmdLine) {
     Drv('Z');
     PCSpkInit;
@@ -104,9 +107,6 @@ U0 _InitUI() {
     DrawWindowNew;
     try ExePrint("%s;\n",__CmdLineBootText);
     catch PutExcept;
-    // Load symbols into adam_task
-    if (FileFind("HCRT.DBG.Z"))
-      DbgInfoRead("HCRT.DBG.Z");
     PaletteSetStd;
     Refresh; // Wait for window manager
     PCSpkInit;
