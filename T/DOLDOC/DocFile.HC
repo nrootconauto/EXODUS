@@ -249,8 +249,7 @@ Bool DocCaptureUndo(CDoc *doc,Bool force=FALSE)
   CDocUndo *u;
   if (doc->flags&DOCF_ALLOW_UNDO) {
     unlock=DocLock(doc);
-    time_stamp=__GetTicks;
-    //dont use cnts.time_stamp_freq because we are using __GetTicks
+    time_stamp=cnts.jiffies;
     if (doc->flags&DOCF_UNDO_DIRTY &&
 	  time_stamp>doc->undo_head.last->time_stamp+1000 ||
 	  force) {

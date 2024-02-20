@@ -116,7 +116,7 @@ return task;
   LBtr(&task->srv_ctrl.flags,JOBCf_LOCKED);
   LBtr(&task->task_flags,TASKf_TASK_LOCK);
 
-  task->wake_jiffy=__GetTicksHP+DYING_JIFFIES;
+  task->wake_jiffy=cnts.jiffies+DYING_JIFFIES;
   while (LBts(&(Gs->cpu_flags),CPUf_DYING_TASK_QUE))
     PAUSE
   QueIns(task,Gs->last_dying);
@@ -453,7 +453,7 @@ U0 TaskKillDying() {
   CTaskDying *task=Gs->next_dying,*task1;
   while (task!=&(Gs->next_dying)) {
     task1=task->next;
-    if(task->wake_jiffy<__GetTicksHP) { 
+    if(task->wake_jiffy<cnts.jiffies) { 
       QueRem(task);
       HeapCtrlDel(task(CTask*)->data_heap);
       HeapCtrlDel(task(CTask*)->code_heap);

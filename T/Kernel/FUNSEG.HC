@@ -86,7 +86,7 @@ U0 FunSegCacheAdd(CHash *tmps,U8 *addr)
     i=MinI64(StrLen(tmps->str),FUN_SEG_CACHE_STR_LEN-1);
     MemCpy(tmpfsc->str,tmps->str,i);
     tmpfsc->str[i]=0;
-    tmpfsc->time_stamp=__GetTicks;
+    tmpfsc->time_stamp=cnts.jiffies;
   }
 }
 

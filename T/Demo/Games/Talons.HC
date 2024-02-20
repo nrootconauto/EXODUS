@@ -664,11 +664,11 @@ U0 MPDrawIt(CTask *task,CDC *dc)
   xh2>>=1; yh2>>=1;
   w_on_map=FALSE;
   dd_old=I64_MAX;
-  for (strip_width=0;__GetTicksHP<update_jiffy_limit;strip_width++) {
+  for (strip_width=0;cnts.jiffies<update_jiffy_limit;strip_width++) {
     x1h=x1wa;
     y1h=y1wa;
     h_on_map=FALSE;
-    for (j=0;j<strip_height && __GetTicksHP<update_jiffy_limit;j++) {
+    for (j=0;j<strip_height && cnts.jiffies<update_jiffy_limit;j++) {
       x1=x1h>>8; y1=y1h>>8;
       if (0<=x1<MAP_WIDTH && 0<=y1<MAP_HEIGHT) {
 	if ((tmpp=panels[y1][x1]) && tmpp->update!=update) {
@@ -865,7 +865,7 @@ U0 Core0Talons()
   I64 i,xx,yy,elev,height,cx=Fs->pix_width>>1,cy=Fs->pix_height>>1;
   F64 min_strip_width,tt;
 
-  update_jiffy_limit=__GetTicksHP+JIFFY_FREQ/40;
+  update_jiffy_limit=cnts.jiffies+JIFFY_FREQ/40;
 
   xx=x/(MAP_SCALE*COORDINATE_SCALE);
   yy=y/(MAP_SCALE*COORDINATE_SCALE);

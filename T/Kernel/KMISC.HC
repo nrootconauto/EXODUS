@@ -1,11 +1,11 @@
 F64 tS()
 {//Time since boot in seconds as a float.
-  return __GetTicks/1000.;
+  return __GetTicks/JIFFY_FREQ;
 }
 Bool Blink(F64 Hz=2.5)
 {//Return TRUE, then FALSE, then TRUE at given frequency.
   if (!Hz) return 0;
-  return ToI64(__GetTicks*2*Hz/1000.)&1;
+  return ToI64(cnts.jiffies*2*Hz/1000.)&1;
 }
 
 U16 EndianU16(U16 d)

@@ -171,7 +171,7 @@ U0 update_talking_text() {
     MemCpy(buf, satania.talk.text, satania.talk.pos);
   GrPrint(gr.dc, satania.pos.x - satania.frame[0]->width + 10,
           satania.pos.y + 10, buf);
-  if (__GetTicks > satania.talk.ticks + 100) {
+  if (cnts.jiffies > satania.talk.ticks + 100) {
     satania.talk.pos++;
     if (satania.talk.text[satania.talk.pos] == '\n') {
       satania.talk.line++;
@@ -181,7 +181,7 @@ U0 update_talking_text() {
         satania.talk.text = StrFirstOcc(satania.talk.text, "\n") + 1;
       }
     }
-    satania.talk.ticks = __GetTicks;
+    satania.talk.ticks = cnts.jiffies;
   }
 }
 
@@ -265,7 +265,7 @@ U0 SataniaBuddy() {
         Kill(task);
         switch (res) {
         case MOVE_RANDOM:
-          rand_ticks = __GetTicks;
+          rand_ticks = cnts.jiffies;
           satania.sprite_index = 5;
           satania.pos.x = Rand * 640;
           satania.pos.y = Rand * 480;
@@ -298,7 +298,7 @@ U0 SataniaBuddy() {
           Free(input_str);
           satania.talk.pos = 0;
           satania.talk.line = 0;
-          satania.talk.ticks = __GetTicks;
+          satania.talk.ticks = cnts.jiffies;
           satania.is_talking = TRUE;
           update = TRUE;
           break;
@@ -310,7 +310,7 @@ U0 SataniaBuddy() {
           Free(input_str);
           satania.talk.pos = 0;
           satania.talk.line = 0;
-          satania.talk.ticks = __GetTicks;
+          satania.talk.ticks = cnts.jiffies;
           satania.is_talking = TRUE;
           update = TRUE;
           break;
@@ -320,7 +320,7 @@ U0 SataniaBuddy() {
       }
       mouse.rb = rbtn;
     }
-    if (__GetTicks > rand_ticks + 4096) {
+    if (cnts.jiffies > rand_ticks + 4096) {
       rnd = Rand * 1024;
       if (rnd < 256 && satania.move_random) {
         satania.pos.x = Rand * 640;
@@ -328,11 +328,11 @@ U0 SataniaBuddy() {
         update = TRUE;
       }
       if (rnd > 256 && rnd < 384 && !satania.is_talking) {
-        rand_ticks = __GetTicks;
+        rand_ticks = cnts.jiffies;
         goto satania_talk_random;
         break;
       }
-      rand_ticks = __GetTicks;
+      rand_ticks = cnts.jiffies;
     }
     if (satania.snap_to_window)
       satania.sprite_index = 4;

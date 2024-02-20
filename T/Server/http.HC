@@ -682,7 +682,7 @@ U0 ServeTask(CServer *srv) {
 U0 Serve(CServer *srv) {
   I64 core=-1;
   CTask *srv_task;
-  Seed(__GetTicksHP*UnixNow);
+  Seed(__GetTicks*UnixNow);
   if (mp_cnt>1)
     core=RandU64%(mp_cnt-1)+1;
       // we dont want core 0 since it has

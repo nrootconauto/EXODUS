@@ -817,7 +817,7 @@ U0 Titanium()
 
   try {
     while (TRUE) {
-      next_update_jiffy=__GetTicksHP+JIFFY_FREQ/100;
+      next_update_jiffy=cnts.jiffies+JIFFY_FREQ/100;
       while (msg_code=ScanMsg(&ch,&sc,1<<MSG_KEY_DOWN+1<<MSG_KEY_UP)) {
 	switch (msg_code) {
 	  case MSG_KEY_DOWN:

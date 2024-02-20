@@ -7,7 +7,7 @@ U0 ProgressBarsRegTf(U8 *path=NULL)
 {
   F64 t,p1,p2,p3,p4;
   if (path) {
-    t=__GetTicks;
+    t=cnts.jiffies;
     if (progress1_t0) p1=t-progress1_t0; else p1=0;
     if (progress2_t0) p2=t-progress2_t0; else p2=0;
     if (progress3_t0) p3=t-progress3_t0; else p3=0;

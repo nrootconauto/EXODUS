@@ -552,7 +552,7 @@ U0 CoreAPSethTask()
   LBts(&(Gs->ready),0);
   LBts(&seth_tasks_ready,__CoreNum);
   CTask *task,*task1=Fs;
-  I64 us,t;
+  I64 ms,t;
   while (TRUE) {
     do {
       TaskKillDying;
@@ -562,19 +562,19 @@ U0 CoreAPSethTask()
 //LBts(&(Fs->task_flags),TASKf_AWAITING_MSG);
     LBtr(&ctrl->flags,JOBCf_LOCKED);
     LBts(&(Fs->task_flags),TASKf_IDLE);
-    us=0.1*JIFFY_FREQ,t=__GetTicksHP;
+    ms=0.1*JIFFY_FREQ,t=__GetTicks;
     for(task=Fs->next_task;task!=task1;task=task->next_task) {
       if(Bt(&task->task_flags,TASKf_SUSPENDED)||Bt(&task->task_flags,TASKf_AWAITING_MSG))
         goto next;
       if(!Bt(&task->task_flags,TASKf_IDLE))
-        us=0;
-      if(task->wake_jiffy-t<us)
-        us=task->wake_jiffy-t;
+        ms=0;
+      if(task->wake_jiffy-t<ms)
+        ms=task->wake_jiffy-t;
 next:
     }
-    if(us>0) {
-      Gs->idle_pt_hits+=us;
-      __SleepHP(us);
+    if(ms>0) {
+      Gs->idle_pt_hits+=ms;
+      __SleepHP(ms*1000);
     }
     Yield;
     LBtr(&Fs->task_flags,TASKf_IDLE);

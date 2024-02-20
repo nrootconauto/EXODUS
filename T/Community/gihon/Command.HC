@@ -233,5 +233,5 @@ U0 IrcParseCommand(IrcClient *client, U8 *str)
         }
         FreeArgs(argc, argv);
     }
-    client->idle = __GetTicks;
+    client->idle = cnts.jiffies;
 }
