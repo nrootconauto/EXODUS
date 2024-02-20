@@ -146,7 +146,7 @@ U0 CtrlAltM(I64)
   if (GetVolume>0.)
     SetVolume(0.);
   else
-    SetVolume(.1);
+    SetVolume(.2);
 }
 
 U0 CtrlAltT(I64)

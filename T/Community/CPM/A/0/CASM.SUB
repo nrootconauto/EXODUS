@@ -1,0 +1,6 @@
+casm $1
+asm $1.ddz  ;where 'd' is the disk drive you are running this on
+era $1.asm
+cload $1
+era $1.hex
+

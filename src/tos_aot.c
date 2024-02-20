@@ -18,12 +18,6 @@
 
 #include "misc.h"
 
-/* this file is mostly just copied from TempleOS and I am not attemping to use
- * redundant casts for all the char/u8 pointer warnings */
-
-#pragma GCC diagnostic ignored "-Wpointer-sign"
-#pragma GCC diagnostic ignored "-Wincompatible-pointer-types"
-
 #define ReadNum(x, T)                          \
   ({                                           \
     T __val;                                   \
@@ -176,13 +170,13 @@ vec_void_t LoadPass2(u8 *src, u8 *module_base) {
   return ret;
 }
 
-struct __attribute__((packed)) CBinFile {
+typedef struct {
   u16 jmp;
   u8 module_align_bits, reserved;
   u8 bin_signature[4];
   i64 org, patch_table_offset, file_size;
   u8 data[];
-};
+} __attribute__((packed)) CBinFile;
 
 vec_void_t LoadHCRT(char const *name) {
   i64 sz;
@@ -195,16 +189,17 @@ vec_void_t LoadHCRT(char const *name) {
     flushprint(stderr, "Can't open \"%s\"\n", name);
     terminate(1);
   }
-  u8 *bfh_addr;
+  void *bfh_addr;
   readfd(fd, bfh_addr = NewVirtualChunk(sz, true), sz);
   closefd(fd);
-  struct CBinFile *bfh = bfh_addr;
+  CBinFile *bfh = bfh_addr;
   if (memcmp(bfh->bin_signature, "TOSB" /*BIN_SIGNATURE_VAL*/, 4)) {
-    flushprint(stderr, "invalid file\n");
-    exit(1);
+    flushprint(stderr, "invalid file '%s'\n", name);
+    terminate(1);
   }
-  LoadPass1(bfh_addr + bfh->patch_table_offset, bfh->data);
-  return LoadPass2(bfh_addr + bfh->patch_table_offset, bfh->data);
+  u8 *patchtable = bfh_addr + bfh->patch_table_offset, *code = bfh->data;
+  LoadPass1(patchtable, code);
+  return LoadPass2(patchtable, code);
 }
 
 /*═════════════════════════════════════════════════════════════════════════════╡

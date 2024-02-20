@@ -47,11 +47,11 @@ void InitSound(void) {
                                               &(SDL_AudioSpec){
                                                   .freq = 24000,
                                                   .format = AUDIO_S16,
-                                                  .channels = 1,
-                                                  .samples = 512,
+                                                  .channels = 2,
+                                                  .samples = 128,
                                                   .callback = AudioCB,
                                               },
-                                              &have, 0);
+                                              &have, SDL_AUDIO_ALLOW_ANY_CHANGE);
   SDL_PauseAudioDevice(out, 0);
 }
 

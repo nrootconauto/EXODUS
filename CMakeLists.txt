@@ -17,20 +17,17 @@ set(VERSION_SIMPLE "${PROJECT_MAJOR_VERSION}.${PROJECT_MINOR_VERSION}.${PROJECT_
 project(exodus
   VERSION ${VERSION_SIMPLE}
   DESCRIPTION "Executable Divine Operating System in Userspace"
-  LANGUAGES C ASM
-)
+  LANGUAGES C ASM)
 
 set(default_build_type "Release")
 
 if (NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
   message(STATUS "Setting build type to '${default_build_type}' as none was specified.")
   set(CMAKE_BUILD_TYPE "${default_build_type}"
-    CACHE STRING "Choose the type of build." FORCE
-  )
+    CACHE STRING "Choose the type of build." FORCE)
   set_property(CACHE CMAKE_BUILD_TYPE
     PROPERTY
-      STRINGS "Debug" "Release" "MinSizeRel" "RelWithDebInfo"
-  )
+      STRINGS "Debug" "Release" "MinSizeRel" "RelWithDebInfo")
 endif ()
 message(STATUS "${PROJECT_NAME} version: ${VERSION_SIMPLE}")
 
@@ -43,7 +40,7 @@ if (NOT ARCH MATCHES "x86_64")
   message(FATAL_ERROR "Only supports x86_64")
 endif ()
 
-set(C_EXECUTABLE_SRC
+set(SRC_FILES
   src/sound.c
   src/misc.c
   src/main.c
@@ -53,8 +50,7 @@ set(C_EXECUTABLE_SRC
   src/tosprint.c
   src/vfs.c
   src/backtrace.c
-  src/misc.c
-)
+  src/misc.c)
 
 if (CMAKE_SYSTEM_NAME STREQUAL "Linux" OR
     CMAKE_SYSTEM_NAME STREQUAL "FreeBSD")
@@ -65,23 +61,20 @@ else ()
   message(FATAL_ERROR "Unsupported system")
 endif ()
 
-list(APPEND C_EXECUTABLE_SRC
+list(APPEND SRC_FILES
   "src/${OS_DIR}/alloc.c"
   "src/${OS_DIR}/dbg.c"
   "src/${OS_DIR}/seth.c"
   "src/${OS_DIR}/shims.c"
 )
 
-set_source_files_properties(${C_EXECUTABLE_SRC}
+set_source_files_properties(${SRC_FILES}
   PROPERTIES
     LANGUAGE C
     COMPILE_FLAGS "-Werror=implicit-function-declaration"
 )
 
-add_executable(${PROJECT_NAME}
-  ${CXX_EXECUTABLE_SRC}
-  ${C_EXECUTABLE_SRC}
-)
+add_executable(${PROJECT_NAME} ${SRC_FILES})
 
 if (CMAKE_BUILD_TYPE STREQUAL "MinSizeRel")
   set_target_properties(${PROJECT_NAME}
@@ -105,29 +98,23 @@ target_compile_options(${PROJECT_NAME}
     -Wall
     -Wextra
     -Werror=shadow
-    -Wno-frame-address
-    -Wno-unused-command-line-argument
-    -Wno-ignored-optimization-argument
     -Wno-pointer-sign
-    -Wno-variadic-macros
     -fno-math-errno
     -fno-trapping-math
     -fno-exceptions
     -fno-omit-frame-pointer
-    -fno-signaling-nans
     -fno-stack-protector
     -fno-unwind-tables
     -fno-asynchronous-unwind-tables
     -fcf-protection=none
-    -mno-shstk
-)
+    -fwrapv
+    -fno-strict-aliasing
+    -mno-shstk)
 
 target_compile_definitions(${PROJECT_NAME} PRIVATE _GNU_SOURCE=1)
 
-# libm
 target_link_libraries(${PROJECT_NAME} PRIVATE m)
 
-# sdl2 dep
 find_package(SDL2 REQUIRED)
 if (NOT SDL2_FOUND)
   message(FATAL_ERROR "INSTALL SDL2")

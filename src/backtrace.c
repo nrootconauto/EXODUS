@@ -71,10 +71,17 @@ void BackTrace(u64 _rbp, u64 _rip) {
   next:
     tmp = (u8 **)rbp;
     ptr = tmp[1], rbp = tmp[0];
-    /* HolyC stk
-     * [RBP+16 and higher] args
-     * [RBP+8] return addr
-     * [RBP]   prev. RBP */
+    /* x86_64 stk
+     * [RBP+16 and higher] args (before call)
+     * [RBP+8] return addr (set on call)
+     * [RBP]   prev. RBP (set on callee's mov rbp,rsp)
+     *
+     * [RBP] might not be set if the function doesn't
+     *       use the stack, but we don't account for that
+     *       because the HolyC compiler always inserts that,
+     *       and raw asm routines are too irregular to consider
+     *
+     * stack grows down (rsp -= n) */
   }
   fputc('\n', stderr);
 }

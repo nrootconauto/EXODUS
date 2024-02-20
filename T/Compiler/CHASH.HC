@@ -176,7 +176,7 @@ CHashGeneric *HashGenericAdd(U8 *name,I64 type,
     res->user_data1=u1;
     res->user_data2=u2;
     res->str=StrNew(name,task);
-    HashAdd(res,Fs->hash_table);
+    HashAdd(res,task->hash_table);
     return res;
 }
 

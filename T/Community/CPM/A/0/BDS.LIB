@@ -1,0 +1,191 @@
+
+;
+; BDS.LIB		for BDS C v1.51		    January 19, 1985
+;
+; Header file for .CSM assembly language source files. Contains
+; addresses within the C.CCC run-time package to be used by the machine
+; language CRL library functions. 
+;
+; If you alter the C.CCC run-time package by reassembling CCC.ASM,
+; be sure to go through this file and make sure all the addresses perfectly
+; match the corresponding addresses resulting from the CCC.ASM assembly.
+; Then the .CSM library functions will be ready to process with CASM.SUB.
+;
+
+	page 76
+
+CPM:	EQU 1		;true if running under CP/M or MP/M II; else 0
+MPM2:	EQU 0		;true only if running under MP/M II
+
+;
+; System addresses:
+;
+	if not cpm
+CCCORG:	EQU WHATEVER	;if not runninng under cp/m, set this to load addr,
+RAM:	EQU WHATEVER2	;set this to address of CCC's ram area
+BASE:	EQU WHATEVER3	;and this to the base of system memory (`base' is 
+			;the re-boot location under cp/m; for non-cp/m oper-
+			;ation, it should be set to a safe place to jump to on
+			;error or user-abort.
+	endif
+
+
+	if cpm
+base:	equ 0000h	;either 0 or 4200h for CP/M systems
+fcb:	equ base+5ch	;default file control block
+tbuff:	equ base+80h	;sector buffer
+bdos:	equ base+5	;bdos entry point
+tpa:	equ base+100h	;transient program area
+nfcbs:	equ 9		;max number of open files allowed at one time
+errorv:	equ 255		;error value returned by BDOS calls
+cccorg:	equ tpa		;where run-time package resides
+
+			;**************************************************
+ram:	equ 667h	;THIS WILL PROBABLY CHANGE IF YOU CUSTOMIZE CCC.ASM
+			;**************************************************
+	endif
+
+
+cr:	equ 0dh		;ASCII codes:	carriage return
+lf:	equ 0ah		;		linefeed
+newlin:	equ lf		;		newline
+tab:	equ 9		;		tab
+bs:	equ 08h		;		backspace
+cntrlc:	equ 3		;		control-C
+
+;
+; Subroutines in C.CCC (the addresses should be that of the 
+; appropriate jump vector entry points):
+;
+
+fexitv:	equ cccorg+09h	;where to go to terminate execution
+error:	equ cccorg+1dh	;return -1 in HL:
+exit:	equ error+3	;close all open files and reboot
+
+	if cpm
+close:	equ error+6
+setfcb:	equ error+9	;set up fcb at HL from text at DE
+fgfd:	equ error+12	;set C according to whether file fd is open
+fgfcb:	equ error+15	;figure address of internal fcb for file fd
+setfcu:	equ error+18	;set up fcb with possible user number prefix
+setusr:	equ error+21	;set current user area to high 5 bits of A
+rstusr:	equ error+24	;reset user area to value before last setusr call
+khack:	equ error+33	;Kirkland interrupt vector initialization
+clrex:	equ error+36	;clear external data routine
+	endif
+
+
+eqwel:	equ cccorg+0e5h
+
+smod:	equ cccorg+10fh
+usmod:	equ cccorg+129h
+smul:	equ cccorg+13fh
+usmul:	equ cccorg+16bh
+usdiv:	equ cccorg+189h
+sdiv:	equ cccorg+1cbh
+
+cmphd:	equ cccorg+1ddh
+cmh:	equ cccorg+1fah
+cmd:	equ cccorg+202h
+
+ma1toh:	equ cccorg+20ah	;get 1st stack element into HL and A
+ma2toh:	equ cccorg+213h	;    2nd
+ma3toh:	equ ma2toh+6	;    3rd
+ma4toh:	equ ma2toh+12	;    4th
+ma5toh:	equ ma2toh+18	;    5th
+ma6toh:	equ ma2toh+24	;    6th
+ma7toh:	equ ma2toh+30	;    7th
+
+arghak:	equ ma2toh+36	;copy first 6 or so stack elements to argc area
+
+;
+; The following addresses will depend on the value of RAM if you
+; customize CCC.ASM....be sure they correspond to the assembly
+; results of CCC.ASM in such cases. If you remove some of the data
+; areas from CCC.ASM (in case they aren't needed), be sure to remove
+; from here also.
+;
+
+	org ram
+
+errnum:	ds	1	;error code from file I/O operations
+rseed:	ds	8	;the random generator seed
+args:	ds	14	;"arghak" puts args passed on stack here.
+iohack:	ds	6	;room for I/O subroutines for use by "inp"
+			;and "outp" library routines
+
+allocp:	ds	2	;pointer to free storage for use by "sbrk" func
+alocmx:	ds	2	;highest location to be made available to the
+			;storage allocator
+
+			;20 bytes of misc. scratch & state variables:
+tmp	ds	1
+tmp1	ds	1
+tmp2	ds 	2
+tmp2a	ds	2
+unused	ds	2
+
+curusr	ds	1	;used to save current user number during file I/O
+usrnum	ds	1	;set by "setfcu" to user number of given filename
+
+
+			;Console I/O control data:
+chmode	db	0	;0: single char mode, 1: line buffered mode
+nleft	db	0	;# of chars left in buffer (if chmode == 1)
+ungetl	db	0	;"ungetch" data byte (0 if no char pushback)
+iobrf	db	1	;check for break on character input/output
+
+spsav	ds	2	;BDOS's saved SP value upon entry from CCP
+
+	ds	4	;total of 20 bytes of misc. data area
+
+
+;
+; Nothing beyond this point will ordinarily require any modifications
+; by the user.
+;
+
+extrns:	equ cccorg+15h	;base of external data area (set by CLINK)
+cccsiz:	equ cccorg+17h	;size of C.CCC for use by CLINK only
+codend:	equ cccorg+19h	;address of byte following last byte of program code
+			; (set by CLINK)
+freram:	equ cccorg+1bh	;first free address after external area
+			; (set by CLINK)
+
+
+arg1:	equ args	;these are just convenient names for 
+arg2:	equ args+2	;the words in the "args" area
+arg3:	equ args+4
+arg4:	equ args+6
+arg5:	equ args+8
+arg6:	equ args+10
+arg7:	equ args+12
+
+;
+; BDOS call codes:
+;
+
+	if cpm
+conin:	equ 1		;get a character from console
+conout:	equ 2		;write a character to console
+lstout:	equ 5		;write a character to list device
+dconio:	equ 6		;direct console I/O (only for CP/M 2.0)
+pstrng:	equ 9		;print string (terminated by '$')
+getlin:	equ 10		;get buffered line from console
+cstat:	equ 11		;get console status
+select:	equ 14		;select disk
+openc:	equ 15		;open a file
+closec:	equ 16		;close a file
+delc:	equ 19		;delete a file
+reads:	equ 20		;read a sector (sequential)
+creatc:	equ 22		;make a file
+renc:	equ 23		;rename file
+sdma:	equ 26		;set dma
+gsuser:	equ 32		;get/set user code
+readr:	equ 33		;read random sector
+writr:	equ 34		;write random sector
+cfsizc:	equ 35		;compute file size
+srrecc:	equ 36		;set random record
+	endif
+
+
