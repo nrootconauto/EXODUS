@@ -51,7 +51,7 @@ U0 TaskFocusNext()
   } while (task!=_task);
 }
 I64 GetTicks() {
-	return __GetTicksHP;
+  return __GetTicksHP;
 }
 U0 SetFs2(CTask *t) {
   SetFs(t);
@@ -306,7 +306,7 @@ U0 Yield() {
   PUSH RSI
   PUSH_C_REGS
   _Yield;
-  Gs->last_yield=__GetTicks;
+  Gs->last_yield=cnts.jiffies=__GetTicks;
   POP_C_REGS
   POP RSI
   POPFD
