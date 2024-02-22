@@ -1,0 +1,20 @@
+138	Reg	SR	255 Units
+171	Ext	S1	255 Units
+81	Reg	WR	255 Units
+13	Reg	W1	255 Units
+139	Reg	SR	35 Units
+170	Ext	S1	35 Units
+79	Reg	WR	35 Units
+35	Reg	W1	35 Units
+193	Ext	SR	Blinking
+172	Ext	S1	Blinking
+156	Ext	WR	Blinking
+17	Reg	W1	Blinking
+192	Ext	SR	Maximum Neighbor
+169	Ext	S1	Maximum Neighbor
+80	Reg	WR	Maximum Neighbor
+12	Reg	W1	Maximum Neighbor
+194	Ext	SR	Minimum Neighbor
+173	Ext	S1	Minimum Neighbor
+157	Ext	WR	Minimum Neighbor
+104	Reg	W1	Minimum Neighbor

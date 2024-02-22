@@ -19,17 +19,22 @@ static SDL_AudioSpec have;
 static f64 volume = .2;
 
 enum {
-  MAX = 1 << 14
+  MAX = 1 << 14 // headspace for vol=1.f
 };
 
 static void AudioCB(argign void *ud, Uint8 *_out, int _len) {
   Sint16 *out = (Sint16 *)_out;
   int len = _len / 2;
+  if (unlikely(!freq)) {
+    memset(_out, 0, _len);
+    return;
+  }
   for (int i = 0; i < len / have.channels; ++i) {
     f64 t = (f64)++sample / have.freq;
-    Sint16 maxed = (sin(2 * M_PI * t * freq) > 0. ? MAX : -MAX) * volume;
-    if (!freq)
-      maxed = 0;
+    double w = sin(2 * M_PI * t * freq);
+    w /= fabs(w);
+    w *= MAX;
+    Sint16 maxed = w * volume;
     for (int j = 0; j < have.channels; ++j)
       out[have.channels * i + j] = maxed;
   }
@@ -47,11 +52,11 @@ void InitSound(void) {
                                               &(SDL_AudioSpec){
                                                   .freq = 24000,
                                                   .format = AUDIO_S16,
-                                                  .channels = 2,
-                                                  .samples = 128,
+                                                  .channels = 1,
+                                                  .samples = 512,
                                                   .callback = AudioCB,
                                               },
-                                              &have, SDL_AUDIO_ALLOW_ANY_CHANGE);
+                                              &have, 0);
   SDL_PauseAudioDevice(out, 0);
 }
 

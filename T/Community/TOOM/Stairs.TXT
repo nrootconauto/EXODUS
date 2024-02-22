@@ -1,0 +1,8 @@
+258	Ext	SR	Up	Slow	8	No	No
+7	Reg	S1	Up	Slow	8	No	No
+256	Ext	WR	Up	Slow	8	No	No
+8	Reg	W1	Up	Slow	8	No	No
+259	Ext	SR	Up	Fast	16	No	No
+127	Reg	S1	Up	Fast	16	No	No
+257	Ext	WR	Up	Fast	16	No	No
+100	Reg	W1	Up	Fast	16	No	No

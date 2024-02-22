@@ -1,0 +1,6 @@
+11	Reg	S1	Normal
+52	Reg	W1	Normal
+197	Ext	G1	Normal
+51	Reg	S1	Secret
+124	Reg	W1	Secret
+198	Ext	G1	Secret

@@ -1,0 +1,166 @@
+#
+# Welcome to the things file
+# See https://doomwiki.org/wiki/Thing_types
+#
+# game is the doom game it's in
+#   S is shareware P Pusha
+#   2 is DOOM 2
+#   R is registerd DOOM
+#
+#
+#  Flags are lit
+#     A Artifact(powerup)
+#     P POWERup
+#     W Weapon,you'll need these to get rid of the demons
+#     O Something that stands in your way
+#     * Shootable
+#     ^ Floating or on ceiling if a prop
+
+
+
+# decimal hex  game  radius  height     Sprite  ???     flags   Description
+
+
+#Monsters
+68	44	2	64	64	BSPI	AB+	MO*	Arachnotron
+64	40	2	20	56	VILE	AB+	MO*	Arch-vile
+3003	BBB	S	24	64	BOSS	AB+	MO*	Baron of Hell
+3005	BBD	R	31	56	HEAD	A+	MO*^	Cacodemon
+72	48	2	16	72	KEEN	A+	MO*^	Commander Keen
+16	10	R	40	110	CYBR	AB+	MO*	Cyberdemon
+3002	BBA	S	30	56	SARG	AB+	MO*	Demon
+65	41	2	20	56	CPOS	AB+	MO*	Heavy weapon dude
+69	45	2	24	64	BOS2	AB+	MO*	Hell knight
+3001	BB9	S	20	56	TROO	AB+	MO*	Imp
+3006	BBE	R	16	56	SKUL	AB+	M1O*^	Lost soul
+67	43	2	48	64	FATT	AB+	MO*	Mancubus
+71	47	2	31	56	PAIN	A+	MO*^	Pain elemental
+66	42	2	20	56	SKEL	AB+	MO*	Revenant
+9	9	S	20	56	SPOS	AB+	MO*	Shotgun guy
+58	3A	S	30	56	SARG	AB+	MO*	Spectre
+7	7	R	128	100	SPID	AB+	MO*	Spiderdemon
+84	54	2	20	56	SSWV	AB+	MO*	Wolfenstein SS
+3004	BBC	S	20	56	POSS	AB+	MO*	Zombieman
+
+
+# Guns
+2006	7D6	R	20	16	BFUG	A	WP1	BFG9000
+2002	7D2	S	20	16	MGUN	A	WP1	Chaingun
+2005	7D5	S	20	16	CSAW	A	WP2	Chainsaw
+2004	7D4	R	20	16	PLAS	A	WP1	Plasma gun
+2003	7D3	S	20	16	LAUN	A	WP1	Rocket launcher
+2001	7D1	S	20	16	SHOT	A	WP1	Shotgun
+82	52	2	20	16	SGN2	A	WP1	Super shotgun
+
+
+#Ammunition
+2008	7D8	S	20	16	SHEL	A	P1	4 shotgun shells
+2048	800	S	20	16	AMMO	A	P1	Box of bullets
+2046	7FE	S	20	16	BROK	A	P1	Box of rockets
+2049	801	S	20	16	SBOX	A	P1	Box of shotgun shells
+2007	7D7	S	20	16	CLIP	A	P1	Clip
+2047	7FF	R	20	16	CELL	A	P1	Energy cell
+17	11	R	20	16	CELP	A	P1	Energy cell pack
+2010	7DA	S	20	16	ROCK	A	P1	Rocket
+
+
+# Fun Powerups
+2015	7DF	S	20	16	BON2	ABCDCB	AP	Armor bonus
+2023	7E7	R	20	16	PSTR	A	AP	Berserk
+2026	7EA	S	20	16	PMAP	ABCDCB	AP1	Computer area map
+2014	7DE	S	20	16	BON1	ABCDCB	AP	Health bonus
+2022	7E6	R	20	16	PINV	ABCD	AP	Invulnerability
+2045	7FD	S	20	16	PVIS	AB	AP	Light amplification visor
+83	53	2	20	16	MEGA	ABCD	AP	Megasphere
+2024	7E8	S	20	16	PINS	ABCD	AP	Partial invisibility
+2013	7DD	S	20	16	SOUL	ABCDCB	AP	Supercharge
+
+# Non-fun powerups
+2018	7E2	S	20	16	ARM1	AB	P1	Armor
+8	8	S	20	16	BPAK	A	P	Backpack
+2012	7DC	S	20	16	MEDI	A	P3	Medikit
+2019	7E3	S	20	16	ARM2	AB	P2	Megaarmor
+2025	7E9	S	20	16	SUIT	A	P	Radiation shielding suit
+2011	7DB	S	20	16	STIM	A	P3	Stimpack
+
+#Keys
+5	5	S	20	16	BKEY	AB	P	Blue keycard
+40	28	R	20	16	BSKU	AB	P	Blue skull key
+13	D	S	20	16	RKEY	AB	P	Red keycard
+38	26	R	20	16	RSKU	AB	P	Red skull key
+6	6	S	20	16	YKEY	AB	P	Yellow keycard
+39	27	R	20	16	YSKU	AB	P	Yellow skull key
+
+# Obstacles
+47	2F	R	16	16	SMIT	A	O	Brown stump
+70	46	2	16	16	FCAN	ABC	O	Burning barrel
+43	2B	R	16	16	TRE1	A	O	Burnt tree
+35	23	S	16	16	CBRA	A	O	Candelabra
+41	29	R	16	16	CEYE	ABCB	O	Evil eye
+2035	7F3	S	10	42	BAR11	AB	O*	Exploding barrel
+28	1C	R	16	16	POL2	A	O	Five skulls "shish kebab"
+42	2A	R	16	16	FSKU	ABC	O	Floating skull
+2028	7EC	S	16	16	COLU	A	O	Floor lamp
+53	35	R	16	52	GOR5	A	O^	Hanging leg
+52	34	R	16	68	GOR4	A	O^	Hanging pair of legs
+78	4E	2	16	64	HDB6	A	O^	Hanging torso, brain removed
+75	4B	2	16	64	HDB3	A	O^	Hanging torso, looking down
+77	4D	2	16	64	HDB5	A	O^	Hanging torso, looking up
+76	4C	2	16	64	HDB4	A	O^	Hanging torso, open skull
+50	32	R	16	84	GOR2	A	O^	Hanging victim, arms out
+74	4A	2	16	88	HDB2	A	O^	Hanging victim, guts and brain removed
+73	49	2	16	88	HDB1	A	O^	Hanging victim, guts removed
+51	33	R	16	84	GOR3	A	O^	Hanging victim, one-legged
+49	31	R	16	68	GOR1	ABCB	O^	Hanging victim, twitching
+25	19	R	16	16	POL1	A	O	Impaled human
+54	36	R	32	16	TRE2	A	O	Large brown tree
+29	1D	R	16	16	POL3	AB	O	Pile of skulls and candles
+55	37	R	16	16	SMBT	ABCD	O	Short blue firestick
+56	38	R	16	16	SMGT	ABCD	O	Short green firestick
+31	1F	R	16	16	COL2	A	O	Short green pillar
+36	24	R	16	16	COL5	AB	O	Short green pillar with beating heart
+57	39	R	16	16	SMRT	ABCD	O	Short red firestick
+33	21	R	16	16	COL4	A	O	Short red pillar
+37	25	R	16	16	COL6	A	O	Short red pillar with skull
+86	56	2	16	16	TLP2	ABCD	O	Short techno floor lamp
+27	1B	R	16	16	POL4	A	O	Skull on a pole
+44	2C	R	16	16	TBLU	ABCD	O	Tall blue firestick
+45	2D	R	16	16	TGRN	ABCD	O	Tall green firestick
+30	1E	R	16	16	COL1	A	O	Tall green pillar
+46	2E	S	16	16	TRED	ABCD	O	Tall red firestick
+32	20	R	16	16	COL3	A	O	Tall red pillar
+48	30	S	16	16	ELEC	A	O	Tall techno column
+85	55	2	16	16	TLMP	ABCD	O	Tall techno floor lamp
+26	1A	R	16	16	POL6	AB	O	Twitching impaled human
+
+# Decorations
+10	A	S	20	16	PLAY	W		Bloody mess
+12	C	S	20	16	PLAY	W		Bloody mess 2
+34	22	S	20	16	CAND	A		Candle
+22	16	R	20	16	HEAD	L		Dead cacodemon
+21	15	R	20	16	SARG	N		Dead demon
+18	12	R	20	16	POSS	L		Dead former human
+19	13	R	20	16	SPOS	L		Dead former sergeant
+20	14	R	20	16	TROO	M		Dead imp
+23	17	R	20	16	SKUL	K		Dead lost soul (invisible)
+15	F	S	20	16	PLAY	N		Dead player
+62	3E	R	20	52	GOR5	A	^	Hanging leg
+60	3C	R	20	68	GOR4	A	^	Hanging pair of legs
+59	3B	R	20	84	GOR2	A	^	Hanging victim, arms out
+61	3D	R	20	52	GOR3	A	^	Hanging victim, one-legged
+63	3F	R	20	68	GOR1	ABCB	^	Hanging victim, twitching
+79	4F	2	20	16	POB1	A		Pool of blood
+80	50	2	20	16	POB2	A		Pool of blood
+24	18	S	20	16	POL5	A		Pool of blood and flesh
+81	51	2	20	16	BRS1	A		Pool of brains
+
+# Misc
+11	B	S	16	56	none	-		Deathmatch start
+89	59	2	20	32	none1	-		Monster spawner
+1	1	S	16	56	PLAY	A+	*	Player 1 start
+2	2	S	16	56	PLAY	A+	*	Player 2 start
+3	3	S	16	56	PLAY	A+	*	Player 3 start
+4	4	S	16	56	PLAY	A+	*	Player 4 start
+88	58	2	16	16	BBRN	A+	O2*	Romero's head
+87	57	2	20	32	none3	-		Spawn spot
+14	E	S	20	16	none4	-		Teleport landing

@@ -1,0 +1,4 @@
+191 	Ext 	SR
+9 	Reg 	S1
+155 	Ext 	WR
+146 	Ext 	W1

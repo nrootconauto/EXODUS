@@ -1,0 +1,61 @@
+190	Ext	SR	--	----	TxTy	Trg	No	No	None
+189	Ext	S1	--	----	TxTy	Trg	No	No	None
+154	Ext	WR	--	----	TxTy	Trg	No	No	None
+153	Ext	W1	--	----	TxTy	Trg	No	No	None
+78	Ext	SR	--	----	TxTy	Num	No	No	None
+241	Ext	S1	--	----	TxTy	Num	No	No	None
+240	Ext	WR	--	----	TxTy	Num	No	No	None
+239	Ext	W1	--	----	TxTy	Num	No	No	None
+69	Reg	SR	Up	Slow	None	--	No	No	Next Neighbor Floor
+18	Reg	S1	Up	Slow	None	--	No	No	Next Neighbor Floor
+128	Reg	WR	Up	Slow	None	--	No	No	Next Neighbor Floor
+119	Reg	W1	Up	Slow	None	--	No	No	Next Neighbor Floor
+132	Reg	SR	Up	Fast	None	--	No	No	Next Neighbor Floor
+131	Reg	S1	Up	Fast	None	--	No	No	Next Neighbor Floor
+129	Reg	WR	Up	Fast	None	--	No	No	Next Neighbor Floor
+130	Reg	W1	Up	Fast	None	--	No	No	Next Neighbor Floor
+222	Ext	SR	Dn	Slow	None	--	No	No	Next Neighbor Floor
+221	Ext	S1	Dn	Slow	None	--	No	No	Next Neighbor Floor
+220	Ext	WR	Dn	Slow	None	--	No	No	Next Neighbor Floor
+219	Ext	W1	Dn	Slow	None	--	No	No	Next Neighbor Floor
+60	Reg	SR	Dn	Slow	None	--	No	No	Lowest Neighbor Floor
+23	Reg	S1	Dn	Slow	None	--	No	No	Lowest Neighbor Floor
+82	Reg	WR	Dn	Slow	None	--	No	No	Lowest Neighbor Floor
+38	Reg	W1	Dn	Slow	None	--	No	No	Lowest Neighbor Floor
+177	Ext	SR	Dn	Slow	TxTy	Num	No	No	Lowest Neighbor Floor
+159	Ext	S1	Dn	Slow	TxTy	Num	No	No	Lowest Neighbor Floor
+84	Reg	WR	Dn	Slow	TxTy	Num	No	No	Lowest Neighbor Floor
+37	Reg	W1	Dn	Slow	TxTy	Num	No	No	Lowest Neighbor Floor
+65	Reg	SR	Up	Slow	None	--	No	Yes	Lowest Neighbor Ceiling - 8
+55	Reg	S1	Up	Slow	None	--	No	Yes	Lowest Neighbor Ceiling - 8
+94	Reg	WR	Up	Slow	None	--	No	Yes	Lowest Neighbor Ceiling - 8
+56	Reg	W1	Up	Slow	None	--	No	Yes	Lowest Neighbor Ceiling - 8
+64	Reg	SR	Up	Slow	None	--	No	No	Lowest Neighbor Ceiling
+101	Reg	S1	Up	Slow	None	--	No	No	Lowest Neighbor Ceiling
+91	Reg	WR	Up	Slow	None	--	No	No	Lowest Neighbor Ceiling
+5	Reg	W1	Up	Slow	None	--	No	No	Lowest Neighbor Ceiling
+24	Reg	G1	Up	Slow	None	--	No	No	Lowest Neighbor Ceiling
+70	Reg	SR	Dn	Fast	None	--	No	No	Highest Neighbor Floor + 8
+71	Reg	S1	Dn	Fast	None	--	No	No	Highest Neighbor Floor + 8
+98	Reg	WR	Dn	Fast	None	--	No	No	Highest Neighbor Floor + 8
+36	Reg	W1	Dn	Fast	None	--	No	No	Highest Neighbor Floor + 8
+45	Reg	SR	Dn	Slow	None	--	No	No	Highest Neighbor Floor
+102	Reg	S1	Dn	Slow	None	--	No	No	Highest Neighbor Floor
+83	Reg	WR	Dn	Slow	None	--	No	No	Highest Neighbor Floor
+19	Reg	W1	Dn	Slow	None	--	No	No	Highest Neighbor Floor
+178	Ext	SR	Up	Slow	None	--	No	No	Absolute 512
+140	Reg	S1	Up	Slow	None	--	No	No	Absolute 512
+147	Ext	WR	Up	Slow	None	--	No	No	Absolute 512
+142	Ext	W1	Up	Slow	None	--	No	No	Absolute 512
+180	Ext	SR	Up	Slow	None	--	No	No	Absolute 24
+161	Ext	S1	Up	Slow	None	--	No	No	Absolute 24
+92	Reg	WR	Up	Slow	None	--	No	No	Absolute 24
+58	Reg	W1	Up	Slow	None	--	No	No	Absolute 24
+179	Ext	SR	Up	Slow	TxTy	Trg	No	No	Absolute 24
+160	Ext	S1	Up	Slow	TxTy	Trg	No	No	Absolute 24
+93	Reg	WR	Up	Slow	TxTy	Trg	No	No	Absolute 24
+59	Reg	W1	Up	Slow	TxTy	Trg	No	No	Absolute 24
+176	Ext	SR	Up	Slow	None	--	No	No	Abs Shortest Lower Texture
+158	Ext	S1	Up	Slow	None	--	No	No	Abs Shortest Lower Texture
+96	Reg	WR	Up	Slow	None	--	No	No	Abs Shortest Lower Texture
+30	Reg	W1	Up	Slow	None	--	No	No	Abs Shortest Lower Texture

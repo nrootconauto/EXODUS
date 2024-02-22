@@ -1,0 +1,31 @@
+66	Reg	SR	--	Slow	Tx	Trg	No	Raise 24 Units
+15	Reg	S1	--	Slow	Tx	Trg	No	Raise 24 Units
+148	Ext	WR	--	Slow	Tx	Trg	No	Raise 24 Units
+143	Ext	W1	--	Slow	Tx	Trg	No	Raise 24 Units
+67	Reg	SR	--	Slow	Tx0	Trg	No	Raise 32 Units
+14	Reg	S1	--	Slow	Tx0	Trg	No	Raise 32 Units
+149	Ext	WR	--	Slow	Tx0	Trg	No	Raise 32 Units
+144	Ext	W1	--	Slow	Tx0	Trg	No	Raise 32 Units
+68	Reg	SR	--	Slow	Tx0	Trg	No	Raise Next Floor
+20	Reg	S1	--	Slow	Tx0	Trg	No	Raise Next Floor
+95	Reg	WR	--	Slow	Tx0	Trg	No	Raise Next Floor
+22	Reg	W1	--	Slow	Tx0	Trg	No	Raise Next Floor
+47	Reg	G1	--	Slow	Tx0	Trg	No	Raise Next Floor
+181	Ext	SR	3s	Slow	None	--	No	Lowest and Highest Floor (perpetual)
+162	Ext	S1	3s	Slow	None	--	No	Lowest and Highest Floor (perpetual)
+87	Reg	WR	3s	Slow	None	--	No	Lowest and Highest Floor (perpetual)
+53	Reg	W1	3s	Slow	None	--	No	Lowest and Highest Floor (perpetual)
+182	Ext	SR	--	----	----	--	--	Stop
+163	Ext	S1	--	----	----	--	--	Stop
+89	Reg	WR	--	----	----	--	--	Stop
+54	Reg	W1	--	----	----	--	--	Stop
+62	Reg	SR	3s	Slow	None	--	No	Lowest Neighbor Floor (lift)
+21	Reg	S1	3s	Slow	None	--	No	Lowest Neighbor Floor (lift)
+88	Reg	WR	3s	Slow	None	--	Yes	Lowest Neighbor Floor (lift)
+10	Reg	W1	3s	Slow	None	--	Yes	Lowest Neighbor Floor (lift)
+123	Reg	SR	3s	Fast	None	--	No	Lowest Neighbor Floor (lift)
+122	Reg	S1	3s	Fast	None	--	No	Lowest Neighbor Floor (lift)
+120	Reg	WR	3s	Fast	None	--	No	Lowest Neighbor Floor (lift)
+121	Reg	W1	3s	Fast	None	--	No	Lowest Neighbor Floor (lift)
+211	Ext	SR	--	Inst	None	--	No	Ceiling (toggle)
+212	Ext	WR	--	Inst	None	--	No	Ceiling (toggle)
