@@ -561,22 +561,22 @@ void EventLoop(void) {
   SDL_RegisterEvents(1);
   SDL_Event e;
   while (true) {
-    if (SDL_WaitEvent(&e)) {
-      switch (e.type) {
-      case SDL_QUIT:
-        return;
-      case SDL_USEREVENT:
-        switch (e.user.code) {
-        case WINDOW_UPDATE:
-          updatescrn(e.user.data1);
-          break;
-        case WINDOW_NEW:
-          newwindow();
-          break;
-        case AUDIO_INIT:
-          InitSound();
-          break;
-        }
+    if (!SDL_WaitEvent(&e))
+      continue;
+    switch (e.type) {
+    case SDL_QUIT:
+      return;
+    case SDL_USEREVENT:
+      switch (e.user.code) {
+      case WINDOW_UPDATE:
+        updatescrn(e.user.data1);
+        break;
+      case WINDOW_NEW:
+        newwindow();
+        break;
+      case AUDIO_INIT:
+        InitSound();
+        break;
       }
     }
   }
