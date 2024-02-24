@@ -560,7 +560,9 @@ void EventLoop(void) {
    * Will always return SDL_UserEvent */
   SDL_RegisterEvents(1);
   SDL_Event e;
-  while (SDL_WaitEvent(&e)) {
+  while (true) {
+    if (!SDL_WaitEvent(&e))
+      continue;
     switch (e.type) {
     case SDL_QUIT:
       return;
