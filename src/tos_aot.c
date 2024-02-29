@@ -176,7 +176,7 @@ typedef struct {
   u8 bin_signature[4];
   i64 org, patch_table_offset, file_size;
   u8 data[];
-} __attribute__((packed)) CBinFile;
+} __attribute__((packed, may_alias)) CBinFile;
 
 vec_void_t LoadHCRT(char const *name) {
   i64 sz;

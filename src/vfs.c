@@ -117,6 +117,7 @@ u8 *VFsFRead(char const *name, u64 *lenp) {
   i64 sz;
   if (-1 == (sz = fsize(p)))
     return NULL;
+  /* HolyMAlloc throws 'OutMem' on failure */
   u8 *data = HolyMAlloc(sz + 1);
   if (veryunlikely(!readfile(p, data, sz))) {
     HolyFree(data);

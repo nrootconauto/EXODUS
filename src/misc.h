@@ -48,11 +48,13 @@ void _dtor(void *_p);
   })
 
 #ifndef NDEBUG
-  #define Unreachable()     \
-    do {                    \
-      asm volatile("int3"); \
-      for (;;)              \
-        ;                   \
+  #define Unreachable()                                                       \
+    do {                                                                      \
+      flushprint(stderr, "Unreachable code @ '%s' L%d func:'%s'\n", __FILE__, \
+                 __LINE__, __func__);                                         \
+      asm volatile("int3");                                                   \
+      for (;;)                                                                \
+        ;                                                                     \
     } while (0)
 #else
   #define Unreachable() __builtin_unreachable()

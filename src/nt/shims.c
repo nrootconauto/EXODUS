@@ -65,41 +65,42 @@ bool fexists(char const *path) {
 bool isdir(char const *path) {
   if (strchr(path, '*') || strchr(path, '?'))
     return false;
-  return !!PathIsDirectoryA(path);
+  /* PathIsDirectoryA returns 0x10 but bool converts it to 1
+   * thanks to C99 enforcing it */
+  return PathIsDirectoryA(path);
 }
 
 /* Ugly because I manually flattened out the recursive function.
  * SHFileOperation is too slow to be used here. */
-struct stack {
+typedef struct {
   int cur, size;
   void *states[];
-};
+} Stk;
 
-static struct stack *stacknew(void) {
-  struct stack *st = malloc(sizeof *st);
-  st->size = 0;
-  st->cur = -1;
-  return st;
+static Stk *stacknew(void) {
+  Stk *ret = malloc(sizeof *ret);
+  *ret = (Stk){.size = 0, .cur = -1};
+  return ret;
 }
 
-static void stackpush(struct stack *restrict *sp, void *p) {
-  struct stack *s = *sp;
+static void stackpush(Stk *restrict *sp, void *p) {
+  Stk *s = *sp;
   /* size is always 1 bigger than cur because indexing, so add 2 */
   if (s->cur + 2 > s->size) {
     s->size |= 1;
     s->size *= 2;
-    s = realloc(s, sizeof(struct stack) + sizeof(void *) * s->size);
+    s = realloc(s, sizeof(Stk) + sizeof(void *) * s->size);
     *sp = s;
   }
   s->cur++;
   s->states[s->cur] = p;
 }
 
-static void *stackcur(struct stack *restrict s) {
+static void *stackcur(Stk *restrict s) {
   return s->states[s->cur];
 }
 
-static void *stackpop(struct stack *restrict s) {
+static void *stackpop(Stk *restrict s) {
   return s->states[s->cur--];
 }
 
@@ -120,7 +121,7 @@ void deleteall(char *s) {
     return;
   }
   void *lbl = &&func;
-  struct stack *restrict stk = stacknew();
+  Stk *restrict stk = stacknew();
   struct deleteall *restrict cur, *tmp;
 func:
   cur = malloc(sizeof *cur);

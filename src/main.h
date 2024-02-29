@@ -14,7 +14,6 @@ char *CmdLineBootText(void);
 u64 IsCmdLine(void);
 int GetFPS(void);
 
-
 /*═════════════════════════════════════════════════════════════════════════════╡
 │ EXODUS: Executable Divine Operating System in Userspace                      │
 │ Copyright 2024 1fishe2fishe                                                  │

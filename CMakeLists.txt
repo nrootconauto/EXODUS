@@ -109,7 +109,8 @@ target_compile_options(${PROJECT_NAME}
     -fcf-protection=none
     -fwrapv
     -fno-strict-aliasing
-    -mno-shstk)
+    -mno-shstk
+    -mno-red-zone)
 
 target_compile_definitions(${PROJECT_NAME} PRIVATE _GNU_SOURCE=1)
 

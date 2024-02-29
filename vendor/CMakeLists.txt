@@ -49,6 +49,7 @@ target_compile_options(c_opts
     -fno-asynchronous-unwind-tables
     -fno-stack-protector
     -mno-shstk
+    -mno-red-zone
     -fcf-protection=none
 )
 target_link_libraries(dyad      PRIVATE c_opts)

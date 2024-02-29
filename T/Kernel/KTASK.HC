@@ -341,8 +341,8 @@ CTask *Spawn(U0 (*fp_start_addr)(U8 *data),U8 *data=NULL,U8 *task_name=NULL,
   StrCpy(task->task_title,task->task_name);
   task->title_src=TTS_TASK_NAME;
 //Insert the task into the QUE to avoid having despawn after it is spawned.
-  task->stk=MAlloc(0x400000,task);
-  stack=task->stk+0x400000;
+  task->stk=MAlloc(MEM_DFT_STK,task);
+  stack=task->stk+MEM_DFT_STK;
   stack[-1]=data;
   stack[-2]=&Exit;
   task->rsp=stack-2;

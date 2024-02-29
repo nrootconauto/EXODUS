@@ -52,7 +52,7 @@ bool fexists(char const *path) {
 bool isdir(char const *path) {
   struct stat s;
   stat(path, &s);
-  return !!S_ISDIR(s.st_mode);
+  return S_ISDIR(s.st_mode);
 }
 
 /* works in the same spirit as std::filesystem::remove_all */
