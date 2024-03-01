@@ -63,6 +63,7 @@ HCRT.BIN
 .ccls-cache
 T/Headers.HH
 T/unfound.DD
+T/Once.HC
 T/AutoComplete/ACDefs.DATA
 build
 tine

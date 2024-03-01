@@ -166,6 +166,45 @@ U0 CtrlAltN(I64) {
     TaskFocusNext;
 }
 
+U0 CtrlAltP(I64) {
+  static CBGR48 stdpal[COLORS_NUM],
+//https://gitlab.com/tsoding/aoc-2021/-/blob/master/Home/Theme.HC
+  gr_palette_gruv[COLORS_NUM]={
+    0xebebdbdbb2b2, // BLACK
+    0x454585858888, // BLUE
+    0x989897971a1a, // GREEN
+    0x68689d9d6a6a, // CYAN
+    0xcccc24241d1d, // RED
+    0xb1b162628686, // PURPLE
+    0xfefe80801919, // BROWN
+    0x3c3c38383636, // LTGRAY
+    0x505049494545, // DKGRAY
+    0x8383a5a59898, // LTBLUE
+    0xb8b8bbbb2626, // LTGREEN
+    0x8e8ec0c07c7c, // LTCYAN
+    0xfbfb49493434, // LTRED
+    0xd3d386869b9b, // LTPURPLE
+    0xfafabdbd2f2f, // YELLOW
+    0x282828282828  // WHITE
+  };
+  static Bool init=FALSE,toggle=FALSE;
+  if (!init) {
+    MemCpy(stdpal,gr_palette_std,sizeof gr_palette_std);
+    init=TRUE;
+  }
+  if (!toggle) {
+
+    GrPaletteSet(gr_palette_gruv);
+    MemCpy(gr_palette_std,gr_palette_gruv,sizeof gr_palette_gruv);
+    toggle=TRUE;
+  } else {
+    GrPaletteSet(stdpal);
+    MemCpy(gr_palette_std,stdpal,sizeof stdpal);
+    toggle=FALSE;
+  }
+
+}
+
 U0 CtrlAltCBSet(U8 ch,U0 (*fp_hndlr)(I64 sc),
 	U8 *no_shift_desc=NULL,U8 *shift_desc=NULL,Bool in_irq=FALSE)
 {//Set callback for <CTRL-ALT-letter>.
@@ -213,7 +252,7 @@ U0 KeyDevInit()
   CtrlAltCBSet('B',&CtrlAltB,"Cmd /Bible");
   CtrlAltCBSet('Z',&CtrlAltZ,"Cmd /Zoom In",
 	"Cmd /Zoom Out");
-  //Clipboard supports utf8 
+  CtrlAltCBSet('P',&CtrlAltP,"Cmd /Switch Palette");
   //CtrlAltCBSet('S',&CtrlAltS,"Cmd /Scrn Shot to Clip");
 }
 KeyDevInit;

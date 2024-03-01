@@ -182,7 +182,7 @@ u64 mp_cnt(void) {
   static u64 cnt;
   if (!cnt) {
     cnt = sysconf(_SC_NPROCESSORS_ONLN);
-    cnt = Min(cnt, (u64)128 /* MP_PROCESSORS_NUM */);
+    cnt = Min(cnt, MP_PROCESSORS_NUM);
   }
   return cnt;
 }

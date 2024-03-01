@@ -68,8 +68,9 @@ U0 StartUpTasks()
     ExePrint("WallPaperInit;;");
     ExePrint("#include \"AMOUSE.HC\";;");
   } catch PutExcept;
-  User;
+  CTask *u=User;
   WinTileVert;
+  if (FileFind("Once.HC")) XTalk(u,"#include \"Once\";\n");
   Silent;
   ACInit("PUBLIC.HC;KERNEL*.HH");
   Silent(OFF);

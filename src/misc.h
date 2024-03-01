@@ -10,15 +10,20 @@
  * AKA DUMPING GROUND FOR STUFF THAT
  * DO NOT DESERVE A SEPERATE FILE */
 
-#include "types.h"
+#include <inttypes.h>
 #include <stddef.h>
 #include <stdint.h>
+
+#include "types.h"
 
 /* ctype.h routines
  * Bt(bitmapname, c) */
 u64 Bt(void *addr, u64 idx);
 extern u32 char_bmp_hex_numeric[16], char_bmp_alpha[16],
     char_bmp_alpha_numeric[16], char_bmp_dec_numeric[16];
+
+/* TOS DEFINES */
+#define MP_PROCESSORS_NUM UINT64_C(128)
 
 /* ATTRIBS */
 #define argign     __attribute__((unused))
@@ -32,7 +37,7 @@ void _dtor(void *_p);
 #define likely(a...)       __builtin_expect(!!(a), 1)
 #define verylikely(a...)   __builtin_expect_with_probability(!!(a), 1, .999)
 
-/* SAFE MACROS */
+/* QoL MACROS */
 #define Min(x, y)              \
   ({                           \
     typeof(x) XRes = (x);      \
@@ -59,6 +64,12 @@ void _dtor(void *_p);
 #else
   #define Unreachable() __builtin_unreachable()
 #endif
+
+/* I could really use some user-defined literals in C, like 128_MiB
+ * A really neat C++ feature, I'm not gonna lie */
+#define KiB(b) (1024 * (u64)(b))
+#define MiB(b) (1024 * KiB(b))
+#define GiB(b) (1024 * MiB(b))
 
 /* SSE */
 typedef char uxmm __attribute__((vector_size(16), aligned(1)));

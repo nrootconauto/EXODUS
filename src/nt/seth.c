@@ -32,7 +32,7 @@ typedef struct {
   vec_void_t funcptrs;
 } CCore;
 
-static CCore cores[128];
+static CCore cores[MP_PROCESSORS_NUM];
 static _Thread_local CCore *self;
 static u64 nproc;
 
@@ -99,8 +99,7 @@ void CreateCore(vec_void_t ptrs) {
       .mtx = CreateMutex(NULL, FALSE, NULL),
       .event = CreateEvent(NULL, FALSE, FALSE, NULL),
   };
-  c->thread = CreateThread(NULL, UINT64_C(1024) * 1024 * 128, //
-                           ThreadRoutine, c, 0, NULL),
+  c->thread = CreateThread(NULL, MiB(128), ThreadRoutine, c, 0, NULL),
   SetThreadPriority(c->thread, THREAD_PRIORITY_HIGHEST);
   ++n;
   /* Win32 cannot thread names unless it's MSVC[1]

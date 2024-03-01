@@ -49,7 +49,7 @@ typedef struct {
   vec_void_t funcptrs;
 } CCore;
 
-static CCore cores[128];
+static CCore cores[MP_PROCESSORS_NUM];
 static _Thread_local CCore *self;
 
 // CTRL+C equiv. in TempleOS
@@ -146,7 +146,7 @@ void CreateCore(vec_void_t ptrs) {
   };
   pthread_attr_t attr;
   pthread_attr_init(&attr);
-  pthread_attr_setstacksize(&attr, UINT64_C(1024) * 1024 * 128);
+  pthread_attr_setstacksize(&attr, MiB(128));
   pthread_create(&c->thread, &attr, ThreadRoutine, c);
   char buf[0x10];
   snprintf(buf, sizeof buf, "Seth(Core%d)", c->core_num);

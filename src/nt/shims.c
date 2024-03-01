@@ -281,7 +281,7 @@ u64 mp_cnt(void) {
     SYSTEM_INFO si;
     GetSystemInfo(&si);
     cnt = si.dwNumberOfProcessors;
-    cnt = Min(cnt, UINT64_C(128) /* MP_PROCESSORS_NUM */);
+    cnt = Min(cnt, MP_PROCESSORS_NUM);
   }
   return cnt;
 }
