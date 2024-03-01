@@ -174,7 +174,7 @@ U0 CtrlAltP(I64) {
     0x454585858888, // BLUE
     0x989897971a1a, // GREEN
     0x68689d9d6a6a, // CYAN
-    0xcccc24241d1d, // RED
+    0xcccc24241d1d, // RED
     0xb1b162628686, // PURPLE
     0xfefe80801919, // BROWN
     0x3c3c38383636, // LTGRAY
@@ -192,8 +192,7 @@ U0 CtrlAltP(I64) {
     MemCpy(stdpal,gr_palette_std,sizeof gr_palette_std);
     init=TRUE;
   }
-  if (!toggle) {
-
+  if (!toggle) {
     GrPaletteSet(gr_palette_gruv);
     MemCpy(gr_palette_std,gr_palette_gruv,sizeof gr_palette_gruv);
     toggle=TRUE;
