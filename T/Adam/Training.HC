@@ -158,8 +158,8 @@ public U0 KeyMap(CTask *task=NULL)
 #help_index "Help System/Training"
 public U0 TipOfDay(U8 *tip_file="::/Doc/Tips.DD")
 {//Print random tip-of-day from ::/Doc/Tips.DD.
-  U64 t=tS;
-  Seed(EndianI64(t<<32|t>>32));
+  U64 t=tS()(U64);
+  Seed(EndianI64(t<<32|t>>32));
   I64 i=RandU16;
   CDoc *doc=DocRead(tip_file),*doc2=DocNew;
   CDocEntry *doc_e=doc->head.next;

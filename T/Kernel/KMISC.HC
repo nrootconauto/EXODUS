@@ -31,7 +31,7 @@ I64 EndianI64(I64)
   U64 reg RAX r;
   MOV   RAX,SF_ARG1[RBP]
   BSWAP RAX
-  return r;
+  return r;
 }
 #help_index "Bit"
 I64 BCnt(I64)

@@ -1,3 +1,3 @@
 "$$PURPLE$$$$TX+CX,\"Tip of the Day\"$$$$FG$$\n";
-TipOfDay;
+TipOfDay;
 Type("::/Doc/Customize.DD");

@@ -192,7 +192,7 @@ U0 CtrlAltP(I64) {
     MemCpy(stdpal,gr_palette_std,sizeof gr_palette_std);
     init=TRUE;
   }
-  if (!toggle) {
+  if (!toggle) {
     GrPaletteSet(gr_palette_gruv);
     MemCpy(gr_palette_std,gr_palette_gruv,sizeof gr_palette_gruv);
     toggle=TRUE;
