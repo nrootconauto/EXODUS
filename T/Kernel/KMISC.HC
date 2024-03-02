@@ -8,44 +8,38 @@ Bool Blink(F64 Hz=2.5)
   return ToI64(__GetTicks*2*Hz/1000.)&1;
 }
 
-U16 EndianU16(U16 d)
+U16 EndianU16(U16)
 {//Swap big<-->little endian.
-  I64 res=0;
-  res.u8[1]=d.u8[0];
-  res.u8[0]=d.u8[1];
-  return res;
+  U16 reg RAX r;
+  XOR  RAX,RAX
+  MOV  AX,U16 SF_ARG1[RBP]
+  XCHG AL,AH
+  return r;
 }
 
-U32 EndianU32(U32 d)
+U32 EndianU32(U32)
 {//Swap big<-->little endian.
-  I64 res=0;
-  res.u8[3]=d.u8[0];
-  res.u8[2]=d.u8[1];
-  res.u8[1]=d.u8[2];
-  res.u8[0]=d.u8[3];
-  return res;
+  U32 reg RAX r;
+  XOR   RAX,RAX
+  MOV   EAX,U32 SF_ARG1[RBP]
+  BSWAP EAX
+  return r;
 }
 
-I64 EndianI64(I64 d)
+I64 EndianI64(I64)
 {//Swap big<-->little endian.
-  U64 res;
-  res.u8[7]=d.u8[0];
-  res.u8[6]=d.u8[1];
-  res.u8[5]=d.u8[2];
-  res.u8[4]=d.u8[3];
-  res.u8[3]=d.u8[4];
-  res.u8[2]=d.u8[5];
-  res.u8[1]=d.u8[6];
-  res.u8[0]=d.u8[7];
-  return res;
+  U64 reg RAX r;
+  MOV   RAX,SF_ARG1[RBP]
+  BSWAP RAX
+  return r;
 }
 #help_index "Bit"
-I64 BCnt(I64 d)
+I64 BCnt(I64)
 {//Count set bits in I64.
-  I64 res=0,i;
-  for (i=0;i<8;i++)
-    res+=set_bits_table[d.u8[i]];
-  return res;
+  I64 reg RAX ret;
+  /*POPCNT RAX,SF_ARG1[RBP]*/
+  DU8 0xF3,0x48,0x0F,0xB8,0x45,0x10;
+  return ret;
 }
 #help_index ""
 F64 Ona2Freq(I8 ona)
