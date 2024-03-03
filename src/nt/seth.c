@@ -159,7 +159,7 @@ void SleepUs(u64 us) {
 }
 
 void MPSetProfilerInt(void *fp, i64 idx, i64 freq) {
-  //TODO
+  // TODO
 }
 
 /* CITATIONS:

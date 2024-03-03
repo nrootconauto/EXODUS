@@ -46,7 +46,7 @@ typedef struct {
   _Alignas(4) _Atomic(u32) is_sleeping;
   int core_num;
   /* U0 (*profiler_int)(U8 *rip) */
-  void profiler_int;
+  void *profiler_int;
   i64 profiler_freq;
   struct itimerval profile_timer;
   /* HolyC function pointers it needs to execute on launch
@@ -196,37 +196,40 @@ void SleepUs(u64 us) {
 }
 
 #ifdef __linux__
-  #define REG(x)  (u64) ctx->uc_mcontext.gregs[REG_##x]
-  #define REG_RIP REG(RIP)
+  #define REG(x) (u64) ctx->uc_mcontext.gregs[REG_##x]
+  #define REGRIP REG(RIP)
 #elif defined(__FreeBSD__)
-  #define REG(X)  (u64) ctx->uc_mcontext.mc_##X
-  #define REG_RIP REG(rip)
+  #define REG(X) (u64) ctx->uc_mcontext.mc_##X
+  #define REGRIP REG(rip)
 #endif
 
 static void ProfRt(argign int sig, argign siginfo_t *info, void *_ctx) {
+  if (!self)
+    return;
   CCore *c = self;
   ucontext_t *ctx = _ctx;
   sigset_t set;
   sigemptyset(&set);
   sigaddset(&set, SIGPROF);
   pthread_sigmask(SIG_UNBLOCK, &set, NULL);
-  if (cores[c].profiler_int) {
-    FFI_CALL_TOS_1(c->profiler_int, REG_RIP);
-    c->profile_timer = (struct itimerval){
-        .it_value.tv_usec = c->profiler_freq,
-        .it_interval.tv_usec = c->profiler_freq,
-    };
-  }
+  if (!pthread_equal(pthread_self(), c->thread) ||
+      veryunlikely(!c->profiler_int))
+    return;
+  FFI_CALL_TOS_1(c->profiler_int, REGRIP);
+  c->profile_timer = (struct itimerval){
+      .it_value.tv_usec = c->profiler_freq,
+      .it_interval.tv_usec = c->profiler_freq,
+  };
 }
 
 void MPSetProfilerInt(void *fp, i64 idx, i64 freq) {
-  if (fp) {
+  if (verylikely(fp)) {
     CCore *c = cores + idx;
     c->profiler_int = fp;
     c->profiler_freq = freq;
     c->profile_timer = (struct itimerval){
-        .it_value = {.tv_sec = 0, .tv_usec = f},
-        .it_interval = {.tv_sec = 0, .tv_usec = f},
+        .it_value.tv_usec = freq,
+        .it_interval.tv_usec = freq,
     };
     setitimer(ITIMER_PROF, &c->profile_timer, NULL);
   } else
