@@ -37,8 +37,7 @@ I64 EndianI64(I64)
 I64 BCnt(I64)
 {//Count set bits in I64.
   I64 reg RAX ret;
-  /*POPCNT RAX,SF_ARG1[RBP]*/
-  DU8 0xF3,0x48,0x0F,0xB8,0x45,0x10;
+  POPCNT RAX,SF_ARG1[RBP]
   return ret;
 }
 #help_index ""
