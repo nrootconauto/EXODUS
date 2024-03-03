@@ -29,6 +29,8 @@ typedef struct {
   HANDLE thread, event, mtx;
   _Atomic(u64) awakeat;
   int core_num;
+  void *profiler_int;
+  u64 profiler_freq, next_prof_int;
   vec_void_t funcptrs;
 } CCore;
 
@@ -134,6 +136,19 @@ static void tickscb(argign UINT id, argign UINT msg, argign DWORD_PTR userptr,
       SetEvent(c->event);
       atomic_store_explicit(&c->awakeat, 0, memory_order_release);
     }
+    if (c->profiler_int && ticks >= c->next_prof_int) {
+      CONTEXT ctx = {.ContextFlags = CONTEXT_FULL};
+      SuspendThread(c->thread);
+      GetThreadContext(c->thread, &ctx);
+      ctx.Rsp -= 16;
+      DWORD64 *rsp = (DWORD64 *)ctx.Rsp;
+      rsp[1] = ctx.Rip; /* return addr */
+      rsp[0] = ctx.Rip; /* arg */
+      ctx.Rip = (u64)c->profiler_int;
+      SetThreadContext(c->thread, &ctx);
+      ResumeThread(c->thread);
+      c->next_prof_int = c->profiler_freq / 1000. + ticks;
+    }
     ReleaseMutex(c->mtx);
   }
 }
@@ -159,7 +174,12 @@ void SleepUs(u64 us) {
 }
 
 void MPSetProfilerInt(void *fp, i64 idx, i64 freq) {
-  // TODO
+  CCore *c = cores + idx;
+  WaitForSingleObject(c->mtx, INFINITE);
+  c->profiler_freq = freq;
+  c->profiler_int = fp;
+  c->next_prof_int = 0;
+  ReleaseMutex(c->mtx);
 }
 
 /* CITATIONS:
