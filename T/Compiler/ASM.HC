@@ -778,14 +778,30 @@ Bool PrsAsmInst(CCmpCtrl *cc,CHashOpcode *tmpo,I64 argcnt)
       AOTStoreCodeU8(cc,OC_OP_SIZE_PREFIX); //Operand size override
     if (best.has_addr_prefix  || aotc->seg_size==16 && cur.has_SIB)
       AOTStoreCodeU8(cc,OC_ADDR_SIZE_PREFIX); //Operand size override
+//https://wiki.osdev.org/X86-64_Instruction_Encoding#Mandatory_prefix
+//0x66,0xF2,0xF3(when part of the opcode) need to come before the REX prefix
+    j=0; //j Assigned here
+    for (;j<tmpins->opcode_cnt-1;j++) {
+      switch(tmpins->opcode[j]) {
+	case 0x66:
+	case 0xF2:
+	case 0xF3:
+          AOTStoreCodeU8(cc,tmpins->opcode[j]);
+	  break;
+	default:
+	  goto rex_prefix;
+      }
+    }
+rex_prefix:
     if (aotc->seg_size==64 && best.REX&0x40==0x40 &&
 	  (best.REX!=0x40 || best.has_REX) &&
 	  (best.REX&7||!(tmpins->flags&IEF_REX_ONLY_R8_R15 ||
 	  tmpins->flags&IEF_REX_XOR_LIKE && tmpa1->reg1==tmpa2->reg1 &&
 	  best.ModrM&0xC0==0xC0)))
       AOTStoreCodeU8(cc,best.REX);
-    for (j=0;j<tmpins->opcode_cnt-1;j++)
-      AOTStoreCodeU8(cc,tmpins->opcode[j]);
+//See j is assigned above
+    while (j<tmpins->opcode_cnt-1)
+      AOTStoreCodeU8(cc,tmpins->opcode[j++]);
     AOTStoreCodeU8(cc,best.last_opcode_U8);
 
     if (best.has_ModrM)
