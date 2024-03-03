@@ -9,7 +9,7 @@
 '*'= IEF_STI_LIKE	Floating STI-like for UAsm.
 '$$'= IEF_ENDING_ZERO	Ending zero for ENTER.
 
-$RED$Note:$FG$ TempleOS uses nonstandard opcodes.
+$FG,4$Note:$FG$ TempleOS uses nonstandard opcodes.
 Asm is kind-of a bonus and I made changes
 to make the assembler simpler. For opcodes
 which can have different numbers of
@@ -1295,3 +1295,7 @@ OPCODE MOV_CR3_RAX 0x0F 0x22 0xD8, 32=;
 OPCODE MOV_RAX_CR3 0x0F 0x20 0xD8, 32=;
 OPCODE MOV_CR4_RAX 0x0F 0x22 0xE0, 32=;
 OPCODE MOV_RAX_CR4 0x0F 0x20 0xE0, 32=;
+
+OPCODE POPCNT 0xF3 0x0F 0xB8,/R 16 R16 RM16
+	0xF3 0x0F 0xB8,/R 32 R32 RM32
+	0xF3 0x0F 0xB8,/R 32= R64 RM64;
