@@ -9,7 +9,6 @@ AlignArrayOfStructures: Left
 AlignConsecutiveMacros: Consecutive
 AlignEscapedNewlines: Left
 AlignOperands: AlignAfterOperator
-AlignEscapedNewlines: Left
 AlignTrailingComments: true
 AllowShortBlocksOnASingleLine: Empty
 AllowAllArgumentsOnNextLine: false

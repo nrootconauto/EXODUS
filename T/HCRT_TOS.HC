@@ -51,6 +51,7 @@ CTask *Fs2() {
 #include "Kernel/STR.HC"
 #include "KERNELB.HH"
 #include "GR/Gr.HH"
+#include "Profiler.HC";
 public extern I64 ExeCmdLine(CCmpCtrl *cc);
 CTask *adam_task=Fs;
 #include "Kernel/KDate.HC"

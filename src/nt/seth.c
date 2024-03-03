@@ -158,6 +158,10 @@ void SleepUs(u64 us) {
   WaitForSingleObject(c->event, INFINITE);
 }
 
+void MPSetProfilerInt(void *fp, i64 idx, i64 freq) {
+  //TODO
+}
+
 /* CITATIONS:
  * [1] https://ofekshilon.com/2009/04/10/naming-threads/
  *     (https://archive.li/MIMDo)

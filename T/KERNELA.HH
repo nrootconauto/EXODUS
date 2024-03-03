@@ -7461,6 +7461,7 @@ extern U8 Mount2(U8 boot_drv_let,CDoc *_doc,Bool _caller_is_prtdsk);
 
 extern class CDyadStream;
 #ifdef IMPORT_BUILTINS
+import U0 MPSetProfilerInt(U8*,U8*,I64);
 import U0 _GrPaletteColorSet(I64i,I64i);
 import U0 __SleepHP(U64);
 import U0 __AwakeCore(U64);
@@ -7532,6 +7533,7 @@ import U8i *__CmdLineBootText();
 import U0i UnblockSignals();
 import U64i __GetTicksHP();
 #else
+extern U0 MPSetProfilerInt(U8*,U8*,I64);
 extern U0 _GrPaletteColorSet(I64i,I64i);
 extern U0 __SleepHP(U64);
 extern U0 __AwakeCore(U64);
@@ -7625,3 +7627,5 @@ extern CKeyDevGlbls keydev;
 extern CTask *sys_macro_task;
 extern U0 (*fp_update_ctrls)(CTask *task);
 extern CCmpGlbls cmp;
+public extern U0 ProfRep(I64 filter_cnt=1,Bool leave_it=OFF);
+public extern U0 Prof(I64 depth=10,I64 cpu_num=0);

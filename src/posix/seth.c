@@ -11,15 +11,16 @@
   #include <sys/types.h>
   #include <sys/umtx.h>
 #endif
-#include <pthread.h>
-#include <unistd.h>
-
 #include <inttypes.h>
+#include <pthread.h>
 #include <signal.h>
 #include <stdatomic.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <sys/time.h>
+#include <ucontext.h>
+#include <unistd.h>
 
 #include "tos_callconv.h"
 #include "vendor/vec.h"
@@ -44,6 +45,10 @@ typedef struct {
    */
   _Alignas(4) _Atomic(u32) is_sleeping;
   int core_num;
+  /* U0 (*profiler_int)(U8 *rip) */
+  void profiler_int;
+  i64 profiler_freq;
+  struct itimerval profile_timer;
   /* HolyC function pointers it needs to execute on launch
    * (especially important for Core 0) */
   vec_void_t funcptrs;
@@ -71,14 +76,16 @@ static void div0(argign int sig) {
   pthread_sigmask(SIG_UNBLOCK, &set, NULL);
   HolyThrow("DivZero");
 }
-
+static void ProfRt(int sig, siginfo_t *info, void *_ctx);
 static void *ThreadRoutine(void *arg) {
   VFsThrdInit();
   SetupDebugger();
   struct sigaction sigfpe = {.sa_handler = div0},
-                   holysigint = {.sa_handler = ctrlaltc};
+                   holysigint = {.sa_handler = ctrlaltc},
+                   holyprof = {.sa_sigaction = ProfRt};
   sigaction(SIGFPE, &sigfpe, NULL);
   sigaction(SIGUSR1, &holysigint, NULL);
+  sigaction(SIGPROF, &holyprof, NULL);
   self = arg;
   /* IET_MAIN routines + kernel entry point <- Core 0.
    * CoreAPSethTask() <- else
@@ -186,6 +193,44 @@ void SleepUs(u64 us) {
             .tv_nsec = (us % 1000000) * 1000,
             .tv_sec = us / 1000000,
         });
+}
+
+#ifdef __linux__
+  #define REG(x)  (u64) ctx->uc_mcontext.gregs[REG_##x]
+  #define REG_RIP REG(RIP)
+#elif defined(__FreeBSD__)
+  #define REG(X)  (u64) ctx->uc_mcontext.mc_##X
+  #define REG_RIP REG(rip)
+#endif
+
+static void ProfRt(argign int sig, argign siginfo_t *info, void *_ctx) {
+  CCore *c = self;
+  ucontext_t *ctx = _ctx;
+  sigset_t set;
+  sigemptyset(&set);
+  sigaddset(&set, SIGPROF);
+  pthread_sigmask(SIG_UNBLOCK, &set, NULL);
+  if (cores[c].profiler_int) {
+    FFI_CALL_TOS_1(c->profiler_int, REG_RIP);
+    c->profile_timer = (struct itimerval){
+        .it_value.tv_usec = c->profiler_freq,
+        .it_interval.tv_usec = c->profiler_freq,
+    };
+  }
+}
+
+void MPSetProfilerInt(void *fp, i64 idx, i64 freq) {
+  if (fp) {
+    CCore *c = cores + idx;
+    c->profiler_int = fp;
+    c->profiler_freq = freq;
+    c->profile_timer = (struct itimerval){
+        .it_value = {.tv_sec = 0, .tv_usec = f},
+        .it_interval = {.tv_sec = 0, .tv_usec = f},
+    };
+    setitimer(ITIMER_PROF, &c->profile_timer, NULL);
+  } else
+    setitimer(ITIMER_PROF, &(struct itimerval){0}, NULL);
 }
 
 /*═════════════════════════════════════════════════════════════════════════════╡

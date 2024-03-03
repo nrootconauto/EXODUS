@@ -25,6 +25,8 @@ void CreateCore(vec_void_t ptrs);
 void WakeCoreUp(u64 n);
 void SleepUs(u64 us);
 
+void MPSetProfilerInt(void *fp, i64 idx, i64 freq);
+
 /*═════════════════════════════════════════════════════════════════════════════╡
 │ EXODUS: Executable Divine Operating System in Userspace                      │
 │ Copyright 2024 1fishe2fishe                                                  │

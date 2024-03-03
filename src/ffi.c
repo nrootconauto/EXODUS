@@ -420,6 +420,10 @@ static void STK_Exit(int *stk) {
   terminate(stk[0]);
 }
 
+static void STK_MPSetProfilerInt(i64 *stk) {
+  MPSetProfilerInt((void *)stk[0], stk[1], stk[2]);
+}
+
 void BootstrapLoader(void) {
 #define R(h, c, a) {.name = h, .fp = c, .arity = a}
 #define S(h, a) \
@@ -429,6 +433,7 @@ void BootstrapLoader(void) {
       R("__CoreNum", CoreNum, 0),
       R("GetFs", GetFs, 0),
       R("GetGs", GetGs, 0),
+      S(MPSetProfilerInt, 3),
       S(mp_cnt, 0),
       R("__IsCmdLine", IsCmdLine, 0),
       S(__IsValidPtr, 1),
