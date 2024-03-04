@@ -197,10 +197,12 @@ void SleepUs(u64 us) {
 
 #ifdef __linux__
   #define REG(x) (u64) ctx->uc_mcontext.gregs[REG_##x]
-  #define REGRIP REG(RIP)
+  #define RegRip REG(RIP)
+  #define RegRbp REG(RBP)
 #elif defined(__FreeBSD__)
   #define REG(X) (u64) ctx->uc_mcontext.mc_##X
-  #define REGRIP REG(rip)
+  #define RegRip REG(rip)
+  #define RegRbp REG(rbp)
 #endif
 
 static void ProfRt(argign int sig, argign siginfo_t *info, void *_ctx) {
@@ -215,7 +217,10 @@ static void ProfRt(argign int sig, argign siginfo_t *info, void *_ctx) {
   if (!pthread_equal(pthread_self(), c->thread) ||
       veryunlikely(!c->profiler_int))
     return;
-  FFI_CALL_TOS_1(c->profiler_int, REGRIP);
+  /* Fake RBP because ProfRt is called from the kernel and
+   * we need the context of the HolyC side (ctx) instead
+   * or ProfRep will print bogus */
+  FFI_CALL_TOS_1_CUSTOM_BP(c->profiler_int, RegRbp, RegRip);
   c->profile_timer = (struct itimerval){
       .it_value.tv_usec = c->profiler_freq,
       .it_interval.tv_usec = c->profiler_freq,

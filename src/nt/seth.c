@@ -5,6 +5,7 @@
 │ See end of file for extended copyright information and citations.            │
 ╚─────────────────────────────────────────────────────────────────────────────*/
 #include <windows.h>
+#include <libloaderapi.h>
 #include <processthreadsapi.h>
 #include <synchapi.h>
 #include <timeapi.h>
@@ -81,7 +82,7 @@ void InterruptCore(u64 core) {
   SuspendThread(c->thread);
   GetThreadContext(c->thread, &ctx);
   ctx.Rsp -= 8;
-  __builtin_memcpy((void *)ctx.Rsp, &ctx.Rip, 8);
+  ((DWORD64 *)ctx.Rsp)[0] = ctx.Rip;
   static CSymbol *sym;
   if (!sym)
     sym = map_get(&symtab, "Yield");
@@ -141,9 +142,8 @@ static void tickscb(argign UINT id, argign UINT msg, argign DWORD_PTR userptr,
       SuspendThread(c->thread);
       GetThreadContext(c->thread, &ctx);
       ctx.Rsp -= 16;
-      DWORD64 *rsp = (DWORD64 *)ctx.Rsp;
-      rsp[1] = ctx.Rip; /* return addr */
-      rsp[0] = ctx.Rip; /* arg */
+      ((DWORD64 *)ctx.Rsp)[1] = ctx.Rip; /* return addr */
+      ((DWORD64 *)ctx.Rsp)[0] = ctx.Rip; /* arg */
       ctx.Rip = (u64)c->profiler_int;
       SetThreadContext(c->thread, &ctx);
       ResumeThread(c->thread);
@@ -174,6 +174,13 @@ void SleepUs(u64 us) {
 }
 
 void MPSetProfilerInt(void *fp, i64 idx, i64 freq) {
+  static bool init, wine;
+  if (!init) {
+    wine = GetProcAddress(GetModuleHandleA("ntdll.dll"), "wine_get_version");
+    init = true;
+  }
+  if (wine)
+    return;
   CCore *c = cores + idx;
   WaitForSingleObject(c->mtx, INFINITE);
   c->profiler_freq = freq;

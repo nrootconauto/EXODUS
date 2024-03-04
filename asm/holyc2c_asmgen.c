@@ -38,6 +38,7 @@ static void preludeasm(FILE *fp) {
   for (int i = 0; i < NARGS; ++i)
     fprintf(fp, ".global FFI_CALL_TOS_%d\n", i);
   fprintf(fp, ".global FFI_CALL_TOS_0_ZERO_BP\n");
+  fprintf(fp, ".global FFI_CALL_TOS_1_CUSTOM_BP\n");
   fprintf(fp, ".text\n");
 }
 static void ncallasm(FILE *fp, int nargs) {
@@ -69,6 +70,12 @@ static void zerobp(FILE *fp) {
   fputs("uint64_t FFI_CALL_TOS_0_ZERO_BP(void *p);\n", fp);
 }
 
+static void custombp(FILE *fp) {
+  fputs("uint64_t FFI_CALL_TOS_1_CUSTOM_BP("
+        "void *p, uint64_t rbp, uint64_t arg0);\n",
+        fp);
+}
+
 static void zerobpasm(FILE *fp) {
   fputs("FFI_CALL_TOS_0_ZERO_BP:\n", fp);
   fputs("push rbp\n", fp);
@@ -79,6 +86,21 @@ static void zerobpasm(FILE *fp) {
   fputs("mov rbp,rsp\n", fp);
   fprintf(fp, "call %s\n", argregs[0]);
   fputs("add rsp,0x10\n", fp); // cleanup stk
+  for (int i = SavedRegs - 1; i >= 0; --i)
+    fprintf(fp, "pop %s\n", savedregs[i]);
+  fputs("pop rbp\n", fp);
+  fputs("ret\n", fp);
+}
+
+/* consult MPSetProfilerInt (fake RBP) */
+static void custombpasm(FILE *fp) {
+  fputs("FFI_CALL_TOS_1_CUSTOM_BP:\n", fp);
+  fputs("push rbp\n", fp);
+  for (int i = 0; i < SavedRegs; ++i)
+    fprintf(fp, "push %s\n", savedregs[i]);
+  fprintf(fp, "mov rbp,%s\n", argregs[1]);
+  fprintf(fp, "push %s\n", argregs[2]);
+  fprintf(fp, "call %s\n", argregs[0]);
   for (int i = SavedRegs - 1; i >= 0; --i)
     fprintf(fp, "pop %s\n", savedregs[i]);
   fputs("pop rbp\n", fp);
@@ -100,12 +122,14 @@ int main(int argc, char **argv) {
   for (int i = 0; i < NARGS; ++i)
     ncall(fp, i);
   zerobp(fp);
+  custombp(fp);
   fclose(fp);
   fp = fopen(asmout, "wb");
   preludeasm(fp);
   for (int i = 0; i < NARGS; ++i)
     ncallasm(fp, i);
   zerobpasm(fp);
+  custombpasm(fp);
 #ifndef _WIN32
   fputs(".section .note.GNU-stack,\"\",@progbits\n", fp);
 #endif

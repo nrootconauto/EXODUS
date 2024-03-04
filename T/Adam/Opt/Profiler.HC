@@ -10,19 +10,27 @@ I64 pf_prof_active=0;
 
 U0 ProfTimerInt(U8 *cur_rip)
 {//See $LK,"profiler_timer_irq",A="FF:::/Kernel/KInts.HC,profiler_timer_irq"$.
+  PUSH_REGS;
+  PUSHFD;
   I64 i,k;
   CTask *task=Fs;
   if (Bt(&pf_prof_active,0))
     for (k=0;k<=pf_depth;k++) {
       if (task==Gs->idle_task)
 	i=NULL;
+      else if (k)
+	i=Caller(k+1);
       else
-	i=Caller(k);
+	i=cur_rip;
       if (pf_buf_in_ptr<PF_ARRAY_CNT) {
 	pf_array[pf_buf_in_ptr++]=i;
 	pf_jiffy_end=__GetTicks;
       }
     }
+  POPFD;
+  POP_REGS; // Save temps
+  return;
+  try; catch; // Force noreg(Windows SetContext doesnt set tmp regs)
 }
 
 public U0 Prof(I64 depth=10,I64 cpu_num=0)

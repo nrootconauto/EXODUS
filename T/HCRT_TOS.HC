@@ -51,7 +51,6 @@ CTask *Fs2() {
 #include "Kernel/STR.HC"
 #include "KERNELB.HH"
 #include "GR/Gr.HH"
-#include "Profiler.HC";
 public extern I64 ExeCmdLine(CCmpCtrl *cc);
 CTask *adam_task=Fs;
 #include "Kernel/KDate.HC"
@@ -107,7 +106,7 @@ CInit;
 #include "Adam/ADskB.HC"
 #include "Adam/ADBG.HC"
 #include "Diff.HC"
-#include "CPURep.HC"
+#include "Adam/Opt/CPURep.HC"
 #include "Kernel/KeyDev.HC"
 #include "Adam/FILEMGR.HC"
 #include "Adam/Training.HC"
@@ -117,6 +116,7 @@ CInit;
 #include "Adam/Opt/DocUtils.HC"
 #include "Adam/Opt/StrUtils.HC"
 #include "Adam/Opt/Merge.HC"
+#include "Adam/Opt/Profiler.HC"
 #include "HomeKeyPlugIns.HC"
 #include "Adam/MakeISOFile.HC"
 #endif
