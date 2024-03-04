@@ -249,13 +249,13 @@ U0 Ui(U8 *buf,U8 **_rip,I64 seg_size=64,I64 *_jmp_dst=NULL,Bool just_ins=FALSE)
 	arg1_size=0,arg2_size=0,reloced_arg1_size,reloced_arg2_size,
 	ModrM=-1,SIB=-1,scale,r1,r2,
 	Mod=-1,RM1=-1,RM2=-1,REX=-1,REX_r=0,REX_x=0,REX_b=0;
-  Bool cont;
+  Bool cont,mpref=FALSE;
   CInst *tmpins,*tmpins2;
   CHashOpcode *tmpo;
   U8 *rip=*_rip,*ptr,*reloced_arg1_st,*reloced_arg2_st,
 	*bin_data_area1,*bin_data_area2,
 	line1[512],line2[512],buf2[512],arg1_st[512],
-	arg2_st[512],seg_overrides[32];
+	arg2_st[512],seg_overrides[32],buf3[0x10];
 
   if (_jmp_dst) *_jmp_dst=-1;
   if (seg_size==16) {
@@ -313,7 +313,20 @@ U0 Ui(U8 *buf,U8 **_rip,I64 seg_size=64,I64 *_jmp_dst=NULL,Bool just_ins=FALSE)
 	else
 	  opadd=16;
 	break;
+      //0x66 seems to be only for SSE
+      case 0xF2:
+      case 0xF3:
+	mpref=TRUE;
+	if (0x40<=rip[1]<=0x4F) {
+	  *buf3=*rip++;
+	  CALL rex
+	  MemCpy(buf3+1,rip+1,0xF);
+          rip=buf3;
+	}
+	cont=FALSE;
+	break;
       case 0x40...0x4F:
+      rex:
 	if (seg_size==64) {
 	  REX=*rip;
 	  if (REX>=0x48)
@@ -321,6 +334,7 @@ U0 Ui(U8 *buf,U8 **_rip,I64 seg_size=64,I64 *_jmp_dst=NULL,Bool just_ins=FALSE)
 	  REX_b=Bt(&REX,0)<<3;
 	  REX_x=Bt(&REX,1)<<3;
 	  REX_r=Bt(&REX,2)<<3;
+	  if (mpref) RET
 	  break;
 	} //Fall thru if !64
       default:
@@ -644,8 +658,12 @@ U0 Ui(U8 *buf,U8 **_rip,I64 seg_size=64,I64 *_jmp_dst=NULL,Bool just_ins=FALSE)
     }
   }
   StrCpy(buf,line1);
-  if (!just_ins && rip-(*_rip)(I64)>6)
+  if (!mpref && !just_ins && rip-(*_rip)(I64)>6)
     CatPrint(buf,line2);
+  if (mpref) {
+    *_rip+=rip-buf3+1;
+    return;
+  }
   *_rip=rip;
 }
 
@@ -667,12 +685,17 @@ U8 *U(U8 *rip,I64 cnt=20,I64 seg_size=64)
 I64 Un(U8 *rip,I64 cnt=0x80,I64 seg_size=64)
 {//Unassembles a num of bytes
   I64 i=0;
-  U8 buf[1024],*end_rip=rip(I64)+cnt;
+  U8 buf[1024],*end_rip=rip(I64)+cnt,*prev_rip;
   if (seg_size==16)
     PrintWarn("16-bit unassembly is not well supported.\n");
   if (!IsRaw) "$$HL,1$$";
   while (rip<end_rip) {
+    prev_rip=rip;
     Ui(buf,&rip,seg_size);
+    /*inf loop means malformed input,
+     *possibly string literal*/
+    if (prev_rip==rip)
+      break;
     "%s",buf;
     i++;
   }
