@@ -7,6 +7,7 @@
 #include <inttypes.h>
 #include <math.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 #include "vendor/vec.h"
 
@@ -15,8 +16,10 @@
 #include "tosprint.h"
 #include "types.h"
 
-static char *unescapestr(char *str, char *where) {
+/* No null termination */
+static i64 unescapestr(char *str, char *where) {
   char const *to;
+  char *ret = where;
   char c;
   while ((c = *str)) {
     switch (c) {
@@ -37,22 +40,25 @@ static char *unescapestr(char *str, char *where) {
     default:
       goto checkascii;
     }
-    __builtin_memcpy(where, to, 2);
-    where += 2;
+    if (where)
+      __builtin_memcpy(ret, to, 2);
+    ret += 2;
     str++;
     continue;
   checkascii:
     if (!Bt(char_bmp_alpha_numeric, c) &&
         !strchr(" ~!@#$%^&*()_+|{}[]\\;':\",./<>?", c)) {
-      snprintf(where, 5, "\\%o", (u8)c);
-      where += 4;
+      if (where)
+        snprintf(ret, 5, "\\%o", (u8)c);
+      ret += 4;
       str++;
       continue;
     }
-    *where++ = *str++;
+    if (where)
+      *ret = *str;
+    ++ret, ++str;
   }
-  *where = 0;
-  return where;
+  return ret - where;
 }
 
 /*
@@ -175,9 +181,10 @@ static vec_char_t MStrPrint(char const *fmt, argign u64 argc, i64 *argv) {
       break;
     case 'q': {
       char *str = ((char **)argv)[arg];
-      char esc[strlen(str) * 4 + 1];
-      unescapestr(str, esc);
-      vec_pusharr(&ret, esc, strlen(esc));
+      i64 escsz = unescapestr(str, NULL);
+      vec_reserve(&ret, escsz);
+      unescapestr(str, ret.data + ret.length);
+      ret.length += escsz;
     } break;
     case '%':
       vec_push(&ret, '%');
@@ -190,7 +197,7 @@ static vec_char_t MStrPrint(char const *fmt, argign u64 argc, i64 *argv) {
 void TOSPrint(char const *fmt, i64 argc, i64 *argv) {
   vec_char_t s = MStrPrint(fmt, argc, argv);
   writefd(1, s.data, s.length);
-  vec_deinit(&s);
+  free(s.data);
 }
 
 /*═════════════════════════════════════════════════════════════════════════════╡

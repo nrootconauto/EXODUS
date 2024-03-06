@@ -565,7 +565,9 @@ void EventLoop(void) {
       continue;
     switch (e.type) {
     case SDL_QUIT:
-      return;
+      /* I will not attempt to clean and synchronize things up */
+      terminate(0);
+      break;
     case SDL_USEREVENT:
       switch (e.user.code) {
       case WINDOW_UPDATE:

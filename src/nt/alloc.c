@@ -29,7 +29,7 @@ void *NewVirtualChunk(u64 sz, bool exec) {
   static u64 cur = 0x10000;
   const u64 max = UINT32_MAX >> 1;
   void *ret;
-  if (atomic_exchange_explicit(&running, true, memory_order_acquire))
+  while (atomic_exchange_explicit(&running, true, memory_order_acquire))
     while (atomic_load_explicit(&running, memory_order_relaxed))
       __builtin_ia32_pause();
   if (!ag) {
@@ -57,7 +57,7 @@ void *NewVirtualChunk(u64 sz, bool exec) {
       }
     }
     ret = NULL;
-  } else /* VirtualAlloc will return NULL on failure. */
+  } else /* VirtualAlloc will return NULL on failure */
     ret = ALLOC(NULL, sz, PAGE_READWRITE);
 ret:
   atomic_store_explicit(&running, false, memory_order_release);

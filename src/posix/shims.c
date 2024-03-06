@@ -38,7 +38,7 @@ i64 readfd(int fd, u8 *buf, u64 sz) {
 }
 
 int openfd(char const *path, bool rw) {
-  return open(path, rw ? (O_RDWR | O_CREAT) : O_RDONLY, 0666);
+  return open(path, rw ? O_RDWR | O_CREAT : O_RDONLY, 0666);
 }
 
 void closefd(int fd) {
@@ -162,7 +162,7 @@ bool readfile(char const *path, u8 *buf, i64 sz) {
 }
 
 bool writefile(char const *path, u8 const *data, i64 sz) {
-  int fd = open(path, O_WRONLY | O_CREAT | O_TRUNC, 0666);
+  int fd = open(path, O_WRONLY | O_CREAT, 0666);
   bool ret = sz == write(fd, data, sz);
   close(fd);
   return ret;

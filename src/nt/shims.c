@@ -48,8 +48,8 @@ i64 readfd(int fd, u8 *buf, u64 sz) {
 }
 
 int openfd(char const *path, bool rw) {
-  return open(path, rw ? (_O_RDWR | _O_CREAT) : _O_RDONLY,
-              _S_IREAD | _S_IWRITE);
+  return _open(path, _O_BINARY | (rw ? _O_RDWR | _O_CREAT : _O_RDONLY),
+               _S_IREAD | _S_IWRITE);
 }
 
 void closefd(int fd) {
@@ -57,21 +57,13 @@ void closefd(int fd) {
 }
 
 bool fexists(char const *path) {
-  if (strchr(path, '*') || strchr(path, '?'))
-    return false;
   return PathFileExistsA(path);
 }
 
 bool isdir(char const *path) {
-  if (strchr(path, '*') || strchr(path, '?'))
-    return false;
-  /* PathIsDirectoryA returns 0x10 but bool converts it to 1
-   * thanks to C99 enforcing it */
   return PathIsDirectoryA(path);
 }
 
-/* Ugly because I manually flattened out the recursive function.
- * SHFileOperation is too slow to be used here. */
 typedef struct {
   int cur, size;
   void *states[];
@@ -115,6 +107,8 @@ struct deleteall {
 };
 
 /* works in the same spirit as std::filesystem::remove_all */
+/* Ugly because I manually flattened out the recursive function.
+ * SHFileOperation is too slow to be used here. */
 void deleteall(char *s) {
   if (!PathIsDirectoryA(s)) {
     DeleteFileA(s);
@@ -165,27 +159,61 @@ endfunc:
   goto *lbl;
 }
 
-char **listdir(char const *path) {
-  vec_str_t ls;
-  WIN32_FIND_DATAA data;
+bool traversedir(char const *path, void cb(WIN32_FIND_DATAA *d, void *_user0),
+                 void *user0) {
+  WIN32_FIND_DATAA data = {0};
   char findbuf[0x200];
   char *cur = stpcpy2(findbuf, path);
   cur = stpcpy2(cur, "\\*.*");
-  /* FindFirstFileA/FindNextFileA also returns ./.., see above */
+  /* FindFirstFileA/FindNextFileA also returns ./.. */
   HANDLE fh = FindFirstFileA(findbuf, &data);
   if (veryunlikely(fh == INVALID_HANDLE_VALUE))
-    return NULL;
-  vec_init(&ls);
+    return false;
   do {
-    if (strlen(data.cFileName) <= 37)
-      vec_push(&ls, HolyStrDup(data.cFileName));
+    cb(&data, user0);
   } while (FindNextFileA(fh, &data));
   FindClose(fh);
+  return true;
+}
+
+static void listdircb(WIN32_FIND_DATAA *d, void *user0) {
+  vec_str_t *p = user0;
+  if (strlen(d->cFileName) <= 37)
+    vec_push(p, HolyStrDup(d->cFileName));
+}
+
+char **listdir(char const *path) {
+  vec_str_t ls;
+  vec_init(&ls);
+  if (veryunlikely(!traversedir(path, listdircb, &ls)))
+    return NULL;
   vec_push(&ls, NULL);
   u64 sz = ls.length * sizeof ls.data[0];
   char **ret = memcpy(HolyMAlloc(sz), ls.data, sz);
   vec_deinit(&ls);
   return ret;
+}
+
+static void fsizecb(WIN32_FIND_DATAA *d, void *user0) {
+  i64 *p = user0;
+  if (!strcmp(d->cFileName, ".") || !strcmp(d->cFileName, ".."))
+    return;
+  if (strlen(d->cFileName) <= 37)
+    ++(*p);
+}
+
+i64 fsize(char const *path) {
+  if (!isdir(path)) {
+    struct _stati64 st;
+    if (veryunlikely(-1 == _stati64(path, &st)))
+      return -1;
+    return st.st_size;
+  } else {
+    i64 ret = 0;
+    if (veryunlikely(!traversedir(path, fsizecb, &ret)))
+      return -1;
+    return ret;
+  }
 }
 
 bool dirmk(char const *path) {
@@ -204,30 +232,6 @@ bool truncfile(char const *path, i64 sz) {
   return ret;
 }
 
-i64 fsize(char const *path) {
-  if (!isdir(path)) {
-    struct _stati64 st;
-    if (veryunlikely(-1 == _stati64(path, &st)))
-      return -1;
-    return st.st_size;
-  } else {
-    WIN32_FIND_DATAA data;
-    char findbuf[0x200];
-    char *cur = stpcpy2(findbuf, path);
-    cur = stpcpy2(cur, "\\*.*");
-    HANDLE fh = FindFirstFileA(findbuf, &data);
-    if (veryunlikely(fh == INVALID_HANDLE_VALUE))
-      return -1;
-    i64 ret = 0;
-    do {
-      if (strlen(data.cFileName) <= 37)
-        ++ret;
-    } while (FindNextFileA(fh, &data));
-    FindClose(fh);
-    return ret;
-  }
-}
-
 u64 unixtime(char const *path) {
   struct _stati64 st;
   _stati64(path, &st);
@@ -242,8 +246,7 @@ bool readfile(char const *path, u8 *buf, i64 sz) {
 }
 
 bool writefile(char const *path, u8 const *data, i64 sz) {
-  int fd = _open(path, _O_WRONLY | _O_TRUNC | _O_CREAT | _O_BINARY,
-                 _S_IREAD | _S_IWRITE);
+  int fd = _open(path, _O_WRONLY | _O_CREAT | _O_BINARY, _S_IREAD | _S_IWRITE);
   bool ret = sz == _write(fd, data, sz);
   _close(fd);
   return ret;
@@ -266,7 +269,7 @@ bool seekfd(int fd, i64 off) {
 
 noret static BOOL WINAPI ctrlchndlr(argign DWORD dw) {
   const char s[] = "User abort.\n";
-  write(2, s, sizeof s - 1);
+  _write(2, s, sizeof s - 1);
   terminate(ERROR_CONTROL_C_EXIT);
   // return TRUE;
 }
@@ -289,13 +292,13 @@ u64 mp_cnt(void) {
 void unblocksigs(void) {}
 
 bool isvalidptr(void *p) {
-  const DWORD mask = PAGE_READONLY          //
-                   | PAGE_READWRITE         //
-                   | PAGE_WRITECOPY         //
-                   | PAGE_EXECUTE           //
-                   | PAGE_EXECUTE_READ      //
-                   | PAGE_EXECUTE_READWRITE //
-                   | PAGE_EXECUTE_WRITECOPY;
+  const u64 mask = PAGE_READONLY          //
+                 | PAGE_READWRITE         //
+                 | PAGE_WRITECOPY         //
+                 | PAGE_EXECUTE           //
+                 | PAGE_EXECUTE_READ      //
+                 | PAGE_EXECUTE_READWRITE //
+                 | PAGE_EXECUTE_WRITECOPY;
   MEMORY_BASIC_INFORMATION mbi;
   /* Thanks [1] */
   if (VirtualQuery(p, &mbi, sizeof mbi))

@@ -151,10 +151,7 @@ void CreateCore(vec_void_t ptrs) {
       .funcptrs = ptrs,
       .core_num = n,
   };
-  pthread_attr_t attr;
-  pthread_attr_init(&attr);
-  pthread_attr_setstacksize(&attr, MiB(128));
-  pthread_create(&c->thread, &attr, ThreadRoutine, c);
+  pthread_create(&c->thread, NULL, ThreadRoutine, c);
   char buf[0x10];
   snprintf(buf, sizeof buf, "Seth(Core%d)", c->core_num);
   /* pthread_setname_np only works on Linux and FreeBSD

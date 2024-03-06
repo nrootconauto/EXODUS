@@ -57,6 +57,8 @@ int main(int argc, char **argv) {
   getrlimit(RLIMIT_NOFILE, &rl);
   rl.rlim_cur = rl.rlim_max;
   setrlimit(RLIMIT_NOFILE, &rl);
+#else
+  handlectrlc();
 #endif
   void *argtable[] = {
       help = arg_lit0("h", "help", "Display this help message"),
@@ -83,8 +85,8 @@ int main(int argc, char **argv) {
     flushprint(stderr, "Can't find \"%s\"", drv->filename[0]);
     return 1;
   }
+  VFsMountDrive('Z', ".");
   if (cli->count) {
-    VFsMountDrive('Z', ".");
     ic_set_history(NULL, -1);
     ic_enable_auto_tab(true);
     vec_char_t tmp;

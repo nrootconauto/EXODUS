@@ -62,7 +62,7 @@ Execute the following to run EXODUS:
 Consult `./exodus -h` for more command-line options such as CLI mode.
 
 # Features
-- Host filesystem integration (T:/ is the root drive)
+- Host filesystem integration (T:/ is the root drive, and Z:/ is where EXODUS was launched)
 - Documentation in T:/Server (run `#include "run";` after `Cd("Server");`, on localhost:8080)
 - Mostly orthodox TempleOS GUI
 - CLI mode

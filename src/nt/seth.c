@@ -6,6 +6,7 @@
 ╚─────────────────────────────────────────────────────────────────────────────*/
 #include <windows.h>
 #include <libloaderapi.h>
+#include <process.h>
 #include <processthreadsapi.h>
 #include <synchapi.h>
 #include <timeapi.h>
@@ -39,17 +40,15 @@ static CCore cores[MP_PROCESSORS_NUM];
 static _Thread_local CCore *self;
 static u64 nproc;
 
-static DWORD ThreadRoutine(LPVOID arg) {
+static void ThreadRoutine(void *arg) {
+  self = arg;
   VFsThrdInit();
   SetupDebugger();
-  self = arg;
   void *fp;
   int iter;
   vec_foreach(&self->funcptrs, fp, iter) {
     FFI_CALL_TOS_0_ZERO_BP(fp);
   }
-  /* Does not return */
-  return 0;
 }
 
 static _Thread_local void *Fs, *Gs;
@@ -82,7 +81,7 @@ void InterruptCore(u64 core) {
   SuspendThread(c->thread);
   GetThreadContext(c->thread, &ctx);
   ctx.Rsp -= 8;
-  ((DWORD64 *)ctx.Rsp)[0] = ctx.Rip;
+  ((u64 *)ctx.Rsp)[0] = ctx.Rip;
   static CSymbol *sym;
   if (!sym)
     sym = map_get(&symtab, "Yield");
@@ -102,7 +101,7 @@ void CreateCore(vec_void_t ptrs) {
       .mtx = CreateMutex(NULL, FALSE, NULL),
       .event = CreateEvent(NULL, FALSE, FALSE, NULL),
   };
-  c->thread = CreateThread(NULL, MiB(128), ThreadRoutine, c, 0, NULL),
+  c->thread = (HANDLE)_beginthread(ThreadRoutine, 0, c);
   SetThreadPriority(c->thread, THREAD_PRIORITY_HIGHEST);
   ++n;
   /* Win32 cannot thread names unless it's MSVC[1]
@@ -121,13 +120,28 @@ void WakeCoreUp(u64 core) {
   ReleaseMutex(c->mtx);
 }
 
-static UINT inc;
+static u32 inc;
+
+static void incinit(void) {
+  static bool init;
+  if (verylikely(init))
+    return;
+  TIMECAPS tc = {0};
+  timeGetDevCaps(&tc, sizeof tc);
+  inc = tc.wPeriodMin;
+  init = true;
+}
+
 static u64 ticks;
 
 /* We need this for accurate μs ticks, and just passing millisecnds to
  * WaitForSingleObject in SleepUs is inaccurate enough mess with input. */
-static void tickscb(argign UINT id, argign UINT msg, argign DWORD_PTR userptr,
-                    argign DWORD_PTR dw1, argign DWORD_PTR dw2) {
+static void tickscb(u32 id, u32 msg, u64 userptr, u64 dw1, u64 dw2) {
+  (void)id;
+  (void)msg;
+  (void)userptr;
+  (void)dw1;
+  (void)dw2;
   ticks += inc;
   for (u64 i = 0; i < nproc; ++i) {
     CCore *c = cores + i;
@@ -137,13 +151,34 @@ static void tickscb(argign UINT id, argign UINT msg, argign DWORD_PTR userptr,
       SetEvent(c->event);
       atomic_store_explicit(&c->awakeat, 0, memory_order_release);
     }
-    if (c->profiler_int && ticks >= c->next_prof_int) {
+    ReleaseMutex(c->mtx);
+  }
+}
+
+static u64 elapsedus(void) {
+  if (veryunlikely(!inc)) {
+    incinit();
+    timeSetEvent(inc, inc, tickscb, 0, TIME_PERIODIC);
+  }
+  return ticks;
+}
+
+static void profcb(u32 id, u32 msg, u64 userptr, u64 dw1, u64 dw2) {
+  (void)id;
+  (void)msg;
+  (void)userptr;
+  (void)dw1;
+  (void)dw2;
+  for (u64 i = 0; i < nproc; ++i) {
+    CCore *c = cores + i;
+    WaitForSingleObject(c->mtx, INFINITE);
+    if (c->profiler_int && elapsedus() >= c->next_prof_int) {
       CONTEXT ctx = {.ContextFlags = CONTEXT_FULL};
       SuspendThread(c->thread);
       GetThreadContext(c->thread, &ctx);
       ctx.Rsp -= 16;
-      ((DWORD64 *)ctx.Rsp)[1] = ctx.Rip; /* return addr */
-      ((DWORD64 *)ctx.Rsp)[0] = ctx.Rip; /* arg */
+      ((u64 *)ctx.Rsp)[1] = ctx.Rip; /* return addr */
+      ((u64 *)ctx.Rsp)[0] = ctx.Rip; /* arg */
       ctx.Rip = (u64)c->profiler_int;
       SetThreadContext(c->thread, &ctx);
       ResumeThread(c->thread);
@@ -151,16 +186,6 @@ static void tickscb(argign UINT id, argign UINT msg, argign DWORD_PTR userptr,
     }
     ReleaseMutex(c->mtx);
   }
-}
-
-static u64 elapsedus(void) {
-  if (veryunlikely(!inc)) {
-    TIMECAPS tc;
-    timeGetDevCaps(&tc, sizeof tc);
-    inc = tc.wPeriodMin;
-    timeSetEvent(inc, inc, tickscb, 0, TIME_PERIODIC);
-  }
-  return ticks;
 }
 
 void SleepUs(u64 us) {
@@ -174,13 +199,12 @@ void SleepUs(u64 us) {
 }
 
 void MPSetProfilerInt(void *fp, i64 idx, i64 freq) {
-  static bool init, wine;
-  if (!init) {
-    wine = GetProcAddress(GetModuleHandleA("ntdll.dll"), "wine_get_version");
+  static bool init;
+  if (veryunlikely(!init)) {
+    incinit();
+    timeSetEvent(inc, inc, profcb, 0, TIME_PERIODIC);
     init = true;
   }
-  if (wine)
-    return;
   CCore *c = cores + idx;
   WaitForSingleObject(c->mtx, INFINITE);
   c->profiler_freq = freq;

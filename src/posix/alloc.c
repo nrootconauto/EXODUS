@@ -19,11 +19,10 @@
 #include "types.h"
 
 // log2(to) == 0
-#define ALIGN(x, to) (x + to - 1) & ~(to - 1)
-#define PROT         PROT_READ | PROT_WRITE
-#define FLAGS        MAP_PRIVATE | MAP_ANON
-#define MMAP(hint, sz, prot, flags) \
-  mmap((void *)(hint), sz, prot, flags, -1, 0);
+#define ALIGN(x, to)                (x + to - 1) & ~(to - 1)
+#define PROT                        PROT_READ | PROT_WRITE
+#define FLAGS                       MAP_PRIVATE | MAP_ANON
+#define MMAP(hint, sz, prot, flags) mmap((void *)(hint), sz, prot, flags, -1, 0)
 
 #define STARTADDR (u8 *)0x10000 // reasonable start address for bump allocation
 void *NewVirtualChunk(u64 sz, bool exec) {
@@ -47,8 +46,11 @@ void *NewVirtualChunk(u64 sz, bool exec) {
       /* Set the starting pivot of allocation.
        * After this we simply keep bumping */
       ret = MMAP(cur, sz, PROT | PROT_EXEC, FLAGS);
-    } else
+    } else {
+      /* mmaping an address overlapping with the brk heap doesn't seem to fail
+       * (TODO: why?) */
       ret = MMAP(cur, sz, PROT | PROT_EXEC, FLAGS | MAP_FIXED);
+    }
     if (veryunlikely(ret == MAP_FAILED)) {
       ret = NULL;
       goto ret;

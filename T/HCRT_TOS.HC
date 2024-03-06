@@ -1,10 +1,6 @@
 #exe {Cd(__DIR__);;};;
 #define FPTRS 1
 #include "KERNELA.HH"
-Bool dol_doc_inited=FALSE;
-Bool IsRaw() {
-  return __IsCmdLine;
-}
 asm {
   ALIGN 16,0; //MUST ALIGN SYS_FIXED_AREA TO 16 TO AVOID SEGUALTS WITH FXSAVE
 };
@@ -24,7 +20,6 @@ HeapCtrlInit(&ahc,Fs,0);
 HeapCtrlInit(&ahd,Fs,1);
 Fs->data_heap=&ahd;
 Fs->code_heap=&ahc;
-Fs->cur_dir=StrNew("T:/",&ahd);
 CCPU cpu_structs[MP_PROCESSORS_NUM],
     *mp_cores[MP_PROCESSORS_NUM];
 U32 SYS_CTRL_ALT_FLAGS=0;
@@ -43,6 +38,10 @@ TaskInit(Fs,0);
 CTask *Fs2() {
   return Fs;
 }
+Bool IsRaw() {
+  return __IsCmdLine;
+}
+Bool dol_doc_inited=FALSE;
 #include "Kernel/KGLBLS.HC"
 #include "DOLDOC/DocExt.HC"
 #include "Kernel/KUTILS.HC"

@@ -50,8 +50,8 @@ target_compile_options(c_opts
     -fno-stack-protector
     -mno-shstk
     -mno-red-zone
-    -fcf-protection=none
-)
+    -fcf-protection=none)
+# I don't know how to CMake
 target_link_libraries(dyad      PRIVATE c_opts)
 target_link_libraries(argtable3 PRIVATE c_opts)
 target_link_libraries(vec       PRIVATE c_opts)

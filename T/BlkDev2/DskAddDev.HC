@@ -198,15 +198,15 @@ U0 BlkDevsInitAll()
   blkdev.drvs=CAlloc(sizeof(CDrv)*DRVS_NUM);
   for (i=0;i<DRVS_NUM;i++)
     blkdev.let_to_drv[i]=&blkdev.drvs[i];
-  bd=BlkDevNextFreeSlot('T',BDT_VIRT);bd->unit=0;
+  bd=BlkDevNextFreeSlot('T',BDT_VIRT);
+  bd->unit=0;
   BlkDevAdd(bd,0,0,0);
   Fs->cur_dv=Let2Drv('T');
   Fs->cur_dir=StrNew("/");
   blkdev.boot_drv_let='T';
-  if(__IsCmdLine) {
-    bd=BlkDevNextFreeSlot('Z',BDT_VIRT);bd->unit=0;
-    BlkDevAdd(bd,0,0,0);
-  }
+  bd=BlkDevNextFreeSlot('Z',BDT_VIRT);
+  bd->unit=0;
+  BlkDevAdd(bd,0,0,0);
 
 /*  #exe {
     if (kernel_cfg->opts[CFG_MOUNT_IDE_AUTO])

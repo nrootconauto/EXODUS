@@ -6,7 +6,6 @@
 ╚─────────────────────────────────────────────────────────────────────────────*/
 #include <ctype.h>
 #include <stdbool.h>
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -16,17 +15,17 @@
 #include "shims.h"
 #include "vfs.h"
 
-_Thread_local char thrd_pwd[0x400], thrd_drv;
+_Thread_local char thrd_pwd[0x200], thrd_drv;
 
-static char *mount_points['z' - 'a' + 1];
+static char mount_points['z' - 'a' + 1][0x100];
 
 static char *VFsFNameAbs(char const *path) {
-  char *cur, ret[0x200];
-  char *mnt = mount_points[thrd_drv - 'A'];
-  cur = stpcpy2(ret, mnt);
-  cur = stpcpy2(cur, "/");
-  cur = stpcpy2(cur, thrd_pwd);
-  cur = stpcpy2(cur, "/");
+  char *cur, *prev, ret[0x200];
+  cur = stpcpy2(ret, mount_points[thrd_drv - 'A']);
+  *cur++ = '/';
+  cur = stpcpy2(prev = cur, thrd_pwd + 1);
+  if (likely(cur != prev))
+    *cur++ = '/';
   strcpy(cur, path);
   return strdup(ret);
 }
@@ -37,9 +36,9 @@ void VFsThrdInit(void) {
 }
 
 void VFsSetDrv(u8 d) {
-  if (!Bt(char_bmp_alpha, d))
+  if (veryunlikely(!Bt(char_bmp_alpha, d)))
     return;
-  thrd_drv = toupper(d);
+  thrd_drv = d & ~0x20;
 }
 
 u8 VFsGetDrv(void) {
@@ -131,7 +130,7 @@ u8 *VFsFRead(char const *name, u64 *lenp) {
 
 char **VFsDir(void) {
   char cleanup(_dtor) *path = VFsFNameAbs("");
-  if (!isdir(path))
+  if (unlikely(!isdir(path)))
     return NULL;
   return listdir(path);
 }
@@ -147,7 +146,9 @@ bool VFsFExists(char const *path) {
 }
 
 void VFsMountDrive(u8 let, char const *path) {
-  mount_points[(let | 0b100000) - 'a'] = strdup(path);
+  if (veryunlikely(!Bt(char_bmp_alpha, let)))
+    return;
+  strcpy(mount_points[(let | 0x20) - 'a'], path);
 }
 
 /*═════════════════════════════════════════════════════════════════════════════╡

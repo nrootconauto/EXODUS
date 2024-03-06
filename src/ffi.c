@@ -58,7 +58,7 @@ noret void HolyThrow(char const *s) {
   if (!fp)
     fp = map_get(&symtab, "throw")->val;
   FFI_CALL_TOS_1(fp, u.i);
-  __builtin_unreachable();
+  Unreachable();
 }
 
 /* FFI thunk generation */
@@ -77,12 +77,14 @@ static void genthunks(HolyFFI *list, i64 cnt) {
    * each of them in for the FFI functions
    *
    * Refer to asm/c2holyc.s for the hexadecimals */
-#define OFF(var, mark, sz)                                      \
-  u8 *var##addr = memmem2(__TOSTHUNK_START, thunksz, mark, sz); \
+#define OFF(var, mark)                                                       \
+  u8 *var##addr = memmem2(__TOSTHUNK_START, thunksz, mark, sizeof mark - 1); \
   i64 var##off = var##addr - __TOSTHUNK_START
-  OFF(call, "\xCC\xCC\xCC\xCC\xCC\xCC\xCC\xCC", 8);
-  OFF(ret1, "\xF4\xF4", 2);
-  for (HolyFFI *cur = list, *end = list + cnt; cur != end; cur++) {
+  OFF(call, "\xCC\xCC\xCC\xCC\xCC\xCC\xCC\xCC");
+  OFF(ret1, "\xF4\xF4");
+  HolyFFI *cur;
+  for (i64 i = 0; i < cnt; i++) {
+    cur = list + i;
     blob = mempcpy2(prev = blob, __TOSTHUNK_START, thunksz);
     __builtin_memcpy(prev + calloff, &cur->fp, 8);
     __builtin_memcpy(prev + ret1off, &(u16){cur->arity * 8}, 2);

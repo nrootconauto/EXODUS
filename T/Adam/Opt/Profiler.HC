@@ -19,9 +19,13 @@ U0 ProfTimerInt(U8 *cur_rip)
       if (task==Gs->idle_task)
 	i=NULL;
       else if (k)
-	i=Caller(k+1);
+        i=Caller(k);
       else
-	i=cur_rip;
+        i=cur_rip;
+      //else if (k)
+	//i=Caller(k+1);
+      //else
+	//i=cur_rip;
       if (pf_buf_in_ptr<PF_ARRAY_CNT) {
 	pf_array[pf_buf_in_ptr++]=i;
 	pf_jiffy_end=__GetTicks;
