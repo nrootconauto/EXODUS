@@ -4,8 +4,10 @@
 │                                                                              │
 │ See end of file for extended copyright information and citations.            │
 ╚─────────────────────────────────────────────────────────────────────────────*/
+#define _WIN32_WINNT 0x0602
 #include <windows.h>
 #include <memoryapi.h>
+#include <processthreadsapi.h>
 #include <sysinfoapi.h>
 
 #include <limits.h>
@@ -20,13 +22,13 @@
 #include "types.h"
 
 #define ALIGN(x, to) (x + to - 1) & ~(to - 1)
-#define ALLOC(addr, sz, pagflags) \
-  VirtualAlloc((void *)addr, sz, MEM_RESERVE | MEM_COMMIT, pagflags)
+#define MEM          MEM_RESERVE | MEM_COMMIT
+#define ALLOC(addr, sz, mem, pagflags) \
+  VirtualAlloc((void *)addr, sz, mem, pagflags)
 
 void *NewVirtualChunk(u64 sz, bool exec) {
   static _Atomic(bool) running;
-  static DWORD ag;
-  static u64 cur = 0x10000;
+  static u64 ag, flags64, cur = 0x10000;
   const u64 max = UINT32_MAX >> 1;
   void *ret;
   while (atomic_exchange_explicit(&running, true, memory_order_acquire))
@@ -36,6 +38,12 @@ void *NewVirtualChunk(u64 sz, bool exec) {
     SYSTEM_INFO si;
     GetSystemInfo(&si);
     ag = si.dwAllocationGranularity;
+    /* TODO: something to do with DynamicCodePolicy */
+    PROCESS_MITIGATION_ASLR_POLICY aslr;
+    GetProcessMitigationPolicy(GetCurrentProcess(), ProcessASLRPolicy, &aslr,
+                               sizeof aslr);
+    if (!aslr.EnableBottomUpRandomization)
+      flags64 = MEM_TOP_DOWN;
   }
   if (exec) {
     /* thanks [1]. x86_64 trampolines sound interesting[2] */
@@ -51,14 +59,14 @@ void *NewVirtualChunk(u64 sz, bool exec) {
        */
       u64 addr = ALIGN((u64)mbi.BaseAddress, ag);
       if (mbi.State & MEM_FREE && sz <= region - addr) {
-        ret = ALLOC(addr, sz, PAGE_EXECUTE_READWRITE);
+        ret = ALLOC(addr, sz, MEM, PAGE_EXECUTE_READWRITE);
         cur = (u64)ret + sz;
         goto ret;
       }
     }
     ret = NULL;
   } else /* VirtualAlloc will return NULL on failure */
-    ret = ALLOC(NULL, sz, PAGE_READWRITE);
+    ret = ALLOC(NULL, sz, MEM | flags64, PAGE_READWRITE);
 ret:
   atomic_store_explicit(&running, false, memory_order_release);
   return ret;
