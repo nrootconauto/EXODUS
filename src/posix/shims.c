@@ -11,10 +11,21 @@
 #include <sys/mman.h>
 #include <sys/syscall.h>
 #include <unistd.h>
+/* clang-format off */
+#ifdef __FreeBSD__
+  #include <kvm.h>
+  #include <sys/param.h>
+  #include <sys/sysctl.h>
+  #include <sys/user.h>
+  #include <libprocstat.h>
+#endif
+/* clang-format on */
 
 #include <inttypes.h>
 #include <signal.h>
 #include <stdbool.h>
+#include <stdint.h>
+#include <stdio.h>
 #include <string.h>
 #include <time.h>
 
@@ -210,6 +221,78 @@ bool isvalidptr(void *p) {
    */
   u64 ptr = (u64)p & ~(pag - 1);
   return -1 != msync((void *)ptr, pag, MS_ASYNC);
+}
+
+/* Gets minimum address that's safely allocatable without overwriting anything
+ * premapped if such a thing exists.
+ * Linux: read /proc/self/maps, use sysctl vm.mmap_min_addr to get minimum addr
+ * FreeBSD: use libprocstat, there's no kernel lower limit to mmap, though
+ *          MAP_FIXED with 0 gave me an error
+ * (remarks: The FreeBSD way is bad for dumping data and getting a view, and
+ *           the Linux way maybe has some speed tradeoff)
+ * then with mmap_min_addr(Linux)/0x10000(FreeBSD) as the start pivot, we loop
+ * thrugh the mapped entries and see the last entry - ie, previous end is below
+ * max and current start is over max.
+ *
+ * What if there's something mapped just at the 31bit edge?
+ *   Tough luck, but I haven't seen anything that does that.
+ *   If anything it's around 0x400000 (on Fedora)
+ */
+u64 get31(void) {
+  u64 max = UINT32_MAX >> 1;
+#ifdef __linux__
+  int addrfd = open("/proc/sys/vm/mmap_min_addr", O_RDONLY), main(int, char **);
+  u64 ret;
+  /* mmap pivot, also minimum address if we don't find any maps
+   * in the lower 32 bits */
+  char buf[0x20];
+  buf[read(addrfd, buf, 0x1f)] = 0;
+  sscanf(buf, "%ju", &ret);
+  close(addrfd);
+  i64 readb;
+  /* ELF is mapped directly on its start address instead of using ASLR */
+  if ((u64)main < max) {
+    enum {
+      MAPSBUFSIZ = 0x8000
+    };
+    char maps[MAPSBUFSIZ], *s = maps;
+    int mapsfd = open("/proc/self/maps", O_RDONLY);
+    while ((readb = read(mapsfd, s, BUFSIZ)) > 0 && s - maps < MAPSBUFSIZ)
+      s += readb;
+    *s = 0;
+    close(mapsfd);
+    u64 start, end = 0, prev = ret;
+    s = maps;
+    while (true) {
+      if (end)
+        prev = end;
+      sscanf(s, "%jx-%jx", &start, &end);
+      if (prev < max && max <= start)
+        break;
+    }
+    ret = prev;
+  }
+  return ret;
+#elif defined(__FreeBSD__)
+  struct procstat *ps = procstat_open_sysctl();
+  /* FreeBSD mandates cnt to be unsigned int */
+  u32 cnt;
+  struct kinfo_proc *kproc =
+      procstat_getprocs(ps, KERN_PROC_PID, getpid(), &(u32){0});
+  struct kinfo_vmentry *vments = procstat_getvmmap(ps, kproc, &cnt), *e;
+  u64 prev = 0x10000;
+  for (u32 i = 0; i < cnt; i++) {
+    e = vments + i;
+    if (i)
+      prev = e[-1].kve_end;
+    if (prev < max && max <= e->kve_start)
+      break;
+  }
+  procstat_freeprocs(ps, kproc);
+  procstat_freevmmap(ps, vments);
+  procstat_close(ps);
+  return prev;
+#endif
 }
 
 /* CITATIONS:

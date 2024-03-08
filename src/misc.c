@@ -14,30 +14,32 @@
  * isalpha: Bt(char_bmp_alpha, c)
  * isalnum: Bt(char_bmp_alpha_numeric, c)
  * ... and so on */
-u32 char_bmp_hex_numeric[16] = {0x0000000, 0x03FF0000, 0x7E, 0x7E, 0, 0, 0, 0,
-                                0,         0,          0,    0,    0, 0, 0, 0},
-    char_bmp_alpha[16] = {0x0000000,  0x00000000, 0x87FFFFFF, 0x07FFFFFE,
-                          0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
-                          0,          0,          0,          0,
-                          0,          0,          0,          0},
+const u32 char_bmp_hex_numeric[16] = {0x0000000, 0x03FF0000, 0x7E, 0x7E, 0, 0,
+                                      0,         0,          0,    0,    0, 0,
+                                      0,         0,          0,    0},
+          char_bmp_alpha[16] = {0x0000000,  0x00000000, 0x87FFFFFF, 0x07FFFFFE,
+                                0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
+                                0,          0,          0,          0,
+                                0,          0,          0,          0},
 
-    char_bmp_alpha_numeric[16] = {0x0000000,  0x03FF0000, 0x87FFFFFF,
-                                  0x07FFFFFE, 0xFFFFFFFF, 0xFFFFFFFF,
-                                  0xFFFFFFFF, 0xFFFFFFFF, 0,
-                                  0,          0,          0,
-                                  0,          0,          0,
-                                  0},
-    char_bmp_dec_numeric[16] = {0x0000000, 0x03FF0000, 0, 0, 0, 0, 0, 0,
-                                0,         0,          0, 0, 0, 0, 0, 0};
+          char_bmp_alpha_numeric[16] = {0x0000000,  0x03FF0000, 0x87FFFFFF,
+                                        0x07FFFFFE, 0xFFFFFFFF, 0xFFFFFFFF,
+                                        0xFFFFFFFF, 0xFFFFFFFF, 0,
+                                        0,          0,          0,
+                                        0,          0,          0,
+                                        0},
+          char_bmp_dec_numeric[16] = {0x0000000, 0x03FF0000, 0, 0, 0, 0, 0, 0,
+                                      0,         0,          0, 0, 0, 0, 0, 0};
 
-__attribute__((naked)) u64 Bt(void *addr, u64 idx) {
-  asm("xor   %%rax,%%rax\n"
-      "bt    %1,(%0)\n"
-      "setc  %%al\n"
-      "ret\n"
+u64 Bt(void const *addr, u64 idx) {
+  register u64 ret asm("rax") = 0;
+  asm("xor   %%rax,%%rax\n\
+       bt    %[idx],(%[addr])\n\
+       setc  %%al\n"
       :
-      : "r"(addr), "r"(idx)
+      : [addr] "r"(addr), [idx] "r"(idx)
       : "rax");
+  return ret;
 }
 
 char *stpcpy2(char *restrict dst, char const *src) {

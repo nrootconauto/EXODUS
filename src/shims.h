@@ -32,7 +32,12 @@ u64 mp_cnt(void);
 void unblocksigs(void);
 bool seekfd(int fd, i64 off);
 bool isvalidptr(void *p);
+#ifdef _WIN32
 void handlectrlc(void);
+#else
+/* Get safely allocatable region in lower 31 bits of memory */
+u64 get31(void);
+#endif
 
 /*═════════════════════════════════════════════════════════════════════════════╡
 │ EXODUS: Executable Divine Operating System in Userspace                      │

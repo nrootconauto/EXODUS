@@ -19,8 +19,8 @@
 
 /* ctype.h routines
  * Bt(bitmapname, c) */
-u64 Bt(void *addr, u64 idx);
-extern u32 char_bmp_hex_numeric[16], char_bmp_alpha[16],
+u64 Bt(void const *addr, u64 idx);
+extern const u32 char_bmp_hex_numeric[16], char_bmp_alpha[16],
     char_bmp_alpha_numeric[16], char_bmp_dec_numeric[16];
 
 /* TOS DEFINES */

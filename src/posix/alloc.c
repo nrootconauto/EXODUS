@@ -12,29 +12,30 @@
 #include <stdatomic.h>
 #include <stdbool.h>
 #include <stdint.h>
-#include <stdio.h>
 
 #include "alloc.h"
 #include "misc.h"
+#include "shims.h"
 #include "types.h"
 
 // log2(to) == 0
-#define ALIGN(x, to)                (x + to - 1) & ~(to - 1)
+#define ALIGN(x, to)                ((x + to - 1) & ~(to - 1))
 #define PROT                        PROT_READ | PROT_WRITE
 #define FLAGS                       MAP_PRIVATE | MAP_ANON
 #define MMAP(hint, sz, prot, flags) mmap((void *)(hint), sz, prot, flags, -1, 0)
 
-#define STARTADDR (u8 *)0x10000 // reasonable start address for bump allocation
 void *NewVirtualChunk(u64 sz, bool exec) {
   static _Atomic(bool) running;
-  static u64 pagsz;
-  static u8 *cur = STARTADDR;
-  u8 *const max = (u8 *)(UINT32_MAX >> 1);
+  static bool init;
+  static u64 pagsz, cur, max = UINT32_MAX >> 1;
   while (atomic_exchange_explicit(&running, true, memory_order_acquire))
     while (atomic_load_explicit(&running, memory_order_relaxed))
       __builtin_ia32_pause();
-  if (!pagsz)
+  if (veryunlikely(!init)) {
     pagsz = sysconf(_SC_PAGESIZE);
+    cur = ALIGN(get31(), pagsz);
+    init = true;
+  }
   sz = ALIGN(sz, pagsz);
   u8 *ret;
   if (exec) {
@@ -42,20 +43,12 @@ void *NewVirtualChunk(u64 sz, bool exec) {
       ret = NULL;
       goto ret;
     }
-    if (veryunlikely(cur == STARTADDR)) {
-      /* Set the starting pivot of allocation.
-       * After this we simply keep bumping */
-      ret = MMAP(cur, sz, PROT | PROT_EXEC, FLAGS);
-    } else {
-      /* mmaping an address overlapping with the brk heap doesn't seem to fail
-       * (TODO: why?) */
-      ret = MMAP(cur, sz, PROT | PROT_EXEC, FLAGS | MAP_FIXED);
-    }
+    ret = MMAP(cur, sz, PROT | PROT_EXEC, FLAGS | MAP_FIXED);
     if (veryunlikely(ret == MAP_FAILED)) {
       ret = NULL;
       goto ret;
     }
-    cur = ret + sz;
+    cur = (u64)ret + sz;
   } else {
     ret = MMAP(NULL, sz, PROT, FLAGS);
     if (veryunlikely(ret == MAP_FAILED))

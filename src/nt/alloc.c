@@ -21,7 +21,7 @@
 #include "misc.h"
 #include "types.h"
 
-#define ALIGN(x, to) (x + to - 1) & ~(to - 1)
+#define ALIGN(x, to) ((x + to - 1) & ~(to - 1))
 #define MEM          MEM_RESERVE | MEM_COMMIT
 #define ALLOC(addr, sz, mem, pagflags) \
   VirtualAlloc((void *)addr, sz, mem, pagflags)

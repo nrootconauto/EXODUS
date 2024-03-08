@@ -153,6 +153,9 @@ if (CMAKE_SYSTEM_NAME STREQUAL "Linux" OR
     CMAKE_SYSTEM_NAME STREQUAL "FreeBSD")
   find_package(Threads REQUIRED)
   target_link_libraries(${PROJECT_NAME} PRIVATE Threads::Threads)
+  if (CMAKE_SYSTEM_NAME STREQUAL "FreeBSD")
+    target_link_libraries(${PROJECT_NAME} PRIVATE procstat)
+  endif ()
 elseif (WIN32)
   target_link_libraries(${PROJECT_NAME} PRIVATE
     ws2_32 synchronization shlwapi shcore dbghelp winmm -static)
