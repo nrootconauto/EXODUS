@@ -281,7 +281,7 @@ u64 get31(void) {
       procstat_getprocs(ps, KERN_PROC_PID, getpid(), &(u32){0});
   struct kinfo_vmentry *vments = procstat_getvmmap(ps, kproc, &cnt), *e;
   u64 prev = 0x10000;
-  for (e = vments; c != vments + cnt; e++) {
+  for (e = vments; e != vments + cnt; e++) {
     if (prev < max && max <= e->kve_start)
       break;
     prev = e->kve_end;
