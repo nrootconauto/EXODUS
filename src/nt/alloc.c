@@ -17,9 +17,9 @@
 #include <stdint.h>
 #include <stdlib.h>
 
-#include "alloc.h"
-#include "misc.h"
-#include "types.h"
+#include "../alloc.h"
+#include "../misc.h"
+#include "../types.h"
 
 #define ALIGN(x, to) ((x + to - 1) & ~(to - 1))
 #define MEM          MEM_RESERVE | MEM_COMMIT

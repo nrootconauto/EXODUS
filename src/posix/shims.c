@@ -31,10 +31,10 @@
 
 #include "vendor/vec.h"
 
-#include "ffi.h"
-#include "misc.h"
-#include "shims.h"
-#include "types.h"
+#include "../ffi.h"
+#include "../misc.h"
+#include "../shims.h"
+#include "../types.h"
 
 noret void terminate(int i) {
   _Exit(i);

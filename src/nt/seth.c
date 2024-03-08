@@ -19,13 +19,13 @@
 
 #include "tos_callconv.h"
 
-#include "dbg.h"
-#include "main.h"
-#include "misc.h"
-#include "seth.h"
-#include "shims.h"
-#include "tos_aot.h"
-#include "vfs.h"
+#include "../dbg.h"
+#include "../main.h"
+#include "../misc.h"
+#include "../seth.h"
+#include "../shims.h"
+#include "../tos_aot.h"
+#include "../vfs.h"
 
 typedef struct {
   HANDLE thread, event, mtx;

@@ -13,10 +13,10 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#include "alloc.h"
-#include "misc.h"
-#include "shims.h"
-#include "types.h"
+#include "../alloc.h"
+#include "../misc.h"
+#include "../shims.h"
+#include "../types.h"
 
 // log2(to) == 0
 #define ALIGN(x, to)                ((x + to - 1) & ~(to - 1))

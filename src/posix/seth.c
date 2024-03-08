@@ -25,14 +25,14 @@
 #include "tos_callconv.h"
 #include "vendor/vec.h"
 
-#include "dbg.h"
-#include "ffi.h"
-#include "main.h"
-#include "misc.h"
-#include "seth.h"
-#include "tos_aot.h"
-#include "types.h"
-#include "vfs.h"
+#include "../dbg.h"
+#include "../ffi.h"
+#include "../main.h"
+#include "../misc.h"
+#include "../seth.h"
+#include "../tos_aot.h"
+#include "../types.h"
+#include "../vfs.h"
 
 typedef struct {
   pthread_t thread;

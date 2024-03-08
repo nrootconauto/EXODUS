@@ -16,12 +16,11 @@
 
 #include "vendor/map.h"
 
-#include "backtrace.h"
-#include "dbg.h"
-#include "tos_aot.h"
-
-#include "misc.h"
-#include "types.h"
+#include "../backtrace.h"
+#include "../dbg.h"
+#include "../misc.h"
+#include "../tos_aot.h"
+#include "../types.h"
 
 static void routine(int sig, argign siginfo_t *siginfo, void *_ctx) {
   /* Block signals temporarily.

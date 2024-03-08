@@ -30,9 +30,9 @@
 
 #include "vendor/vec.h"
 
-#include "ffi.h"
-#include "misc.h"
-#include "shims.h"
+#include "../ffi.h"
+#include "../misc.h"
+#include "../shims.h"
 
 noret void terminate(int i) {
   TerminateProcess(GetCurrentProcess(), i);

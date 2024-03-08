@@ -11,11 +11,11 @@
 
 #include "tos_callconv.h"
 
-#include "backtrace.h"
-#include "dbg.h"
-#include "ffi.h"
-#include "tos_aot.h"
-#include "types.h"
+#include "../backtrace.h"
+#include "../dbg.h"
+#include "../ffi.h"
+#include "../tos_aot.h"
+#include "../types.h"
 
 static LONG WINAPI VEHandler(struct _EXCEPTION_POINTERS *info) {
   u64 sig;
