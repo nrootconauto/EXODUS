@@ -241,7 +241,7 @@ bool isvalidptr(void *p) {
 u64 get31(void) {
   u64 max = UINT32_MAX >> 1;
 #ifdef __linux__
-  int addrfd = open("/proc/sys/vm/mmap_min_addr", O_RDONLY), main(int, char **);
+  int addrfd = open("/proc/sys/vm/mmap_min_addr", O_RDONLY);
   u64 ret;
   /* mmap pivot, also minimum address if we don't find any maps
    * in the lower 32 bits */
@@ -250,30 +250,27 @@ u64 get31(void) {
   sscanf(buf, "%ju", &ret);
   close(addrfd);
   i64 readb;
-  /* ELF is mapped directly on its start address instead of using ASLR */
-  if ((u64)main < max) {
-    enum {
-      MAPSBUFSIZ = 0x8000
-    };
-    char maps[MAPSBUFSIZ], *s = maps;
-    int mapsfd = open("/proc/self/maps", O_RDONLY);
-    while ((readb = read(mapsfd, s, BUFSIZ)) > 0 && s - maps < MAPSBUFSIZ)
-      s += readb;
-    *s = 0;
-    close(mapsfd);
-    u64 start, end = 0, prev = ret;
-    s = maps;
-    while (true) {
-      if (end)
-        prev = end;
-      sscanf(s, "%jx-%jx", &start, &end);
-      if (prev < max && max <= start)
-        break;
-      /* We won't hit a null before a newline or finding something anyway */
-      while (*s++ != '\n')
-        ;
+  enum {
+    MAPSBUFSIZ = 0x8000
+  };
+  char maps[MAPSBUFSIZ], *s = maps;
+  int mapsfd = open("/proc/self/maps", O_RDONLY);
+  while ((readb = read(mapsfd, s, BUFSIZ)) > 0 && s - maps < MAPSBUFSIZ)
+    s += readb;
+  *s = 0;
+  close(mapsfd);
+  u64 start, end = 0, prev = ret;
+  s = maps;
+  while (true) {
+    sscanf(s, "%jx-%jx", &start, &end);
+    if (prev < max && max <= start) {
+      ret = prev;
+      break;
     }
-    ret = prev;
+    prev = end;
+    /* We won't hit a null before a newline or finding something anyway */
+    while (*s++ != '\n')
+      ;
   }
   return ret;
 #elif defined(__FreeBSD__)
@@ -284,12 +281,10 @@ u64 get31(void) {
       procstat_getprocs(ps, KERN_PROC_PID, getpid(), &(u32){0});
   struct kinfo_vmentry *vments = procstat_getvmmap(ps, kproc, &cnt), *e;
   u64 prev = 0x10000;
-  for (u32 i = 0; i < cnt; i++) {
-    e = vments + i;
-    if (i)
-      prev = e[-1].kve_end;
+  for (e = vments; c != vments + cnt; e++) {
     if (prev < max && max <= e->kve_start)
       break;
+    prev = e->kve_end;
   }
   procstat_freeprocs(ps, kproc);
   procstat_freevmmap(ps, vments);
