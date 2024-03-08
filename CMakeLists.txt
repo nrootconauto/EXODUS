@@ -40,41 +40,7 @@ if (NOT ARCH MATCHES "x86_64")
   message(FATAL_ERROR "Only supports x86_64")
 endif ()
 
-set(SRC_FILES
-  src/sound.c
-  src/misc.c
-  src/main.c
-  src/sdl_window.c
-  src/tos_aot.c
-  src/ffi.c
-  src/tosprint.c
-  src/vfs.c
-  src/backtrace.c
-  src/misc.c)
-
-if (CMAKE_SYSTEM_NAME STREQUAL "Linux" OR
-    CMAKE_SYSTEM_NAME STREQUAL "FreeBSD")
-  set(OS_DIR "posix")
-elseif (WIN32)
-  set(OS_DIR "nt")
-else ()
-  message(FATAL_ERROR "Unsupported system")
-endif ()
-
-list(APPEND SRC_FILES
-  "src/${OS_DIR}/alloc.c"
-  "src/${OS_DIR}/dbg.c"
-  "src/${OS_DIR}/seth.c"
-  "src/${OS_DIR}/shims.c"
-)
-
-set_source_files_properties(${SRC_FILES}
-  PROPERTIES
-    LANGUAGE C
-    COMPILE_FLAGS "-Werror=implicit-function-declaration"
-)
-
-add_executable(${PROJECT_NAME} ${SRC_FILES})
+add_subdirectory(src)
 
 if (CMAKE_BUILD_TYPE STREQUAL "MinSizeRel")
   set_target_properties(${PROJECT_NAME}
@@ -123,9 +89,7 @@ endif ()
 target_include_directories(${PROJECT_NAME} PRIVATE ${SDL2_INCLUDE_DIRS})
 target_link_libraries(${PROJECT_NAME} PRIVATE SDL2::SDL2)
 
-target_include_directories(${PROJECT_NAME}
-  PRIVATE
-    "${CMAKE_CURRENT_SOURCE_DIR}")
+target_include_directories(${PROJECT_NAME} PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}")
 
 add_subdirectory(asm)
 add_subdirectory(vendor)

@@ -22,7 +22,7 @@ add_library(argtable3
 
 add_library(isocline
   STATIC
-  ${CMAKE_CURRENT_SOURCE_DIR}/isocline/src/isocline.c
+  ${CMAKE_CURRENT_SOURCE_DIR}/isocline/isocline.c
 )
 
 
@@ -61,6 +61,4 @@ target_link_libraries(isocline  PRIVATE c_opts)
 target_link_libraries(${PROJECT_NAME} PRIVATE dyad argtable3 vec isocline map)
 target_include_directories(${PROJECT_NAME}
   PRIVATE
-    "${CMAKE_CURRENT_SOURCE_DIR}"
-    "${CMAKE_CURRENT_SOURCE_DIR}/isocline/include"
-)
+    "${CMAKE_CURRENT_SOURCE_DIR}")
