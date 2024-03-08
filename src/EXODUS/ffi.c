@@ -8,9 +8,9 @@
 #include <string.h>
 #include <time.h>
 
-#include <vendor/isocline.h>
 #include <tos_callconv.h>
 #include <vendor/dyad.h>
+#include <vendor/isocline.h>
 
 #include <EXODUS/alloc.h>
 #include <EXODUS/main.h>

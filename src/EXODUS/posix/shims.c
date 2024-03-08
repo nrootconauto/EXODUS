@@ -269,6 +269,9 @@ u64 get31(void) {
       sscanf(s, "%jx-%jx", &start, &end);
       if (prev < max && max <= start)
         break;
+      /* We won't hit a null before a newline or finding something anyway */
+      while (*s++ != '\n')
+        ;
     }
     ret = prev;
   }

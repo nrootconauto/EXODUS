@@ -10,9 +10,9 @@
 #include <string.h>
 
 #include <EXODUS/alloc.h>
+#include <EXODUS/misc.h>
 #include <EXODUS/shims.h>
 #include <EXODUS/tos_aot.h>
-#include <EXODUS/misc.h>
 
 #include <vendor/map.h>
 #include <vendor/vec.h>

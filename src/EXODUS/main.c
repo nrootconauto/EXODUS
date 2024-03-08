@@ -15,8 +15,8 @@
 
 #include <tos_callconv.h>
 
-#include <vendor/isocline.h>
 #include <vendor/argtable3.h>
+#include <vendor/isocline.h>
 
 #include <EXODUS/dbg.h>
 #include <EXODUS/ffi.h>
@@ -28,7 +28,6 @@
 #include <EXODUS/sound.h>
 #include <EXODUS/tos_aot.h>
 #include <EXODUS/vfs.h>
-
 
 static char bin_path[0x400], *boot_str;
 __attribute__((constructor)) static void init(void) {
