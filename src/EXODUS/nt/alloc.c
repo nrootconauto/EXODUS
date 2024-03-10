@@ -24,13 +24,14 @@
 // popcnt(to) == 1
 #define ALIGN(x, to) ((x + to - 1) & ~(to - 1))
 #define MEM          MEM_RESERVE | MEM_COMMIT
-#define ALLOC(addr, sz, mem, pagflags) \
-  VirtualAlloc((void *)addr, sz, mem, pagflags)
+#define ALLOC(addr, sz, pagflags) \
+  VirtualAlloc((void *)addr, sz, vflags, pagflags)
 
 void *NewVirtualChunk(u64 sz, bool exec) {
   static _Atomic(bool) running;
   static bool init;
-  static u64 ag, flags64, cur = 0x10000, max = UINT32_MAX >> 1;
+  static u64 ag, cur = 0x10000, max = UINT32_MAX >> 1;
+  static DWORD vflags = MEM_RESERVE | MEM_COMMIT;
   void *ret;
   while (atomic_exchange_explicit(&running, true, memory_order_acquire))
     while (atomic_load_explicit(&running, memory_order_relaxed))
@@ -44,7 +45,7 @@ void *NewVirtualChunk(u64 sz, bool exec) {
     /* If DEP is disabled, don't let RW pages pile on RWX pages to save space */
     GetProcessMitigationPolicy(proc, ProcessASLRPolicy, &aslr, sizeof aslr);
     if (!aslr.EnableBottomUpRandomization)
-      flags64 = MEM_TOP_DOWN;
+      vflags |= MEM_TOP_DOWN;
     PROCESS_MITIGATION_DYNAMIC_CODE_POLICY wxallowed;
     /* Disable ACG */
     GetProcessMitigationPolicy(proc, ProcessDynamicCodePolicy, &wxallowed,
@@ -70,14 +71,14 @@ void *NewVirtualChunk(u64 sz, bool exec) {
        */
       u64 addr = ALIGN((u64)mbi.BaseAddress, ag);
       if (mbi.State & MEM_FREE && sz <= region - addr) {
-        ret = ALLOC(addr, sz, MEM, PAGE_EXECUTE_READWRITE);
+        ret = ALLOC(addr, sz, PAGE_EXECUTE_READWRITE);
         cur = (u64)ret + sz;
         goto ret;
       }
     }
     ret = NULL;
   } else /* VirtualAlloc will return NULL on failure */
-    ret = ALLOC(NULL, sz, MEM | flags64, PAGE_READWRITE);
+    ret = ALLOC(NULL, sz, PAGE_READWRITE);
 ret:
   atomic_store_explicit(&running, false, memory_order_release);
   return ret;
