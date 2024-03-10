@@ -4,7 +4,6 @@
 │                                                                              │
 │ See end of file for extended copyright information and citations.            │
 ╚─────────────────────────────────────────────────────────────────────────────*/
-#include <inttypes.h>
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -62,6 +61,7 @@ static i64 unescapestr(char *str, char *where) {
 }
 
 /*
+ * Could've used normal snprintf here but this is cooler
  * (excerpt from his notes)
  * ----09/19/13 18:14:38----
  *
@@ -87,10 +87,7 @@ static int fmtfloat(char *s, u64 buflen, double f, int _prec) {
   i64 prec = pow(10, _prec);
   i64 integ = f, dec = f * prec;
   dec -= integ * prec;
-  /* The C standard mandates labs() to take a long, but Windows uses
-   * long long for 64-bit integers. As a result I am forced to cast it to
-   * long and use %ld for the compiler to shut the fuck up */
-  return snprintf(s, buflen, "%" PRIi64 ".%ld", integ, labs((long)dec));
+  return snprintf(s, buflen, "%ji.%ji", integ, imaxabs(dec));
 }
 
 static vec_char_t MStrPrint(char const *fmt, argign u64 argc, i64 *argv) {
@@ -130,25 +127,21 @@ static vec_char_t MStrPrint(char const *fmt, argign u64 argc, i64 *argv) {
         ++start;
       }
     }
-#define FmtTyp(fmt, T)                   \
-  do {                                   \
-    union {                              \
-      T t;                               \
-      i64 i;                             \
-    } u = {.i = argv[arg]};              \
-    snprintf(buf, sizeof buf, fmt, u.t); \
-    vec_pusharr(&ret, buf, strlen(buf)); \
+#define FmtTyp(fmt, T)                                \
+  do {                                                \
+    snprintf(buf, sizeof buf, fmt, ((T *)argv)[arg]); \
+    vec_pusharr(&ret, buf, strlen(buf));              \
   } while (0)
     switch (*start) {
     case 'd':
     case 'i':
-      FmtTyp("%" PRId64, i64);
+      FmtTyp("%ji", i64);
       break;
     case 'u':
-      FmtTyp("%" PRIu64, u64);
+      FmtTyp("%ju", u64);
       break;
     case 'x':
-      FmtTyp("%" PRIx64, u64);
+      FmtTyp("%jx", u64);
       break;
     case 'f':
     case 'n': {
@@ -156,8 +149,9 @@ static vec_char_t MStrPrint(char const *fmt, argign u64 argc, i64 *argv) {
         f64 f;
         i64 i;
       } u = {.i = argv[arg]};
-      /* 7: ansf precision in TempleOS */
-      fmtfloat(buf, sizeof buf, 7, u.f);
+      /* 6: ansf precision in TempleOS */
+      fmtfloat(buf, sizeof buf, u.f, 7);
+      vec_pusharr(&ret, buf, strlen(buf));
     } break;
     case 'p':
       FmtTyp("%p", void *);
@@ -165,14 +159,14 @@ static vec_char_t MStrPrint(char const *fmt, argign u64 argc, i64 *argv) {
     case 'c': {
       /* HolyC has multichar literals (e.g. 'abcdefg')
        * so we need to stamp it out in a string */
-      char *tmp = ((char **)argv)[arg];
+      char *tmp = (char *)&argv[arg];
       u64 len = strlen(tmp);
       while (--aux >= 0)
         vec_pusharr(&ret, tmp, len);
     } break;
     case 's': {
       char *tmp = ((char **)argv)[arg];
-      u64 len = strlen((char *)&argv[arg]);
+      u64 len = strlen(tmp);
       while (--aux >= 0)
         vec_pusharr(&ret, tmp, len);
     } break;

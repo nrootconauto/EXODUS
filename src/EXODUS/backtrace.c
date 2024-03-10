@@ -4,7 +4,6 @@
 │                                                                              │
 │ See end of file for extended copyright information and citations.            │
 ╚─────────────────────────────────────────────────────────────────────────────*/
-#include <inttypes.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -61,8 +60,7 @@ void BackTrace(u64 _rbp, u64 _rip) {
          * 1) stack corruption
          * 2) some jit'd user cmd line code */
         /* function name [function addr+offset from rip] (%rip) */
-        flushprint(stderr, "%s [%p+%#" PRIx64 "] (%p)\n", last, ptr, ptr - oldp,
-                   curp);
+        flushprint(stderr, "%s [%p+%#jx] (%p)\n", last, ptr, ptr - oldp, curp);
         goto next;
       }
       oldp = curp;
