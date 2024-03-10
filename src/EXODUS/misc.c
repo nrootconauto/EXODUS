@@ -13,7 +13,9 @@
 /* ctype.h
  * isalpha: Bt(char_bmp_alpha, c)
  * isalnum: Bt(char_bmp_alpha_numeric, c)
- * ... and so on */
+ * ... and so on
+ * Why? I wanted to be sort of orthodox in my code (and failed) and I thought
+ * using BT for ctype routines was really cool. */
 const u32 char_bmp_hex_numeric[16] = {0x0000000, 0x03FF0000, 0x7E, 0x7E, 0, 0,
                                       0,         0,          0,    0,    0, 0,
                                       0,         0,          0,    0},

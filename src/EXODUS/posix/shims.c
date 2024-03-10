@@ -283,8 +283,10 @@ u64 get31(void) {
     }
     prev = end;
     s = strchr(s, '\n');
+    /* always {prev,start} < max. prev >= max can't happen
+     * This means there's nothing mapped in >32bits (practically impossible) */
     if (!s)
-      break;
+      return start;
   }
   return ret;
 #elif defined(__FreeBSD__)
