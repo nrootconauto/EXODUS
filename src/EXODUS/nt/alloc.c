@@ -4,7 +4,7 @@
 │                                                                              │
 │ See end of file for extended copyright information and citations.            │
 ╚─────────────────────────────────────────────────────────────────────────────*/
-#define _WIN32_WINNT 0x0602 /* [3] (GetProcessMitigationPolicy) */
+#define _WIN32_WINNT 0x0602 /* [2] (GetProcessMitigationPolicy) */
 #include <windows.h>
 #include <memoryapi.h>
 #include <processthreadsapi.h>
@@ -21,6 +21,7 @@
 #include <EXODUS/misc.h>
 #include <EXODUS/types.h>
 
+// popcnt(to) == 1
 #define ALIGN(x, to) ((x + to - 1) & ~(to - 1))
 #define MEM          MEM_RESERVE | MEM_COMMIT
 #define ALLOC(addr, sz, mem, pagflags) \
@@ -29,8 +30,7 @@
 void *NewVirtualChunk(u64 sz, bool exec) {
   static _Atomic(bool) running;
   static bool init;
-  static u64 ag, flags64, cur = 0x10000;
-  const u64 max = UINT32_MAX >> 1;
+  static u64 ag, flags64, cur = 0x10000, max = UINT32_MAX >> 1;
   void *ret;
   while (atomic_exchange_explicit(&running, true, memory_order_acquire))
     while (atomic_load_explicit(&running, memory_order_relaxed))
@@ -41,10 +41,12 @@ void *NewVirtualChunk(u64 sz, bool exec) {
     ag = si.dwAllocationGranularity;
     HANDLE proc = GetCurrentProcess();
     PROCESS_MITIGATION_ASLR_POLICY aslr;
+    /* If DEP is disabled, don't let RW pages pile on RWX pages to save space */
     GetProcessMitigationPolicy(proc, ProcessASLRPolicy, &aslr, sizeof aslr);
     if (!aslr.EnableBottomUpRandomization)
       flags64 = MEM_TOP_DOWN;
     PROCESS_MITIGATION_DYNAMIC_CODE_POLICY wxallowed;
+    /* Disable ACG */
     GetProcessMitigationPolicy(proc, ProcessDynamicCodePolicy, &wxallowed,
                                sizeof wxallowed);
     wxallowed.ProhibitDynamicCode = 0;
@@ -53,7 +55,9 @@ void *NewVirtualChunk(u64 sz, bool exec) {
     init = true;
   }
   if (exec) {
-    /* thanks [1]. x86_64 trampolines sound interesting[2] */
+    /* thanks [1].
+     * Climbs up from a low address and queries the memory region,
+     * checks for size and availability, rinse and repeat */
     MEMORY_BASIC_INFORMATION mbi;
     u64 region = cur;
     while (verylikely(region <= max) &&
@@ -85,8 +89,7 @@ void FreeVirtualChunk(void *ptr, argign u64 sz) {
 
 /* CITATIONS:
  * [1] https://stackoverflow.com/a/54732489 (https://archive.md/ugIUC)
- * [2] https://www.ragestorm.net/blogs/?p=107 (https://archive.md/lR0Mn)
- * [3]
+ * [2]
  * https://learn.microsoft.com/en-us/cpp/porting/modifying-winver-and-win32-winnt?view=msvc-170
  *     (https://archive.is/1VQzm)
  */

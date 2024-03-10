@@ -183,7 +183,7 @@ vec_void_t LoadHCRT(char const *name) {
     terminate(1);
   }
   int fd = openfd(name, false);
-  if (veryunlikely(fd == -1)) {
+  if (fd == -1) {
     flushprint(stderr, "Can't open \"%s\"\n", name);
     terminate(1);
   }

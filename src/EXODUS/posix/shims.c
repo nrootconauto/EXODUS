@@ -11,16 +11,13 @@
 #include <sys/mman.h>
 #include <sys/syscall.h>
 #include <unistd.h>
-/* clang-format off
- * Headers must specifically be in this order */
 #ifdef __FreeBSD__
   #include <kvm.h>
-  #include <libprocstat.h>
   #include <sys/param.h>
   #include <sys/sysctl.h>
   #include <sys/user.h>
+  #include <libprocstat.h>
 #endif
-/* clang-format on */
 
 #include <inttypes.h>
 #include <signal.h>
@@ -261,7 +258,8 @@ u64 get31(void) {
   int addrfd = open("/proc/sys/vm/mmap_min_addr", O_RDONLY);
   u64 ret;
   /* mmap pivot, also minimum address if we don't find any maps
-   * in the lower 32 bits */
+   * in the lower 32 bits
+   * mmap_min_addr is a number, 0x1f is more than enough */
   char buf[0x20];
   buf[read(addrfd, buf, 0x1f)] = 0;
   sscanf(buf, "%ju", &ret);
@@ -277,17 +275,16 @@ u64 get31(void) {
   *s = 0;
   close(mapsfd);
   u64 start, end, prev = ret;
-  s = maps;
-  while (true) {
+  for (s = maps;; s++) {
     sscanf(s, "%jx-%jx", &start, &end);
     if (prev < max && max <= start) {
       ret = prev;
       break;
     }
     prev = end;
-    /* We won't hit a null before a newline or finding something anyway */
-    while (*s++ != '\n')
-      ;
+    s = strchr(s, '\n');
+    if (!s)
+      break;
   }
   return ret;
 #elif defined(__FreeBSD__)

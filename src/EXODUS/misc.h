@@ -53,6 +53,8 @@ void _dtor(void *_p);
     XRes > YRes ? XRes : YRes; \
   })
 
+#define Arrlen(a) (sizeof a / sizeof a[0])
+
 #ifndef NDEBUG
   #define Unreachable()                                                       \
     do {                                                                      \

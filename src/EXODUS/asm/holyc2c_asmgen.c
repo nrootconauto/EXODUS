@@ -10,7 +10,7 @@
 #define NARGS 9
 
 #ifdef _WIN32
-#include <direct.h>
+  #include <direct.h>
 static char *savedregs[] = {"rbx", "rdi", "rsi", "r12", "r13", "r14", "r15"};
 static char *argregs[] = {"rcx", "rdx", "r8", "r9"};
   /* STK ARGS START FROM RBP+0x30 [1]
@@ -23,17 +23,18 @@ static char *argregs[] = {"rcx", "rdx", "r8", "r9"};
    *          rbp
    */
   #define STARTSTKARG 0x30
-  #define mkdir(a,b) _mkdir(a)
+  #define mkdir(a, b) _mkdir(a)
 #else
-#include <sys/stat.h>
+  #include <sys/stat.h>
 static char *savedregs[] = {"rbx", "r12", "r13", "r14", "r15"};
 static char *argregs[] = {"rdi", "rsi", "rdx", "rcx", "r8", "r9"};
 // STARTS STK ARGS FROM RBP+0x10
   #define STARTSTKARG 0x10
 #endif
+#define Arrlen(a) (sizeof a / sizeof a[0])
 enum {
-  SavedRegs = sizeof savedregs / sizeof savedregs[0],
-  ArgRegs = sizeof argregs / sizeof argregs[0],
+  SavedRegs = Arrlen(savedregs),
+  ArgRegs = Arrlen(argregs),
 };
 
 static void preludeasm(FILE *fp) {

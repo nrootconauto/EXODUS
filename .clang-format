@@ -23,11 +23,17 @@ BinPackParameters: true
 IndentPPDirectives: BeforeHash
 IndentCaseLabels: false
 IncludeCategories: [
-  {Regex: '<winsock.*\.h>', Priority: -3},
-  {Regex: '<windows\.h>'  , Priority: -2},
-  {Regex: '<winbase\.h>'  , Priority: -1},
-  {Regex: '<win.*\.h>'    , Priority:  0},
-  {Regex: '<sys/types\.h>', Priority:  1},
-  {Regex: '<sys/stat\.h>', Priority:   2},
+  {Regex: '<winsock.*\.h>'  , Priority:  -3},
+  {Regex: '<windows\.h>'    , Priority:  -2},
+  {Regex: '<winbase\.h>'    , Priority:  -1},
+  {Regex: '<win.*\.h>'      , Priority:  0},
+  {Regex: '<sys/types\.h>'  , Priority:  1},
+  {Regex: '<sys/stat\.h>'   , Priority:  2},
+# FreeBSD has zero header hygiene
+  {Regex: '<kvm\.h>'        , Priority:  3},
+  {Regex: '<sys/param\.h>'  , Priority:  4},
+  {Regex: '<sys/sysctl\.h>' , Priority:  5},
+  {Regex: '<sys/user\.h>'   , Priority:  6},
+  {Regex: '<libprocstat\.h>', Priority:  7},
 ]
 ...

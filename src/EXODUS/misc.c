@@ -36,8 +36,8 @@ u64 Bt(void const *addr, u64 idx) {
   asm("bt    %[idx],(%[addr])\n"
       "setc  %%al\n"
       "movzx %%al,%[ret]\n"
-      : [ret]"=r"(ret)
-      : [addr]"r"(addr), [idx]"r"(idx)
+      : [ret] "=r"(ret)
+      : [addr] "r"(addr), [idx] "r"(idx)
       : "rax");
   return ret;
 }

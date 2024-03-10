@@ -68,7 +68,7 @@ void SetupDebugger(void) {
   };
   sigemptyset(&sa.sa_mask);
   int const sigs[] = {SIGTRAP, SIGBUS, SIGSEGV, SIGPIPE, SIGILL};
-  for (u64 i = 0; i < sizeof sigs / sizeof sigs[0]; i++)
+  for (u64 i = 0; i < Arrlen(sigs); i++)
     sigaction(sigs[i], &sa, NULL);
 }
 

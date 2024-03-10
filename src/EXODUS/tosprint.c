@@ -162,23 +162,20 @@ static vec_char_t MStrPrint(char const *fmt, argign u64 argc, i64 *argv) {
     case 'p':
       FmtTyp("%p", void *);
       break;
-    case 'c':
+    case 'c': {
       /* HolyC has multichar literals (e.g. 'abcdefg')
        * so we need to stamp it out in a string */
-      while (--aux >= 0) {
-        union {
-          char s[9];
-          i64 i;
-        } u = {.i = argv[arg]};
-        vec_pusharr(&ret, u.s, strlen(u.s));
-      }
-      break;
-    case 's':
-      while (--aux >= 0) {
-        char *tmp = ((char **)argv)[arg];
-        vec_pusharr(&ret, tmp, strlen(tmp));
-      }
-      break;
+      char *tmp = ((char **)argv)[arg];
+      u64 len = strlen(tmp);
+      while (--aux >= 0)
+        vec_pusharr(&ret, tmp, len);
+    } break;
+    case 's': {
+      char *tmp = ((char **)argv)[arg];
+      u64 len = strlen((char *)&argv[arg]);
+      while (--aux >= 0)
+        vec_pusharr(&ret, tmp, len);
+    } break;
     case 'q': {
       char *str = ((char **)argv)[arg];
       i64 escsz = unescapestr(str, NULL);

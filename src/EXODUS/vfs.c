@@ -38,7 +38,7 @@ void VFsThrdInit(void) {
 void VFsSetDrv(u8 d) {
   if (veryunlikely(!Bt(char_bmp_alpha, d)))
     return;
-  thrd_drv = d & ~0x20;
+  thrd_drv = toupper(d);
 }
 
 u8 VFsGetDrv(void) {
@@ -51,6 +51,7 @@ void VFsSetPwd(char const *pwd) {
 
 bool VFsDirMk(char const *to) {
   char cleanup(_dtor) *p = VFsFNameAbs(to);
+  /* Poor man's tuple matcher */
   switch ((isdir(p) << 1) | fexists(p)) {
   case 0b11:
     return true;
@@ -148,7 +149,7 @@ bool VFsFExists(char const *path) {
 void VFsMountDrive(u8 let, char const *path) {
   if (veryunlikely(!Bt(char_bmp_alpha, let)))
     return;
-  strcpy(mount_points[(let | 0x20) - 'a'], path);
+  strcpy(mount_points[toupper(let) - 'A'], path);
 }
 
 /*═════════════════════════════════════════════════════════════════════════════╡

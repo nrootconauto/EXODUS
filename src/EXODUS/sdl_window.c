@@ -260,7 +260,7 @@ static u8 keytab[256] = {
 };
 
 u64 keymap(u8 ch) {
-  for (u64 i = 0; i < sizeof keymap / sizeof keytab[0]; ++i)
+  for (u64 i = 0; i < Arrlen(keytab); ++i)
     if (keytab[i] == ch)
       return i;
   __builtin_unreachable();

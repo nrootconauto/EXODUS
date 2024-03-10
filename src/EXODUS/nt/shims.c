@@ -170,7 +170,8 @@ static bool traversedir(char const *path,
   HANDLE fh = FindFirstFileA(findbuf, &data);
   if (veryunlikely(fh == INVALID_HANDLE_VALUE))
     return false;
-  do cb(&data, user0);
+  do
+    cb(&data, user0);
   while (FindNextFileA(fh, &data));
   FindClose(fh);
   return true;

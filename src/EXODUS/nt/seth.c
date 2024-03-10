@@ -163,6 +163,7 @@ static u64 elapsedus(void) {
   return ticks;
 }
 
+/* There's no SIGPROF on Windows, so we just jump to the profiler interrupt */
 static void profcb(u32 id, u32 msg, u64 userptr, u64 dw1, u64 dw2) {
   (void)id;
   (void)msg;

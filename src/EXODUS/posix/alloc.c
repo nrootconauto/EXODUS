@@ -18,12 +18,17 @@
 #include <EXODUS/shims.h>
 #include <EXODUS/types.h>
 
-// log2(to) == 0
+// popcnt(to) == 1
 #define ALIGN(x, to)                ((x + to - 1) & ~(to - 1))
 #define PROT                        PROT_READ | PROT_WRITE
 #define FLAGS                       MAP_PRIVATE | MAP_ANON
 #define MMAP(hint, sz, prot, flags) mmap((void *)(hint), sz, prot, flags, -1, 0)
 
+/* Sort of a bump allocator that resumes from the previous mapping (for R|W|X).
+ * We get the unmapped region in the lower 2 gigs
+ * (after the mapped binary/brk heap in some systems) and just keep bumping
+ * and mapping from there. MAP_FIXED doesn't seem to care about already
+ * allocated pages but the initial pivot address seems to be enough. */
 void *NewVirtualChunk(u64 sz, bool exec) {
   static _Atomic(bool) running;
   static bool init;
@@ -33,6 +38,7 @@ void *NewVirtualChunk(u64 sz, bool exec) {
       __builtin_ia32_pause();
   if (veryunlikely(!init)) {
     pagsz = sysconf(_SC_PAGESIZE);
+    /* Refer to posix/shims.c */
     cur = ALIGN(get31(), pagsz);
     init = true;
   }

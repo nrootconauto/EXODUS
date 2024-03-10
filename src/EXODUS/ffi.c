@@ -508,7 +508,7 @@ void BootstrapLoader(void) {
       S(__GetTicksHP, 0),
       S(_GrPaletteColorSet, 2),
   };
-  genthunks(ffis, sizeof ffis / sizeof *ffis);
+  genthunks(ffis, Arrlen(ffis));
 }
 
 /*═════════════════════════════════════════════════════════════════════════════╡
