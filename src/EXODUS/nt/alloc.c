@@ -4,7 +4,7 @@
 │                                                                              │
 │ See end of file for extended copyright information and citations.            │
 ╚─────────────────────────────────────────────────────────────────────────────*/
-#define _WIN32_WINNT 0x0602
+#define _WIN32_WINNT 0x0602 /* [3] (GetProcessMitigationPolicy) */
 #include <windows.h>
 #include <memoryapi.h>
 #include <processthreadsapi.h>
@@ -28,22 +28,29 @@
 
 void *NewVirtualChunk(u64 sz, bool exec) {
   static _Atomic(bool) running;
+  static bool init;
   static u64 ag, flags64, cur = 0x10000;
   const u64 max = UINT32_MAX >> 1;
   void *ret;
   while (atomic_exchange_explicit(&running, true, memory_order_acquire))
     while (atomic_load_explicit(&running, memory_order_relaxed))
       __builtin_ia32_pause();
-  if (!ag) {
+  if (veryunlikely(!init)) {
     SYSTEM_INFO si;
     GetSystemInfo(&si);
     ag = si.dwAllocationGranularity;
-    /* TODO: something to do with DynamicCodePolicy */
+    HANDLE proc = GetCurrentProcess();
     PROCESS_MITIGATION_ASLR_POLICY aslr;
-    GetProcessMitigationPolicy(GetCurrentProcess(), ProcessASLRPolicy, &aslr,
-                               sizeof aslr);
+    GetProcessMitigationPolicy(proc, ProcessASLRPolicy, &aslr, sizeof aslr);
     if (!aslr.EnableBottomUpRandomization)
       flags64 = MEM_TOP_DOWN;
+    PROCESS_MITIGATION_DYNAMIC_CODE_POLICY wxallowed;
+    GetProcessMitigationPolicy(proc, ProcessDynamicCodePolicy, &wxallowed,
+                               sizeof wxallowed);
+    wxallowed.ProhibitDynamicCode = 0;
+    SetProcessMitigationPolicy(ProcessDynamicCodePolicy, &wxallowed,
+                               sizeof wxallowed);
+    init = true;
   }
   if (exec) {
     /* thanks [1]. x86_64 trampolines sound interesting[2] */
@@ -79,6 +86,9 @@ void FreeVirtualChunk(void *ptr, argign u64 sz) {
 /* CITATIONS:
  * [1] https://stackoverflow.com/a/54732489 (https://archive.md/ugIUC)
  * [2] https://www.ragestorm.net/blogs/?p=107 (https://archive.md/lR0Mn)
+ * [3]
+ * https://learn.microsoft.com/en-us/cpp/porting/modifying-winver-and-win32-winnt?view=msvc-170
+ *     (https://archive.is/1VQzm)
  */
 /*═════════════════════════════════════════════════════════════════════════════╡
 │ EXODUS: Executable Divine Operating System in Userspace                      │

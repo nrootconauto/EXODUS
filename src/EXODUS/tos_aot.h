@@ -6,8 +6,8 @@
 ╚─────────────────────────────────────────────────────────────────────────────*/
 #pragma once
 
-#include <vendor/map.h>
-#include <vendor/vec.h>
+#include <map/map.h>
+#include <vec/vec.h>
 
 #include <EXODUS/types.h>
 

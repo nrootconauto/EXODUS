@@ -12,14 +12,13 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include <tos_callconv.h>
-
-#include <vendor/map.h>
+#include <map/map.h>
 
 #include <EXODUS/backtrace.h>
 #include <EXODUS/dbg.h>
 #include <EXODUS/misc.h>
 #include <EXODUS/tos_aot.h>
+#include <EXODUS/tos_callconv.h>
 #include <EXODUS/types.h>
 
 static void routine(int sig, argign siginfo_t *siginfo, void *_ctx) {

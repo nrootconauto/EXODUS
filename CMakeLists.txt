@@ -46,6 +46,13 @@ if (CMAKE_BUILD_TYPE STREQUAL "MinSizeRel")
   set_target_properties(${PROJECT_NAME}
     PROPERTIES
       INTERPROCEDURAL_OPTIMIZATION ON)
+  if (CMAKE_C_COMPILER_ID MATCHES "Clang")
+    find_program(LLD lld)
+    if (NOT LLD)
+      message(FATAL_ERROR "LTO with Clang requires LLD")
+    endif ()
+    target_link_options(${PROJECT_NAME} PRIVATE -fuse-ld=lld)
+  endif ()
 endif ()
 
 set_target_properties(${PROJECT_NAME}
@@ -91,7 +98,6 @@ target_link_libraries(${PROJECT_NAME} PRIVATE SDL2::SDL2)
 
 target_include_directories(${PROJECT_NAME} PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}")
 
-add_subdirectory(asm)
 add_subdirectory(vendor)
 
 include (CheckCSourceCompiles)
@@ -109,7 +115,6 @@ check_c_source_compiles(
 if (NOT SANE_INTEGERS)
   message(FATAL_ERROR "Your compiler's integer declarations are not sane")
 endif ()
-
 
 if (CMAKE_SYSTEM_NAME STREQUAL "Linux" OR
     CMAKE_SYSTEM_NAME STREQUAL "FreeBSD")

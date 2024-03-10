@@ -6,7 +6,7 @@
 ╚─────────────────────────────────────────────────────────────────────────────*/
 #pragma once
 
-#include <vendor/vec.h>
+#include <vec/vec.h>
 
 #include <EXODUS/types.h>
 

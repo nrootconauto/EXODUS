@@ -9,7 +9,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include <vendor/vec.h>
+#include <vec/vec.h>
 
 #include <EXODUS/misc.h>
 #include <EXODUS/shims.h>

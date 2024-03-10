@@ -8,22 +8,21 @@
 #include <string.h>
 #include <time.h>
 
-#include <tos_callconv.h>
-#include <vendor/dyad.h>
-#include <vendor/isocline.h>
+#include <dyad/dyad.h>
+#include <isocline.h>
 
 #include <EXODUS/alloc.h>
 #include <EXODUS/main.h>
+#include <EXODUS/misc.h>
 #include <EXODUS/sdl_window.h>
 #include <EXODUS/seth.h>
+#include <EXODUS/shims.h>
 #include <EXODUS/sound.h>
 #include <EXODUS/tos_aot.h>
+#include <EXODUS/tos_callconv.h>
 #include <EXODUS/tosprint.h>
-#include <EXODUS/vfs.h>
-
-#include <EXODUS/misc.h>
-#include <EXODUS/shims.h>
 #include <EXODUS/types.h>
+#include <EXODUS/vfs.h>
 
 /* HolyC -> C FFI */
 void HolyFree(void *ptr) {

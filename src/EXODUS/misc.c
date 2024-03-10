@@ -31,18 +31,15 @@ const u32 char_bmp_hex_numeric[16] = {0x0000000, 0x03FF0000, 0x7E, 0x7E, 0, 0,
           char_bmp_dec_numeric[16] = {0x0000000, 0x03FF0000, 0, 0, 0, 0, 0, 0,
                                       0,         0,          0, 0, 0, 0, 0, 0};
 
-/* We could've just used function argument references here
- * if clang didn't decide to not allow that (presumably because of stack usage)
- */
-__attribute__((naked)) u64 Bt(void const *, u64) {
-  asm("xor   %%rax,%%rax\n"
-#ifdef _WIN32
-      "bt    %%rdx,(%%rcx)\n"
-#else
-      "bt    %%rsi,(%%rdi)\n"
-#endif
+u64 Bt(void const *addr, u64 idx) {
+  u64 ret;
+  asm("bt    %[idx],(%[addr])\n"
       "setc  %%al\n"
-      "ret" ::);
+      "movzx %%al,%[ret]\n"
+      : [ret]"=r"(ret)
+      : [addr]"r"(addr), [idx]"r"(idx)
+      : "rax");
+  return ret;
 }
 
 char *stpcpy2(char *restrict dst, char const *src) {

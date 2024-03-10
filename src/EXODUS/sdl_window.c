@@ -11,14 +11,13 @@
 
 #include <SDL2/SDL.h>
 
-#include <tos_callconv.h>
-
 #include <EXODUS/ffi.h>
 #include <EXODUS/main.h>
 #include <EXODUS/misc.h>
 #include <EXODUS/sdl_window.h>
 #include <EXODUS/shims.h>
 #include <EXODUS/sound.h>
+#include <EXODUS/tos_callconv.h>
 #include <EXODUS/types.h>
 
 static struct {

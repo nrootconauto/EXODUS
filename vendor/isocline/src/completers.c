@@ -7,7 +7,7 @@
 #include <string.h>
 #include <stdio.h>
 
-#include "../isocline.h"
+#include "../include/isocline.h"
 #include "common.h"
 #include "env.h"
 #include "stringbuf.h"

@@ -28,7 +28,7 @@
 #include <stdio.h> /* big brother Microsoft wants you to use stdio.h for SEEK_SET */
 #include <stdlib.h>
 
-#include <vendor/vec.h>
+#include <vec/vec.h>
 
 #include <EXODUS/ffi.h>
 #include <EXODUS/misc.h>
@@ -145,7 +145,7 @@ func:
     } else {
       DeleteFileA(cur->entbuf);
     }
-  dir:
+  dir:; /* Clang wants a semicolon here */
   } while (FindNextFileA(cur->fh, &cur->data));
   FindClose(cur->fh);
   RemoveDirectoryA(cur->cwd);
@@ -159,8 +159,9 @@ endfunc:
   goto *lbl;
 }
 
-bool traversedir(char const *path, void cb(WIN32_FIND_DATAA *d, void *_user0),
-                 void *user0) {
+static bool traversedir(char const *path,
+                        void cb(WIN32_FIND_DATAA *d, void *_user0),
+                        void *user0) {
   WIN32_FIND_DATAA data = {0};
   char findbuf[0x200];
   char *cur = stpcpy2(findbuf, path);
@@ -169,16 +170,15 @@ bool traversedir(char const *path, void cb(WIN32_FIND_DATAA *d, void *_user0),
   HANDLE fh = FindFirstFileA(findbuf, &data);
   if (veryunlikely(fh == INVALID_HANDLE_VALUE))
     return false;
-  do {
-    cb(&data, user0);
-  } while (FindNextFileA(fh, &data));
+  do cb(&data, user0);
+  while (FindNextFileA(fh, &data));
   FindClose(fh);
   return true;
 }
 
 static void listdircb(WIN32_FIND_DATAA *d, void *user0) {
   vec_str_t *p = user0;
-  if (strlen(d->cFileName) <= 37)
+  if (verylikely(strlen(d->cFileName) <= 37))
     vec_push(p, HolyStrDup(d->cFileName));
 }
 
@@ -198,8 +198,8 @@ static void fsizecb(WIN32_FIND_DATAA *d, void *user0) {
   i64 *p = user0;
   if (!strcmp(d->cFileName, ".") || !strcmp(d->cFileName, ".."))
     return;
-  if (strlen(d->cFileName) <= 37)
-    ++(*p);
+  if (verylikely(strlen(d->cFileName) <= 37))
+    ++*p;
 }
 
 i64 fsize(char const *path) {
@@ -268,10 +268,7 @@ bool seekfd(int fd, i64 off) {
 }
 
 noret static BOOL WINAPI ctrlchndlr(argign DWORD dw) {
-  const char s[] = "User abort.\n";
-  _write(2, s, sizeof s - 1);
   terminate(ERROR_CONTROL_C_EXIT);
-  // return TRUE;
 }
 
 void handlectrlc(void) {

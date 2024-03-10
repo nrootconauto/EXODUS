@@ -1,30 +1,10 @@
 #-*- vi: set et ft=cmake ts=2 sts=2 sw=2 fenc=utf-8            :vi -*-┐
 #─────────────────────────────────────────────────────────────────────┘
-add_library(dyad
-  STATIC
-  ${CMAKE_CURRENT_SOURCE_DIR}/dyad.c
-)
-
-add_library(vec
-  STATIC
-  ${CMAKE_CURRENT_SOURCE_DIR}/vec.c
-)
-
-add_library(map
-  STATIC
-  ${CMAKE_CURRENT_SOURCE_DIR}/map.c
-)
-
-add_library(argtable3
-  STATIC
-  ${CMAKE_CURRENT_SOURCE_DIR}/argtable3.c
-)
-
-add_library(isocline
-  STATIC
-  ${CMAKE_CURRENT_SOURCE_DIR}/isocline/isocline.c
-)
-
+add_library(dyad STATIC ${CMAKE_CURRENT_SOURCE_DIR}/dyad/dyad.c)
+add_library(vec STATIC ${CMAKE_CURRENT_SOURCE_DIR}/vec/vec.c)
+add_library(map STATIC ${CMAKE_CURRENT_SOURCE_DIR}/map/map.c)
+add_subdirectory(isocline)
+add_subdirectory(argtable3)
 
 if (CMAKE_BUILD_TYPE STREQUAL "MinSizeRel")
   set_target_properties(dyad argtable3 vec isocline map
@@ -32,7 +12,7 @@ if (CMAKE_BUILD_TYPE STREQUAL "MinSizeRel")
       INTERPROCEDURAL_OPTIMIZATION ON)
 endif ()
 
-set_target_properties(dyad argtable3 vec isocline map
+set_target_properties(dyad argtable3 vec map isocline
   PROPERTIES
     C_STANDARD 11
     C_STANDARD_REQUIRED YES

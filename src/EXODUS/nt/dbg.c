@@ -9,12 +9,11 @@
 #include <winnt.h>
 #include <errhandlingapi.h>
 
-#include <tos_callconv.h>
-
 #include <EXODUS/backtrace.h>
 #include <EXODUS/dbg.h>
 #include <EXODUS/ffi.h>
 #include <EXODUS/tos_aot.h>
+#include <EXODUS/tos_callconv.h>
 #include <EXODUS/types.h>
 
 static LONG WINAPI VEHandler(struct _EXCEPTION_POINTERS *info) {

@@ -19,7 +19,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <assert.h>
-#include "../isocline.h"  // ic_malloc_fun_t, ic_color_t etc.
+#include "../include/isocline.h"  // ic_malloc_fun_t, ic_color_t etc.
 
 # ifdef __cplusplus
 #  define ic_extern_c   extern "C"
@@ -29,11 +29,7 @@
 
 #if defined(IC_SEPARATE_OBJS)
 #  define ic_public     ic_extern_c 
-# if defined(__GNUC__) // includes clang and icc      
-#  define ic_private    __attribute__((visibility("hidden")))
-# else
 #  define ic_private  
-# endif
 #else
 # define ic_private     static
 # define ic_public      ic_extern_c

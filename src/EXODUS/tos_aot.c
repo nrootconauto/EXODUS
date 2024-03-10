@@ -9,13 +9,13 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <map/map.h>
+#include <vec/vec.h>
+
 #include <EXODUS/alloc.h>
 #include <EXODUS/misc.h>
 #include <EXODUS/shims.h>
 #include <EXODUS/tos_aot.h>
-
-#include <vendor/map.h>
-#include <vendor/vec.h>
 
 #define ReadNum(x, T)                          \
   ({                                           \
@@ -26,7 +26,6 @@
 
 map_sym_t symtab;
 
-// This code is mostly copied from TempleOS
 void LoadOneImport(u8 **_src, u8 *module_base) {
   u8 *src = *_src, *ptr = NULL;
   u64 i = 0;

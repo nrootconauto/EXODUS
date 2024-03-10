@@ -10,7 +10,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include <vendor/vec.h>
+#include <vec/vec.h>
 
 #include <EXODUS/backtrace.h>
 #include <EXODUS/misc.h>

@@ -17,7 +17,9 @@
 
 #if defined(_WIN32)
 #include <windows.h>
+#include <io.h>
 #define STDOUT_FILENO 1
+#define isatty(a...) _isatty(a)
 #else
 #include <unistd.h>
 #include <errno.h>

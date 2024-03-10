@@ -1,14 +1,16 @@
 #-*- vi: set et ft=cmake ts=2 sts=2 sw=2 fenc=utf-8            :vi -*-┐
 #─────────────────────────────────────────────────────────────────────┘
+set(EX_ASM_OUT "${CMAKE_CURRENT_BINARY_DIR}/EXODUS/")
+
 add_executable(genasm "${CMAKE_CURRENT_SOURCE_DIR}/holyc2c_asmgen.c")
-add_custom_command(OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/tos_callconv.h"
-                          "${CMAKE_CURRENT_BINARY_DIR}/callconv.s"
-                   COMMAND genasm "${CMAKE_CURRENT_BINARY_DIR}"
+add_custom_command(OUTPUT "${EX_ASM_OUT}/tos_callconv.h"
+                          "${EX_ASM_OUT}/callconv.s"
+                   COMMAND genasm "${CMAKE_CURRENT_BINARY_DIR}" EXODUS
                    DEPENDS genasm)
 
 add_library(FFI
   STATIC
-  "${CMAKE_CURRENT_BINARY_DIR}/callconv.s"
+  "${EX_ASM_OUT}/callconv.s"
   "${CMAKE_CURRENT_SOURCE_DIR}/c2holyc.s")
 
 target_compile_options(FFI

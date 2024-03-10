@@ -10,6 +10,7 @@
 #define NARGS 9
 
 #ifdef _WIN32
+#include <direct.h>
 static char *savedregs[] = {"rbx", "rdi", "rsi", "r12", "r13", "r14", "r15"};
 static char *argregs[] = {"rcx", "rdx", "r8", "r9"};
   /* STK ARGS START FROM RBP+0x30 [1]
@@ -22,7 +23,9 @@ static char *argregs[] = {"rcx", "rdx", "r8", "r9"};
    *          rbp
    */
   #define STARTSTKARG 0x30
+  #define mkdir(a,b) _mkdir(a)
 #else
+#include <sys/stat.h>
 static char *savedregs[] = {"rbx", "r12", "r13", "r14", "r15"};
 static char *argregs[] = {"rdi", "rsi", "rdx", "rcx", "r8", "r9"};
 // STARTS STK ARGS FROM RBP+0x10
@@ -109,10 +112,13 @@ static void custombpasm(FILE *fp) {
 
 int main(int argc, char **argv) {
   char path[0x400], header[0x400], asmout[0x400];
-  if (argc < 2)
+  if (argc < 3)
     strcpy(path, "./");
   else
     strcpy(path, argv[1]);
+  strcat(path, "/");
+  strcat(path, argv[2]);
+  mkdir(argv[2], 0755);
   strcpy(header, path);
   strcat(header, "/tos_callconv.h");
   strcpy(asmout, path);

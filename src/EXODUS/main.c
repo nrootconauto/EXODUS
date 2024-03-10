@@ -13,10 +13,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include <tos_callconv.h>
-
-#include <vendor/argtable3.h>
-#include <vendor/isocline.h>
+#include <argtable3.h>
+#include <isocline.h>
 
 #include <EXODUS/dbg.h>
 #include <EXODUS/ffi.h>
@@ -68,7 +66,7 @@ int main(int argc, char **argv) {
       drv = arg_file0("t", "root", NULL, "Specify boot folder"),
       clifiles = arg_filen(NULL, NULL, "<files>", 0, 100,
                            "Files that run on boot(cmdline mode specific)"),
-      end = arg_end_(10),
+      end = arg_end(10),
   };
   int errs = arg_parse(argc, argv, argtable);
   if (help->count || errs > 0 || !drv->count) {

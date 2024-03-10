@@ -11,13 +11,14 @@
 #include <sys/mman.h>
 #include <sys/syscall.h>
 #include <unistd.h>
-/* clang-format off */
+/* clang-format off
+ * Headers must specifically be in this order */
 #ifdef __FreeBSD__
   #include <kvm.h>
+  #include <libprocstat.h>
   #include <sys/param.h>
   #include <sys/sysctl.h>
   #include <sys/user.h>
-  #include <libprocstat.h>
 #endif
 /* clang-format on */
 
@@ -29,7 +30,7 @@
 #include <string.h>
 #include <time.h>
 
-#include <vendor/vec.h>
+#include <vec/vec.h>
 
 #include <EXODUS/ffi.h>
 #include <EXODUS/misc.h>
@@ -108,25 +109,57 @@ void deleteall(char *s) {
   fts_close(fts);
 }
 
-char **listdir(char const *path) {
-  vec_str_t ls;
+static bool traversedir(char const *path,
+                        void cb(struct dirent *e, void *_user0), void *user0) {
   DIR *dir = opendir(path);
   if (veryunlikely(!dir))
-    return NULL;
-  vec_init(&ls);
+    return false;
   struct dirent *ent;
-  while ((ent = readdir(dir))) {
-    /* max strlen() should be 37 because CDIR_FILENAME_LEN is 38
-     * fat32 legacy. will break opening ISOs if touched. */
-    if (strlen(ent->d_name) <= 37)
-      vec_push(&ls, HolyStrDup(ent->d_name));
-  }
-  vec_push(&ls, NULL); /* accepts NULL terminated pointer array */
+  while ((ent = readdir(dir)))
+    cb(ent, user0);
   closedir(dir);
+  return true;
+}
+
+static void listdircb(struct dirent *e, void *user0) {
+  vec_str_t *v = user0;
+  /* max strlen() should be 37 because CDIR_FILENAME_LEN is 38
+   * fat32 legacy. will break opening ISOs if touched. */
+  if (verylikely(strlen(e->d_name) <= 37))
+    vec_push(v, HolyStrDup(e->d_name));
+}
+
+char **listdir(char const *path) {
+  vec_str_t ls;
+  vec_init(&ls);
+  if (veryunlikely(!traversedir(path, listdircb, &ls)))
+    return NULL;
   u64 sz = ls.length * sizeof ls.data[0];
   char **ret = memcpy(HolyMAlloc(sz), ls.data, sz);
   vec_deinit(&ls);
   return ret;
+}
+
+static void fsizecb(struct dirent *e, void *user0) {
+  i64 *i = user0;
+  if (!strcmp(e->d_name, ".") || !strcmp(e->d_name, ".."))
+    return;
+  if (verylikely(strlen(e->d_name) <= 37))
+    ++*i;
+}
+
+i64 fsize(char const *path) {
+  if (!isdir(path)) {
+    struct stat st;
+    if (veryunlikely(-1 == stat(path, &st)))
+      return -1;
+    return st.st_size;
+  } else {
+    i64 ret = 0;
+    if (veryunlikely(!traversedir(path, fsizecb, &ret)))
+      return -1;
+    return ret;
+  }
 }
 
 bool dirmk(char const *path) {
@@ -140,22 +173,6 @@ bool truncfile(char const *path, i64 sz) {
   bool ret = !ftruncate(fd, sz);
   close(fd);
   return ret;
-}
-
-i64 fsize(char const *path) {
-  if (!isdir(path)) {
-    struct stat st;
-    if (veryunlikely(-1 == stat(path, &st)))
-      return -1;
-    return st.st_size;
-  } else {
-    DIR *d = opendir(path);
-    i64 i = 0;
-    while (readdir(d))
-      ++i;
-    closedir(d);
-    return i;
-  }
 }
 
 u64 unixtime(char const *path) {
@@ -259,7 +276,7 @@ u64 get31(void) {
     s += readb;
   *s = 0;
   close(mapsfd);
-  u64 start, end = 0, prev = ret;
+  u64 start, end, prev = ret;
   s = maps;
   while (true) {
     sscanf(s, "%jx-%jx", &start, &end);

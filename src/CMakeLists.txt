@@ -35,3 +35,5 @@ set_source_files_properties(${SRC_FILES}
 add_executable(${PROJECT_NAME} ${SRC_FILES})
 
 target_include_directories(${PROJECT_NAME} PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}")
+
+add_subdirectory(EXODUS/asm)

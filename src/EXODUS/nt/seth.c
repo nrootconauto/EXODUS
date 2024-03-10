@@ -5,6 +5,7 @@
 │ See end of file for extended copyright information and citations.            │
 ╚─────────────────────────────────────────────────────────────────────────────*/
 #include <windows.h>
+#include <winnt.h>
 #include <libloaderapi.h>
 #include <process.h>
 #include <processthreadsapi.h>
@@ -17,14 +18,13 @@
 #include <stdio.h>
 #include <string.h>
 
-#include <tos_callconv.h>
-
 #include <EXODUS/dbg.h>
 #include <EXODUS/main.h>
 #include <EXODUS/misc.h>
 #include <EXODUS/seth.h>
 #include <EXODUS/shims.h>
 #include <EXODUS/tos_aot.h>
+#include <EXODUS/tos_callconv.h>
 #include <EXODUS/vfs.h>
 
 typedef struct {

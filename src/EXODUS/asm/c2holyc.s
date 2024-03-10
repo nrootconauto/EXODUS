@@ -23,13 +23,13 @@ __TOSTHUNK_START:
     push   r14
     push   r15
 #ifdef _WIN32
-    lea    rcx,QWORD PTR[rbp+0x10]
+    lea    rcx,[rbp+0x10]
     push   r9 /* 4 register homes required for win32[1] */
     push   r8
     push   rdx
     push   rcx
 #else
-    lea    rdi,QWORD PTR[rbp+0x10]
+    lea    rdi,[rbp+0x10]
 #endif
 /* CCh is INT3, an assembler won't just randomly insert a bunch of them */
     movabs rax,0xCCCCCCCCCCCCCCCC

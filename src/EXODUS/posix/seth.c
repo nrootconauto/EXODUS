@@ -22,8 +22,7 @@
 #include <ucontext.h>
 #include <unistd.h>
 
-#include <tos_callconv.h>
-#include <vendor/vec.h>
+#include <vec/vec.h>
 
 #include <EXODUS/dbg.h>
 #include <EXODUS/ffi.h>
@@ -31,6 +30,7 @@
 #include <EXODUS/misc.h>
 #include <EXODUS/seth.h>
 #include <EXODUS/tos_aot.h>
+#include <EXODUS/tos_callconv.h>
 #include <EXODUS/types.h>
 #include <EXODUS/vfs.h>
 
