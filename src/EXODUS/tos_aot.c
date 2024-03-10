@@ -17,6 +17,47 @@
 #include <EXODUS/shims.h>
 #include <EXODUS/tos_aot.h>
 
+map_sym_t symtab;
+
+/* These routines are just copied from TempleOS and I haven't put much effort in
+ * making them pretty */
+static void LoadOneImport(u8 **_src, u8 *module_base);
+static void SysSymImportsResolve(u8 *st_ptr);
+static void LoadPass1(u8 *src, u8 *module_base);
+static vec_void_t LoadPass2(u8 *src, u8 *module_base);
+
+typedef struct {
+  u16 jmp;
+  u8 module_align_bits, reserved;
+  u8 bin_signature[4];
+  i64 org, patch_table_offset, file_size;
+  u8 data[];
+} __attribute__((packed, may_alias)) CBinFile;
+
+vec_void_t LoadHCRT(char const *name) {
+  i64 sz;
+  if (-1 == (sz = fsize(name))) {
+    flushprint(stderr, "Can't find file / filesystem error\n");
+    terminate(1);
+  }
+  int fd = openfd(name, false);
+  if (fd == -1) {
+    flushprint(stderr, "Can't open \"%s\"\n", name);
+    terminate(1);
+  }
+  void *bfh_addr;
+  readfd(fd, bfh_addr = NewVirtualChunk(sz, true), sz);
+  closefd(fd);
+  CBinFile *bfh = bfh_addr;
+  if (memcmp(bfh->bin_signature, "TOSB" /*BIN_SIGNATURE_VAL*/, 4)) {
+    flushprint(stderr, "invalid file '%s'\n", name);
+    terminate(1);
+  }
+  u8 *patchtable = bfh_addr + bfh->patch_table_offset, *code = bfh->data;
+  LoadPass1(patchtable, code);
+  return LoadPass2(patchtable, code);
+}
+
 #define ReadNum(x, T)                          \
   ({                                           \
     T __val;                                   \
@@ -24,9 +65,7 @@
     __val;                                     \
   })
 
-map_sym_t symtab;
-
-void LoadOneImport(u8 **_src, u8 *module_base) {
+static void LoadOneImport(u8 **_src, u8 *module_base) {
   u8 *src = *_src, *ptr = NULL;
   u64 i = 0;
   bool first = true;
@@ -97,7 +136,7 @@ void LoadOneImport(u8 **_src, u8 *module_base) {
   *_src = src - 1;
 }
 
-void SysSymImportsResolve(u8 *st_ptr) {
+static void SysSymImportsResolve(u8 *st_ptr) {
   CSymbol *sym = map_get(&symtab, st_ptr);
   if (!sym)
     return;
@@ -107,7 +146,7 @@ void SysSymImportsResolve(u8 *st_ptr) {
   sym->type = HTT_INVALID;
 }
 
-void LoadPass1(u8 *src, u8 *module_base) {
+static void LoadPass1(u8 *src, u8 *module_base) {
   u8 *ptr, *st_ptr;
   u8 etype;
   while ((etype = *src++)) {
@@ -140,7 +179,7 @@ void LoadPass1(u8 *src, u8 *module_base) {
   }
 }
 
-vec_void_t LoadPass2(u8 *src, u8 *module_base) {
+static vec_void_t LoadPass2(u8 *src, u8 *module_base) {
   vec_void_t ret;
   vec_init(&ret);
   u8 etype;
@@ -166,38 +205,6 @@ vec_void_t LoadPass2(u8 *src, u8 *module_base) {
     }
   }
   return ret;
-}
-
-typedef struct {
-  u16 jmp;
-  u8 module_align_bits, reserved;
-  u8 bin_signature[4];
-  i64 org, patch_table_offset, file_size;
-  u8 data[];
-} __attribute__((packed, may_alias)) CBinFile;
-
-vec_void_t LoadHCRT(char const *name) {
-  i64 sz;
-  if (-1 == (sz = fsize(name))) {
-    flushprint(stderr, "Can't find file / filesystem error\n");
-    terminate(1);
-  }
-  int fd = openfd(name, false);
-  if (fd == -1) {
-    flushprint(stderr, "Can't open \"%s\"\n", name);
-    terminate(1);
-  }
-  void *bfh_addr;
-  readfd(fd, bfh_addr = NewVirtualChunk(sz, true), sz);
-  closefd(fd);
-  CBinFile *bfh = bfh_addr;
-  if (memcmp(bfh->bin_signature, "TOSB" /*BIN_SIGNATURE_VAL*/, 4)) {
-    flushprint(stderr, "invalid file '%s'\n", name);
-    terminate(1);
-  }
-  u8 *patchtable = bfh_addr + bfh->patch_table_offset, *code = bfh->data;
-  LoadPass1(patchtable, code);
-  return LoadPass2(patchtable, code);
 }
 
 /*═════════════════════════════════════════════════════════════════════════════╡
