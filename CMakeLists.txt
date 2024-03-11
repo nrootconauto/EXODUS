@@ -42,16 +42,22 @@ endif ()
 
 add_subdirectory(src)
 
-if (CMAKE_BUILD_TYPE STREQUAL "MinSizeRel")
-  set_target_properties(${PROJECT_NAME}
-    PROPERTIES
-      INTERPROCEDURAL_OPTIMIZATION ON)
+if (CMAKE_BUILD_TYPE STREQUAL "MinSizeRel"
+    OR CMAKE_INTERPROCEDURAL_OPTIMIZATION)
   if (CMAKE_C_COMPILER_ID MATCHES "Clang")
     find_program(LLD lld)
     if (NOT LLD)
       message(FATAL_ERROR "LTO with Clang requires LLD")
     endif ()
-    target_link_options(${PROJECT_NAME} PRIVATE -fuse-ld=lld)
+    set_target_properties(${PROJECT_NAME}
+      PROPERTIES
+      INTERPROCEDURAL_OPTIMIZATION OFF)
+    target_link_options(${PROJECT_NAME} PRIVATE -flto=full -fuse-ld=lld)
+    target_compile_options(${PROJECT_NAME} PRIVATE -flto=full)
+  else ()
+    set_target_properties(${PROJECT_NAME}
+      PROPERTIES
+      INTERPROCEDURAL_OPTIMIZATION ON)
   endif ()
 endif ()
 
@@ -62,8 +68,7 @@ set_target_properties(${PROJECT_NAME}
     C_STANDARD_REQUIRED YES
     C_EXTENSIONS YES
     LINKER_LANGUAGE C
-    C_VISIBILITY_PRESET hidden
-)
+    C_VISIBILITY_PRESET hidden)
 
 target_compile_options(${PROJECT_NAME}
   PRIVATE

@@ -6,12 +6,6 @@ add_library(map STATIC ${CMAKE_CURRENT_SOURCE_DIR}/map/map.c)
 add_subdirectory(isocline)
 add_subdirectory(argtable3)
 
-if (CMAKE_BUILD_TYPE STREQUAL "MinSizeRel")
-  set_target_properties(dyad argtable3 vec isocline map
-    PROPERTIES
-      INTERPROCEDURAL_OPTIMIZATION ON)
-endif ()
-
 set_target_properties(dyad argtable3 vec map isocline
   PROPERTIES
     C_STANDARD 11
@@ -31,6 +25,20 @@ target_compile_options(c_opts
     -mno-shstk
     -mno-red-zone
     -fcf-protection=none)
+
+if (CMAKE_BUILD_TYPE STREQUAL "MinSizeRel"
+    OR CMAKE_INTERPROCEDURAL_OPTIMIZATION)
+  if (CMAKE_C_COMPILER_ID MATCHES "Clang")
+    set_target_properties(dyad argtable3 vec isocline map
+      PROPERTIES
+        INTERPROCEDURAL_OPTIMIZATION OFF)
+    target_compile_options(c_opts INTERFACE -flto=full)
+  else ()
+    set_target_properties(dyad argtable3 vec isocline map
+      PROPERTIES
+        INTERPROCEDURAL_OPTIMIZATION ON)
+  endif ()
+endif ()
 # I don't know how to CMake
 target_link_libraries(dyad      PRIVATE c_opts)
 target_link_libraries(argtable3 PRIVATE c_opts)

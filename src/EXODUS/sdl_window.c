@@ -56,19 +56,15 @@ static void updatescrn(u8 *px) {
   SDL_RenderClear(win.rend);
   int w, h, w2, h2, margin_x = 0, margin_y = 0;
   SDL_GetWindowSize(win.window, &w, &h);
-  if (w > h) {
-    h2 = 480. / 640 * w;
+  f32 ratio = 640. / 480;
+  if (w > h * ratio) {
+    h2 = h;
+    w2 = ratio * h;
+    margin_x = (w - w2) / 2;
+  } else {
+    h2 = w / ratio;
     w2 = w;
     margin_y = (h - h2) / 2;
-    if (h2 > h) {
-      margin_y = 0;
-      goto top_margin;
-    }
-  } else {
-  top_margin:
-    w2 = h * 640. / 480;
-    h2 = h;
-    margin_x = (w - w2) / 2;
   }
   SDL_Rect viewport = {
       .x = win.margin_x = margin_x,

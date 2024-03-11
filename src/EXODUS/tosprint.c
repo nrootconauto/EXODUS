@@ -149,7 +149,7 @@ static vec_char_t MStrPrint(char const *fmt, argign u64 argc, i64 *argv) {
         f64 f;
         i64 i;
       } u = {.i = argv[arg]};
-      /* 6: ansf precision in TempleOS */
+      /* 7: ansf precision in TempleOS */
       fmtfloat(buf, sizeof buf, u.f, 7);
       vec_pusharr(&ret, buf, strlen(buf));
     } break;
