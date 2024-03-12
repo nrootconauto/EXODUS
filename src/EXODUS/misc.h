@@ -11,6 +11,7 @@
  * DO NOT DESERVE A SEPERATE FILE */
 
 #include <inttypes.h>
+#include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -27,10 +28,10 @@
  * LBts: addr[idx] -> rax, addr[idx] = 0
  * LBtc: addr[idx] -> rax, addr[idx] = ~addr[idx]
  */
-u64 Bt(void const *addr, u64 idx);
-u64 LBtr(void *addr, u64 idx);
-u64 LBts(void *addr, u64 idx);
-u64 LBtc(void *addr, u64 idx);
+bool Bt(void const *addr, u64 idx);
+bool LBtr(void *addr, u64 idx);
+bool LBts(void *addr, u64 idx);
+bool LBtc(void *addr, u64 idx);
 
 /* ctype.h routines
  * Bt(bitmapname, c) */

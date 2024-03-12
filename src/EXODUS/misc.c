@@ -4,6 +4,7 @@
 │                                                                              │
 │ See end of file for extended copyright information and citations.            │
 ╚─────────────────────────────────────────────────────────────────────────────*/
+#include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -32,50 +33,20 @@ const u32 char_bmp_hex_numeric[16] = {0x0000000, 0x03FF0000, 0x7E, 0x7E, 0, 0,
                                         0},
           char_bmp_dec_numeric[16] = {0x0000000, 0x03FF0000, 0, 0, 0, 0, 0, 0,
                                       0,         0,          0, 0, 0, 0, 0, 0};
+#define Bitop(name, inst, a...)            \
+  bool name(void a *addr, u64 idx) {       \
+    bool ret = false;                      \
+    asm(#inst "%[idx],(%[addr])\n"         \
+        : "=@ccc"(ret)                     \
+        : [idx] "r"(idx), [addr] "r"(addr) \
+        : "cc", "memory");                 \
+    return ret;                            \
+  }
 
-u64 Bt(void const *addr, u64 idx) {
-  u64 ret;
-  asm("bt    %[idx],(%[addr])\n"
-      "setc  %%al\n"
-      "movzx %%al,%[ret]\n"
-      : [ret] "=r"(ret)
-      : [addr] "r"(addr), [idx] "r"(idx)
-      : "rax");
-  return ret;
-}
-
-u64 LBts(void *addr, u64 idx) {
-  u64 ret;
-  asm("lock bts  %[idx],(%[addr])\n"
-      "setc      %%al\n"
-      "movzx     %%al,%[ret]\n"
-      : [ret] "=r"(ret)
-      : [addr] "r"(addr), [idx] "r"(idx)
-      : "rax", "memory");
-  return ret;
-}
-
-u64 LBtr(void *addr, u64 idx) {
-  u64 ret;
-  asm("lock btr  %[idx],(%[addr])\n"
-      "setc      %%al\n"
-      "movzx     %%al,%[ret]\n"
-      : [ret] "=r"(ret)
-      : [addr] "r"(addr), [idx] "r"(idx)
-      : "rax", "memory");
-  return ret;
-}
-
-u64 LBtc(void *addr, u64 idx) {
-  u64 ret;
-  asm("lock btc  %[idx],(%[addr])\n"
-      "setc      %%al\n"
-      "movzx     %%al,%[ret]\n"
-      : [ret] "=r"(ret)
-      : [addr] "r"(addr), [idx] "r"(idx)
-      : "rax", "memory");
-  return ret;
-}
+Bitop(Bt, bt, const);
+Bitop(LBts, lock bts);
+Bitop(LBtr, lock btr);
+Bitop(LBtc, lock btc);
 
 char *stpcpy2(char *restrict dst, char const *src) {
   u64 sz = strlen(src);
