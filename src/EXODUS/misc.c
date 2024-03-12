@@ -44,6 +44,39 @@ u64 Bt(void const *addr, u64 idx) {
   return ret;
 }
 
+u64 LBts(void *addr, u64 idx) {
+  u64 ret;
+  asm("lock bts  %[idx],(%[addr])\n"
+      "setc      %%al\n"
+      "movzx     %%al,%[ret]\n"
+      : [ret] "=r"(ret)
+      : [addr] "r"(addr), [idx] "r"(idx)
+      : "rax", "memory");
+  return ret;
+}
+
+u64 LBtr(void *addr, u64 idx) {
+  u64 ret;
+  asm("lock btr  %[idx],(%[addr])\n"
+      "setc      %%al\n"
+      "movzx     %%al,%[ret]\n"
+      : [ret] "=r"(ret)
+      : [addr] "r"(addr), [idx] "r"(idx)
+      : "rax", "memory");
+  return ret;
+}
+
+u64 LBtc(void *addr, u64 idx) {
+  u64 ret;
+  asm("lock btc  %[idx],(%[addr])\n"
+      "setc      %%al\n"
+      "movzx     %%al,%[ret]\n"
+      : [ret] "=r"(ret)
+      : [addr] "r"(addr), [idx] "r"(idx)
+      : "rax", "memory");
+  return ret;
+}
+
 char *stpcpy2(char *restrict dst, char const *src) {
   u64 sz = strlen(src);
   return (char *)memcpy(dst, src, sz + 1) + sz;

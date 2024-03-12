@@ -9,7 +9,6 @@
 #include <unistd.h>
 
 #include <limits.h>
-#include <stdatomic.h>
 #include <stdbool.h>
 #include <stdint.h>
 
@@ -30,11 +29,11 @@
  * and mapping from there. MAP_FIXED doesn't seem to care about already
  * allocated pages but the initial pivot address seems to be enough. */
 void *NewVirtualChunk(u64 sz, bool exec) {
-  static _Atomic(bool) running;
+  static bool running;
   static bool init;
   static u64 pagsz, cur, max = UINT32_MAX >> 1;
-  while (atomic_exchange_explicit(&running, true, memory_order_acquire))
-    while (atomic_load_explicit(&running, memory_order_relaxed))
+  while (LBts(&running, 0))
+    while (Bt(&running, 0))
       __builtin_ia32_pause();
   if (veryunlikely(!init)) {
     pagsz = sysconf(_SC_PAGESIZE);
@@ -61,7 +60,7 @@ void *NewVirtualChunk(u64 sz, bool exec) {
       ret = NULL;
   }
 ret:
-  atomic_store_explicit(&running, false, memory_order_release);
+  LBtr(&running, 0);
   return ret;
 }
 

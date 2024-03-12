@@ -13,7 +13,6 @@
 #include <timeapi.h>
 
 #include <inttypes.h>
-#include <stdatomic.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
@@ -29,7 +28,7 @@
 
 typedef struct {
   HANDLE thread, event, mtx;
-  _Atomic(u64) awakeat;
+  _Alignas(u64) _Atomic(u64) awakeat;
   int core_num;
   void *profiler_int;
   u64 profiler_freq, next_prof_int;
@@ -146,10 +145,10 @@ static void tickscb(u32 id, u32 msg, u64 userptr, u64 dw1, u64 dw2) {
   for (u64 i = 0; i < nproc; ++i) {
     CCore *c = cores + i;
     WaitForSingleObject(c->mtx, INFINITE);
-    u64 wake = atomic_load_explicit(&c->awakeat, memory_order_acquire);
+    u64 wake = c->awakeat;
     if (ticks >= wake && wake > 0) {
       SetEvent(c->event);
-      atomic_store_explicit(&c->awakeat, 0, memory_order_release);
+      c->awakeat = 0;
     }
     ReleaseMutex(c->mtx);
   }
@@ -173,7 +172,7 @@ static void profcb(u32 id, u32 msg, u64 userptr, u64 dw1, u64 dw2) {
   for (u64 i = 0; i < nproc; ++i) {
     CCore *c = cores + i;
     WaitForSingleObject(c->mtx, INFINITE);
-    if (c->profiler_int && elapsedus() >= c->next_prof_int) {
+    if (c->profiler_int && ticks >= c->next_prof_int) {
       CONTEXT ctx = {.ContextFlags = CONTEXT_FULL};
       SuspendThread(c->thread);
       GetThreadContext(c->thread, &ctx);
@@ -193,8 +192,7 @@ void SleepUs(u64 us) {
   CCore *c = self;
   u64 curticks = elapsedus();
   WaitForSingleObject(c->mtx, INFINITE);
-  atomic_store_explicit(&c->awakeat, curticks + us / 1000,
-                        memory_order_release);
+  c->awakeat = curticks + us / 1000;
   ReleaseMutex(c->mtx);
   WaitForSingleObject(c->event, INFINITE);
 }

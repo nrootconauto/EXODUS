@@ -17,9 +17,23 @@
 
 #include <EXODUS/types.h>
 
+/* Bit/atomic routines because I'm too cool for stdatomic.h
+ *
+ * addr is a bit array
+ * L prefixed: atomic
+ *
+ * Bt:   addr[idx] -> rax
+ * LBtr: addr[idx] -> rax, addr[idx] = 1
+ * LBts: addr[idx] -> rax, addr[idx] = 0
+ * LBtc: addr[idx] -> rax, addr[idx] = ~addr[idx]
+ */
+u64 Bt(void const *addr, u64 idx);
+u64 LBtr(void *addr, u64 idx);
+u64 LBts(void *addr, u64 idx);
+u64 LBtc(void *addr, u64 idx);
+
 /* ctype.h routines
  * Bt(bitmapname, c) */
-u64 Bt(void const *addr, u64 idx);
 extern const u32 char_bmp_hex_numeric[16], char_bmp_alpha[16],
     char_bmp_alpha_numeric[16], char_bmp_dec_numeric[16];
 

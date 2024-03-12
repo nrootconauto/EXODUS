@@ -56,7 +56,7 @@ static void updatescrn(u8 *px) {
   SDL_RenderClear(win.rend);
   int w, h, w2, h2, margin_x = 0, margin_y = 0;
   SDL_GetWindowSize(win.window, &w, &h);
-  f32 ratio = 640. / 480;
+  f32 ratio = (f32)WIDTH / HEIGHT;
   if (w > h * ratio) {
     h2 = h;
     w2 = ratio * h;
@@ -93,6 +93,7 @@ static void newwindow(void) {
                           SDL_HINT_OVERRIDE);
   win.screen_mutex = SDL_CreateMutex();
   win.screen_done_cond = SDL_CreateCond();
+  SDL_LockMutex(win.screen_mutex);
   win.window =
       SDL_CreateWindow("EXODUS", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
                        640, 480, SDL_WINDOW_RESIZABLE);
@@ -104,10 +105,11 @@ static void newwindow(void) {
   win.margin_y = win.margin_x = 0;
   win.sz_x = 640;
   win.sz_y = 480;
-  win.ready = true;
   /* let TempleOS manage the cursor */
   SDL_ShowCursor(SDL_DISABLE);
   SDL_SetWindowKeyboardGrab(win.window, SDL_TRUE);
+  SDL_UnlockMutex(win.screen_mutex);
+  LBts(&win.ready, 0);
 }
 
 enum {
@@ -617,9 +619,7 @@ void DrawWindowNew(void) {
                .code = WINDOW_NEW,
                }
   });
-  /* Spin until it's safe to write to the framebuffer.
-   * won't be long so it's fine to spin here */
-  while (!win.ready)
+  while (!Bt(&win.ready, 0))
     SDL_Delay(1);
 }
 
@@ -657,7 +657,7 @@ void GrPaletteColorSet(u64 i, u64 _u) {
   } u = {.i = _u};
   /* 0xffff is 100% so 0x7fff/0xffff would be about .50
    * this gets multiplied by 0xff to get 0x7f */
-  SDL_Color sdl_c = {
+  SDL_Color c = {
       .r = u.r / (double)0xffff * 0xff,
       .g = u.g / (double)0xffff * 0xff,
       .b = u.b / (double)0xffff * 0xff,
@@ -665,7 +665,7 @@ void GrPaletteColorSet(u64 i, u64 _u) {
   };
   // set column
   for (int col = 0; col < 256 / 16; ++col)
-    SDL_SetPaletteColors(win.palette, &sdl_c, i + col * 16, 1);
+    SDL_SetPaletteColors(win.palette, &c, i + col * 16, 1);
 }
 
 /*═════════════════════════════════════════════════════════════════════════════╡

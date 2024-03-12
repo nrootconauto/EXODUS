@@ -14,7 +14,6 @@
 #include <inttypes.h>
 #include <pthread.h>
 #include <signal.h>
-#include <stdatomic.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -169,7 +168,7 @@ void CreateCore(vec_void_t ptrs) {
 
 void WakeCoreUp(u64 core) {
   CCore *c = cores + core;
-  if (atomic_exchange_explicit(&c->is_sleeping, 0, memory_order_acquire))
+  if (LBtr(&c->is_sleeping, 0))
     Awake(&c->is_sleeping);
 }
 
@@ -184,7 +183,7 @@ void SleepUs(u64 us) {
   CCore *c = self;
   /* Cannot call the Sleep function if we are sleeping.
    * So to remove extra code, just store 1 */
-  atomic_store_explicit(&c->is_sleeping, 1, memory_order_release);
+  LBts(&c->is_sleeping, 0);
   Sleep(&c->is_sleeping, UINT32_C(1),
         &(struct timespec){
             .tv_nsec = (us % 1000000) * 1000,
