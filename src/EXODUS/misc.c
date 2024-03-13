@@ -36,7 +36,7 @@ const u32 char_bmp_hex_numeric[16] = {0x0000000, 0x03FF0000, 0x7E, 0x7E, 0, 0,
 #define Bitop(name, inst, a...)            \
   bool name(void a *addr, u64 idx) {       \
     bool ret = false;                      \
-    asm(#inst "%[idx],(%[addr])\n"         \
+    asm(#inst " %[idx],(%[addr])\n"        \
         : "=@ccc"(ret)                     \
         : [idx] "r"(idx), [addr] "r"(addr) \
         : "cc", "memory");                 \

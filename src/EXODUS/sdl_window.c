@@ -620,7 +620,7 @@ void DrawWindowNew(void) {
                }
   });
   while (!Bt(&win.ready, 0))
-    SDL_Delay(1);
+    __builtin_ia32_pause();
 }
 
 void PCSpkInit(void) {
