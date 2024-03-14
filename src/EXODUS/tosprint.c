@@ -159,10 +159,11 @@ static vec_char_t MStrPrint(char const *fmt, argign u64 argc, i64 *argv) {
     case 'c': {
       /* HolyC has multichar literals (e.g. 'abcdefg')
        * so we need to stamp it out in a string */
-      char *tmp = (char *)&argv[arg];
-      u64 len = strlen(tmp);
+      __builtin_memcpy(buf, argv + arg, 8);
+      buf[8] = 0;
+      u64 len = strlen(buf);
       while (--aux >= 0)
-        vec_pusharr(&ret, tmp, len);
+        vec_pusharr(&ret, buf, len);
     } break;
     case 's': {
       char *tmp = ((char **)argv)[arg];

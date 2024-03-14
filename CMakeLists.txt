@@ -129,6 +129,7 @@ if (CMAKE_SYSTEM_NAME STREQUAL "Linux" OR
     target_link_libraries(${PROJECT_NAME} PRIVATE procstat)
   endif ()
 elseif (WIN32)
+  target_compile_definitions(${PROJECT_NAME} PRIVATE __USE_MINGW_ANSI_STDIO=1)
   target_link_libraries(${PROJECT_NAME} PRIVATE
     ws2_32 synchronization shlwapi shcore dbghelp winmm -static)
   # We don't need winpthreads

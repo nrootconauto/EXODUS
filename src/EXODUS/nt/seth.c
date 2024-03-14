@@ -28,7 +28,7 @@
 
 typedef struct {
   HANDLE thread, event, mtx;
-  _Alignas(u64) _Atomic(u64) awakeat;
+  _Alignas(u64) u64 awakeat;
   int core_num;
   void *profiler_int;
   u64 profiler_freq, next_prof_int;
