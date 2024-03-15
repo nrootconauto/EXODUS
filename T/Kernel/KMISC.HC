@@ -34,12 +34,29 @@ I64 EndianI64(I64)
   return r;
 }
 #help_index "Bit"
-I64 BCnt(I64)
-{//Count set bits in I64.
-  I64 reg RAX ret;
-  POPCNT RAX,SF_ARG1[RBP]
-  return ret;
+
+asm {
+_BCNT::
+//Count set bits in I64.
+  MOV  R8,8[RSP]
+  XOR  RAX,RAX
+  XOR  RCX,RCX//data dep
+@@0:
+  TEST R8,R8
+  JZ   @@1
+  BSF  RCX,R8
+  MOV  RDX,1
+  SHL  RDX,CL
+  NOT  RDX
+  AND  R8,RDX
+  INC  RAX
+  JMP  @@0
+@@1:
+  RET1 8
 }
+
+_extern _BCNT I64 BCnt(I64);
+
 #help_index ""
 F64 Ona2Freq(I8 ona)
 {//Ona to freq. Ona=60 is 440.0Hz.

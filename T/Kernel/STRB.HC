@@ -694,6 +694,7 @@ and take addr.
 	    i_ptr=argv[cur_arg++];
 	    *i_ptr=Str2I64(buf);
 	    break;
+	  case 'x':
 	  case 'X':
 	    if (cur_arg>=argc)
 	      throw('Scan');

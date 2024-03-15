@@ -83,8 +83,9 @@ serial interface.
 
 # Changes from stock TempleOS
 - The Windows key functionality has been replaced with the Alt key
-- Context switching is slower than a VM or native hardware because it runs in Ring 3, but it does not contribut to the general performance.
-- Ring-0 opcodes (HLT, etc) and routines (InU8, etc) are not available
+- Context switching is slower than a VM or native hardware because it runs in Ring 3, but it does not degrade general performance
+- Ring-0 opcodes (HLT, etc) and routines (InU8, etc) are not available (you can assemble the opcodes but they'll raise a fault)
+- JIFFY\_FREQ is 1e6 instead of 1e3 for precision sleep and performance benefits, when porting third-party software redefine it ***in the software*** as 1e3 (might be fixed later)
 
 # Contributing
 [Refer to this document.](./CONTRIBUTING.md)
