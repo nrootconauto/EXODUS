@@ -35,27 +35,30 @@ I64 EndianI64(I64)
 }
 #help_index "Bit"
 
-asm {
-_BCNT::
-//Count set bits in I64.
-  MOV  R8,8[RSP]
-  XOR  RAX,RAX
-  XOR  RCX,RCX//data dep
-@@0:
-  TEST R8,R8
-  JZ   @@1
-  BSF  RCX,R8
-  MOV  RDX,1
-  SHL  RDX,CL
-  NOT  RDX
-  AND  R8,RDX
-  INC  RAX
-  JMP  @@0
-@@1:
-  RET1 8
-}
 
-_extern _BCNT I64 BCnt(I64);
+I64 BCnt(I64 i)
+{//Count set bits in I64.
+  MOV   RAX,SF_ARG1[RBP]
+  MOV   RDX,RAX
+  SHR1  RDX
+  MOV   RCX,0x5555555555555555
+  AND   RDX,RCX
+  SUB   RAX,RDX
+  MOV   RCX,0x3333333333333333
+  MOV   RDX,RAX
+  AND   RAX,RCX
+  SHR   RDX,2
+  AND   RDX,RCX
+  ADD   RAX,RDX
+  MOV   RDX,RAX
+  SHR   RDX,4
+  ADD   RAX,RDX
+  MOV   RCX,0x0f0f0f0f0f0f0f0f
+  AND   RAX,RCX
+  MOV   RCX,0x0101010101010101
+  IMUL2 RAX,RCX
+  SHR   RAX,0x38
+}
 
 #help_index ""
 F64 Ona2Freq(I8 ona)
