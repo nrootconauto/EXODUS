@@ -25,12 +25,13 @@ class BombData {
   U8 *backbuffer;
 };
 
-I64 bomb_sz;
-U8 *BombBIN=FileRead("Asm/Bomb.BIN",&bomb_sz);
-U0 (*BombVFX)(BombData *bd)=NewVirtualChunk(bomb_sz,TRUE);
-MemCpy(BombVFX,BombBIN,bomb_sz);
+{
+I64 _bsz;
+U8 *BombBIN=FileRead("Asm/Bomb.BIN",&_bsz);
+U0 (*BombVFX)(BombData *bd)=MAlloc32(_bsz);
+MemCpy(BombVFX,BombBIN,_bsz);
 Free(BombBIN);
-
+}
 
 #define SCORESCR_X 192
 #define SCORESCR_Y 8

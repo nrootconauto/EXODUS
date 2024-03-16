@@ -82,7 +82,7 @@ easy fix).
 CP/M is sexy and I will write more CP/M shennanigins in the future,this is 
 the first glimsh of the whats to come
 
-If you want more sexy stuff,check out ![this cool site](http://www.z80.eu/adventures.html).
+If you want more sexy stuff,check out [this cool site](http://www.z80.eu/adventures.html).
 
 ## Contributing.
 

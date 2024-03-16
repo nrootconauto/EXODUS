@@ -37,7 +37,7 @@ I64 EndianI64(I64)
 
 
 I64 BCnt(I64 i)
-{//Count set bits in I64.
+{//Count set bits in I64.
   MOV   RAX,SF_ARG1[RBP]
   MOV   RDX,RAX
   SHR1  RDX

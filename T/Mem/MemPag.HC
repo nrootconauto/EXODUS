@@ -19,7 +19,7 @@ Return: NULL if out of memory.
   I64 i;
   Bool old;
   PUSHFD
-  old=!Bts(&(Fs->task_flags),TASKf_BREAK_LOCKED); 
+  old=!Bts(&Fs->task_flags,TASKf_BREAK_LOCKED); 
   res=NewVirtualChunk(pags<<MEM_PAG_BITS,!bp);
   if(!res) return NULL;
   ins:
@@ -27,11 +27,7 @@ Return: NULL if out of memory.
   QueInit(&res->next2);
   res->pags=pags;
   res->mb_signature=MBS_UNUSED_SIGNATURE_VAL;
-
-at_done:
-at_done2:
-  if(old)
-	BreakUnlock;
+  if (old) BreakUnlock;
   POPFD
   return res;
 }
@@ -46,8 +42,7 @@ U0 MemPagFree(CMemBlk *m,CBlkPool *bp=NULL)
     pags=m->pags;
     m->mb_signature=MBS_UNUSED_SIGNATURE_VAL;
     FreeVirtualChunk(m,pags<<MEM_PAG_BITS);
-    if(old)
-	  BreakUnlock;
+    if (old) BreakUnlock;
     POPFD
   }
 }

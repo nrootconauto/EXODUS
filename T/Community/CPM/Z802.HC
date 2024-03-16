@@ -115,14 +115,6 @@ U8 FlagTableAnd[0x100];
 U8 FlagTableInc[0x100];
 U8 FlagTableDec[0x100];
 
-I64 BCnt(U16 p) {
-  I64 cnt=0;
-  while(p) {
-    p&=~(1<<Bsf(p));
-    cnt++;
-  }
-  return cnt;
-}
 U0 PopulateTables() {
   I64 noreg a;
   I64 noreg b;
