@@ -131,6 +131,7 @@ char **listdir(char const *path) {
   vec_init(&ls);
   if (veryunlikely(!traversedir(path, listdircb, &ls)))
     return NULL;
+  vec_push(&ls, NULL);
   u64 sz = ls.length * sizeof ls.data[0];
   char **ret = memcpy(HolyMAlloc(sz), ls.data, sz);
   vec_deinit(&ls);
