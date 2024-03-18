@@ -59,13 +59,13 @@ int main(int argc, char **argv) {
   handlectrlc();
 #endif
   void *argtable[] = {
-      help = arg_lit0("h", "help", "Display this help message"),
-      _60fps = arg_lit0("6", "60fps", "Run in 60 fps mode."),
-      cli = arg_lit0("c", "com", "Command line mode, cwd -> Z:/"),
-      hcrt = arg_file0("f", "file", NULL, "Specify HolyC runtime"),
+      help = arg_lit0("h", "help", "This help message"),
+      _60fps = arg_lit0("6", "60fps", "Run in 60 FPS"),
+      cli = arg_lit0("c", "com", "Command line mode"),
+      hcrt = arg_file0("f", "hcrtfile", NULL, "Specify HolyC runtime"),
       drv = arg_file0("t", "root", NULL, "Specify boot folder"),
       clifiles = arg_filen(NULL, NULL, "<files>", 0, 100,
-                           "Files that run on boot(cmdline mode specific)"),
+                           ".HC files that run on startup, used with -c"),
       end = arg_end(10),
   };
   int errs = arg_parse(argc, argv, argtable);

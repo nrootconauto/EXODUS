@@ -9,12 +9,6 @@ full-featured GUI from stock TempleOS, and a CLI mode which has found
 uses for running the networked servers automatically and building
 EXODUS' kernel itself.
 
-EXODUS is similar to [Aiwnios](https://github.com/nrootconauto/Aiwnios) in that
-it provides a TempleOS experience in user space, but EXODUS runs TempleOS' orthodox
-compiler and has less divergences from stock TempleOS, and Aiwnios runs on other
-architectures than x86_64 through its own compiler backend, such as aarch64/riscv64.
-If you're feeling experimental I recommend you try both.
-
 # Building EXODUS
 
 ## Linux/FreeBSD
@@ -124,4 +118,4 @@ Shutdown;
 
 People:
 
-- [nrootconauto](https://github.com/nrootconauto) for getting me started with HolyC code and working on the Wiki
+- [nrootconauto](https://github.com/nrootconauto) for working on the Wiki
