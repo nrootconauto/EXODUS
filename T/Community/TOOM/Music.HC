@@ -1,8 +1,6 @@
 #ifndef MUS_H
 #define MUS_H "Tee Hee Oh Shamona"
-#ifdef __EXODUS
-#define JIFFY_FREQ 1e3
-#endif
+
 class CPCSpkSnd {
   I8 pad[2];
   I16 samples;

@@ -276,9 +276,9 @@ public Bool DocRecalc(CDoc *doc,I64 recalc_flags=RECALCt_NORMAL)
 
   if (!doc || doc->doc_signature!=DOC_SIGNATURE_VAL) return FALSE;
 
-    //WinMgr updates all wins $TX,"30",D="WINMGR_FPS"$, 33.33333mS
+    //WinMgr updates all wins $TX,"(target_fps)",D="WINMGR_FPS"$, 33.33333mS
   if (recalc_flags&RECALCG_MASK==RECALCt_TO_SCRN && doc->owning_task!=Fs) {
-    i_jif=__GetTicksHP+JIFFY_FREQ/250; //4 ms
+    i_jif=__GetTicksHP+JIFFYHP_FREQ/250; //4 ms
     while (Bt(&doc->locked_flags,DOClf_LOCKED)) {
       if (__GetTicksHP>=i_jif)
 	  	return FALSE; //Bail-out if doc locked.

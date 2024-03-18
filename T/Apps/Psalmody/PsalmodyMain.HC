@@ -668,7 +668,7 @@ mo_got_msg:
 		    music.tempo=4.4*tempo_state.tempo/TEMPO_RANGE+0.5;
 		    music.stacatto_factor=
 			  0.88*tempo_state.stacatto/TEMPO_RANGE+0.12;
-		    d=JIFFY_FREQ*psm_durations[tmpn->duration]/music.tempo;
+		    d=JIFFYHP_FREQ*psm_durations[tmpn->duration]/music.tempo;
 		    if (Bt(&tmpn->flags,PSMf_TIE)) {
 		      timeout_val+=d;
 		      timeout_val2=timeout_val;

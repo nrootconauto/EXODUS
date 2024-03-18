@@ -686,7 +686,8 @@ public class CCntsGlbls
   Bool	time_stamp_calibrated;
 };
 
-#define JIFFY_FREQ		1e6 // Hz
+#define JIFFYHP_FREQ		1e6
+#define JIFFY_FREQ		1e3 // Hz
 #define CDATE_FREQ		49710 // Hz
 #define SYS_TIMER_FREQ		(18333*65536/1000) //Hz
 #define SYS_TIMER0_PERIOD	(65536*182/10/JIFFY_FREQ)

@@ -258,7 +258,7 @@ I64 WinMgrSleep(Bool flush_msgs=FALSE)
     t=tS+WINMGR_PERIOD/8;
     while (winmgr.ideal_refresh_tS<t)
       winmgr.ideal_refresh_tS+=WINMGR_PERIOD;
-    timeout_val=__GetTicksHP+(winmgr.ideal_refresh_tS-tS)*JIFFY_FREQ;
+    timeout_val=__GetTicksHP+(winmgr.ideal_refresh_tS-tS)*JIFFYHP_FREQ;
     LBts(&sys_semas[SEMA_REFRESH_IN_PROGRESS],0);
     GrUpdateScrn;
     LBtr(&sys_semas[SEMA_REFRESH_IN_PROGRESS],0);

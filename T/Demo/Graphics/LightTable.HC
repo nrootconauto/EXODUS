@@ -11,7 +11,7 @@ class Photon
 } p_root[mp_cnt];
 I64 p_root_locks;
 
-#define ANIMATE_JIFFIES	(JIFFY_FREQ*0.01)
+#define ANIMATE_JIFFIES	(JIFFYHP_FREQ*0.01)
 I64 master_sleep_jiffy;
 CTask *animate_tasks[mp_cnt];
 
