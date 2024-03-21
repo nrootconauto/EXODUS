@@ -27,15 +27,19 @@
 #include <stdbool.h>
 #include <stdio.h> /* big brother Microsoft wants you to use stdio.h for SEEK_SET */
 #include <stdlib.h>
+#include <string.h>
+#include <wchar.h>
 
 #include <vec/vec.h>
 
 #include <EXODUS/ffi.h>
 #include <EXODUS/misc.h>
+#include <EXODUS/nt/ddk.h>
 #include <EXODUS/shims.h>
 
 noret void terminate(int i) {
-  TerminateProcess(GetCurrentProcess(), i);
+  while (true)
+    TerminateProcess(GetCurrentProcess(), i);
   Unreachable();
 }
 
@@ -62,6 +66,22 @@ bool fexists(char const *path) {
 
 bool isdir(char const *path) {
   return PathIsDirectoryA(path);
+}
+
+/* ASCII to wide char string */
+static void a2wcs(char const *s, WCHAR *ws, i64 sz) {
+  i64 i;
+  for (i = 0; i < sz; ++i)
+    ws[i] = (WCHAR)s[i];
+  ws[i] = 0;
+}
+
+/* wide char string to ASCII */
+static void wcs2a(WCHAR const *ws, char *s, i64 sz) {
+  i64 i;
+  for (i = 0; i < sz; ++i)
+    s[i] = ws[i] & 0xFF;
+  s[i] = 0;
 }
 
 typedef struct {
@@ -110,7 +130,7 @@ struct deleteall {
 /* Ugly because I manually flattened out the recursive function.
  * SHFileOperation is too slow to be used here. */
 void deleteall(char *s) {
-  if (!PathIsDirectoryA(s)) {
+  if (!isdir(s)) {
     DeleteFileA(s);
     return;
   }
@@ -160,27 +180,49 @@ endfunc:
 }
 
 static bool traversedir(char const *path,
-                        void cb(WIN32_FIND_DATAA *d, void *_user0),
+                        void cb(PFILE_FULL_DIR_INFORMATION d, void *_user0),
                         void *user0) {
-  WIN32_FIND_DATAA data = {0};
-  char findbuf[0x200];
-  char *cur = stpcpy2(findbuf, path);
-  cur = stpcpy2(cur, "\\*.*");
-  /* FindFirstFileA/FindNextFileA also returns ./.. */
-  HANDLE fh = FindFirstFileA(findbuf, &data);
-  if (veryunlikely(fh == INVALID_HANDLE_VALUE))
+  bool ret = true;
+  NTSTATUS st;
+  HANDLE h;
+  IO_STATUS_BLOCK iosb = {0};
+  WCHAR buf[0x8000], dir[MAX_PATH];
+  PFILE_FULL_DIR_INFORMATION di = (PFILE_FULL_DIR_INFORMATION)buf;
+  a2wcs(path, dir, strlen(path));
+  h = CreateFileW(dir, FILE_LIST_DIRECTORY,
+                  FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, NULL,
+                  OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, NULL);
+  if (veryunlikely(h == INVALID_HANDLE_VALUE))
     return false;
-  do
-    cb(&data, user0);
-  while (FindNextFileA(fh, &data));
-  FindClose(fh);
-  return true;
+  while (true) {
+    st = NtQueryDirectoryFile(h, NULL, NULL, NULL, &iosb, buf, sizeof buf,
+                              FileFullDirectoryInformation, FALSE, NULL, FALSE);
+    if (!NT_SUCCESS(st)) {
+      /* we've reached the end if st == STATUS_NO_MORE_FILES,
+       * if anything else, it's a failure */
+      if (st != STATUS_NO_MORE_FILES)
+        ret = false;
+      break;
+    }
+    do {
+      cb(di, user0);
+      di = (PFILE_FULL_DIR_INFORMATION)((u8 *)di + di->NextEntryOffset);
+    } while (di->NextEntryOffset); /* 0 signifies the end of the buffer */
+  }
+  CloseHandle(h);
+  return ret;
 }
 
-static void listdircb(WIN32_FIND_DATAA *d, void *user0) {
+static void listdircb(PFILE_FULL_DIR_INFORMATION d, void *user0) {
   vec_str_t *p = user0;
-  if (verylikely(strlen(d->cFileName) <= 37))
-    vec_push(p, HolyStrDup(d->cFileName));
+  i64 len = d->FileNameLength / sizeof(WCHAR);
+  if (verylikely(len <= 37)) {
+    char buf[len + 1], *dup;
+    wcs2a(d->FileName, buf, len);
+    dup = HolyMAlloc(sizeof buf);
+    memcpy(dup, buf, sizeof buf);
+    vec_push(p, dup);
+  }
 }
 
 char **listdir(char const *path) {
@@ -195,11 +237,11 @@ char **listdir(char const *path) {
   return ret;
 }
 
-static void fsizecb(WIN32_FIND_DATAA *d, void *user0) {
+static void fsizecb(PFILE_FULL_DIR_INFORMATION d, void *user0) {
   i64 *p = user0;
-  if (!strcmp(d->cFileName, ".") || !strcmp(d->cFileName, ".."))
+  if (!wcscmp(d->FileName, L".") || !wcscmp(d->FileName, L".."))
     return;
-  if (verylikely(strlen(d->cFileName) <= 37))
+  if (verylikely(d->FileNameLength / sizeof(WCHAR) <= 37))
     ++*p;
 }
 
