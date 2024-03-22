@@ -63,7 +63,7 @@ void closefd(int fd) {
 
 /* W routines are faster than A routines because A routines convert to WTF16 and
  * call W routines internally, so better to use simple quick routines instead
- * of whatever Windows has */
+ * of whatever Windows has for converting text */
 
 /* ASCII to wide char string */
 static void a2wcs(char const *s, WCHAR *ws, i64 sz) {
@@ -93,66 +93,45 @@ bool isdir(char const *path) {
   return PathIsDirectoryW(buf);
 }
 
+/* emulated stack frame */
 typedef struct {
-  int cur, size;
-  void *states[];
-} Stk;
-
-static Stk *stacknew(void) {
-  Stk *ret = malloc(sizeof *ret);
-  *ret = (Stk){.size = 0, .cur = -1};
-  return ret;
-}
-
-static void stackpush(Stk *restrict *sp, void *p) {
-  Stk *s = *sp;
-  /* size is always 1 bigger than cur because indexing, so add 2 */
-  if (s->cur + 2 > s->size) {
-    s->size |= 1;
-    s->size *= 2;
-    s = realloc(s, sizeof(Stk) + sizeof(void *) * s->size);
-    *sp = s;
-  }
-  s->cur++;
-  s->states[s->cur] = p;
-}
-
-static void *stackcur(Stk *restrict s) {
-  return s->states[s->cur];
-}
-
-static void *stackpop(Stk *restrict s) {
-  return s->states[s->cur--];
-}
-
-struct deleteall {
   HANDLE fh;
   char const *cwd;
-  char *strcur, *fnp; /* ptr to filename
-                               ↓
-                        <path>/????? */
-  char findbuf[0x200], entbuf[0x200];
+  /* fnp: ptr to filename
+            ↓
+     <path>/????? */
+  char *strcur, *fnp;
+  char findbuf[MAX_PATH], entbuf[MAX_PATH];
   WIN32_FIND_DATAA data;
-};
+} delstkframe;
+
+typedef vec_t(delstkframe *) delstk;
+
+static delstkframe *stkcur(delstk *v) {
+  return v->data[v->length - 1];
+}
+
+static delstkframe *stkpop(delstk *v) {
+  return v->data[v->length-- - 1];
+}
 
 /* works in the same spirit as std::filesystem::remove_all */
 /* Ugly because I manually flattened out the recursive function.
  * SHFileOperation is too slow to be used here. */
 void deleteall(char *s) {
-  if (!isdir(s)) {
+  if (!PathIsDirectoryA(s)) {
     DeleteFileA(s);
     return;
   }
   void *lbl = &&func;
-  Stk *restrict stk = stacknew();
-  struct deleteall *restrict cur, *tmp;
+  delstk stk = {0};
+  delstkframe *cur;
 func:
   cur = malloc(sizeof *cur);
-  if (stk->cur == -1)
+  if (!stk.length)
     cur->cwd = s;
   else {
-    tmp = stackcur(stk); // parent dir
-    cur->cwd = tmp->entbuf;
+    cur->cwd = stkcur(&stk)->entbuf; // parent dir
   }
   cur->data = (WIN32_FIND_DATAA){0};
   cur->strcur = stpcpy2(cur->findbuf, cur->cwd);
@@ -168,7 +147,7 @@ func:
     cur->strcur = stpcpy2(cur->strcur, "\\");
     strcpy(cur->strcur, cur->data.cFileName);
     if (PathIsDirectoryA(cur->entbuf)) {
-      stackpush(&stk, cur);
+      vec_push(&stk, cur);
       lbl = &&dir;
       goto func;
     } else {
@@ -180,23 +159,22 @@ func:
   RemoveDirectoryA(cur->cwd);
 endfunc:
   free(cur);
-  if (stk->cur == -1) {
-    free(stk);
+  if (!stk.length) {
+    free(stk.data);
     return;
   }
-  cur = stackpop(stk);
+  cur = stkpop(&stk);
   goto *lbl;
 }
 
 typedef FILE_NAMES_INFORMATION FileInfo;
 
-static bool traversedir(char const *path,
-                        void cb(FileInfo *d, void *_user0),
+static bool traversedir(char const *path, void cb(FileInfo *d, void *_user0),
                         void *user0) {
   bool ret = true;
   NTSTATUS st;
   HANDLE h;
-  IO_STATUS_BLOCK iosb = {0};
+  IO_STATUS_BLOCK iosb;
   /* [2] */
   _Alignas(LONG) WCHAR buf[0x8000], pathbuf[MAX_PATH];
   FileInfo *di = (FileInfo *)buf;
