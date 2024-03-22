@@ -100,7 +100,7 @@ void CreateCore(vec_void_t ptrs) {
       .core_num = n,
       .event = CreateEvent(NULL, FALSE, FALSE, NULL),
   };
-  InitializeCriticalSection(&c->mtx);
+  InitializeCriticalSectionEx(&c->mtx, 2000, CRITICAL_SECTION_NO_DEBUG_INFO);
   c->thread = (HANDLE)_beginthread(ThreadRoutine, 0, c);
   SetThreadPriority(c->thread, THREAD_PRIORITY_HIGHEST);
   ++n;
@@ -114,7 +114,6 @@ void WakeCoreUp(u64 core) {
   CCore *c = cores + core;
   /* the timeSetEvent callback will automatiacally
    * wake things up so just wait for the event. */
-  /* TODO: Try SuspendThread() and passing CONTEXT to tickscb? */
   EnterCriticalSection(&c->mtx);
   SetEvent(c->event);
   LeaveCriticalSection(&c->mtx);
