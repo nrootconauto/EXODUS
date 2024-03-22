@@ -7,6 +7,7 @@
 #include <windows.h>
 #include <wincon.h>
 #include <winerror.h>
+#include <winternl.h>
 #include <direct.h> /* _mkdir */
 #include <io.h>     /* _chsize_s */
 #include <memoryapi.h>
@@ -60,19 +61,15 @@ void closefd(int fd) {
   _close(fd);
 }
 
-bool fexists(char const *path) {
-  return PathFileExistsA(path);
-}
-
-bool isdir(char const *path) {
-  return PathIsDirectoryA(path);
-}
+/* W routines are faster than A routines because A routines convert to WTF16 and
+ * call W routines internally, so better to use simple quick routines instead
+ * of whatever Windows has */
 
 /* ASCII to wide char string */
 static void a2wcs(char const *s, WCHAR *ws, i64 sz) {
   i64 i;
   for (i = 0; i < sz; ++i)
-    ws[i] = (WCHAR)s[i];
+    ws[i] = s[i];
   ws[i] = 0;
 }
 
@@ -82,6 +79,18 @@ static void wcs2a(WCHAR const *ws, char *s, i64 sz) {
   for (i = 0; i < sz; ++i)
     s[i] = ws[i] & 0xFF;
   s[i] = 0;
+}
+
+bool fexists(char const *path) {
+  WCHAR buf[MAX_PATH];
+  a2wcs(path, buf, strlen(path));
+  return PathFileExistsW(buf);
+}
+
+bool isdir(char const *path) {
+  WCHAR buf[MAX_PATH];
+  a2wcs(path, buf, strlen(path));
+  return PathIsDirectoryW(buf);
 }
 
 typedef struct {
@@ -179,24 +188,27 @@ endfunc:
   goto *lbl;
 }
 
+typedef FILE_NAMES_INFORMATION FileInfo;
+
 static bool traversedir(char const *path,
-                        void cb(PFILE_FULL_DIR_INFORMATION d, void *_user0),
+                        void cb(FileInfo *d, void *_user0),
                         void *user0) {
   bool ret = true;
   NTSTATUS st;
   HANDLE h;
   IO_STATUS_BLOCK iosb = {0};
-  WCHAR buf[0x8000], dir[MAX_PATH];
-  PFILE_FULL_DIR_INFORMATION di = (PFILE_FULL_DIR_INFORMATION)buf;
-  a2wcs(path, dir, strlen(path));
-  h = CreateFileW(dir, FILE_LIST_DIRECTORY,
+  /* [2] */
+  _Alignas(LONG) WCHAR buf[0x8000], pathbuf[MAX_PATH];
+  FileInfo *di = (FileInfo *)buf;
+  a2wcs(path, pathbuf, strlen(path));
+  h = CreateFileW(pathbuf, FILE_LIST_DIRECTORY,
                   FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, NULL,
                   OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, NULL);
   if (veryunlikely(h == INVALID_HANDLE_VALUE))
     return false;
   while (true) {
     st = NtQueryDirectoryFile(h, NULL, NULL, NULL, &iosb, buf, sizeof buf,
-                              FileFullDirectoryInformation, FALSE, NULL, FALSE);
+                              FileNamesInformation, FALSE, NULL, FALSE);
     if (!NT_SUCCESS(st)) {
       /* we've reached the end if st == STATUS_NO_MORE_FILES,
        * if anything else, it's a failure */
@@ -206,14 +218,14 @@ static bool traversedir(char const *path,
     }
     do {
       cb(di, user0);
-      di = (PFILE_FULL_DIR_INFORMATION)((u8 *)di + di->NextEntryOffset);
+      di = (FileInfo *)((u8 *)di + di->NextEntryOffset);
     } while (di->NextEntryOffset); /* 0 signifies the end of the buffer */
   }
   CloseHandle(h);
   return ret;
 }
 
-static void listdircb(PFILE_FULL_DIR_INFORMATION d, void *user0) {
+static void listdircb(FileInfo *d, void *user0) {
   vec_str_t *p = user0;
   i64 len = d->FileNameLength / sizeof(WCHAR);
   if (verylikely(len <= 37)) {
@@ -237,7 +249,7 @@ char **listdir(char const *path) {
   return ret;
 }
 
-static void fsizecb(PFILE_FULL_DIR_INFORMATION d, void *user0) {
+static void fsizecb(FileInfo *d, void *user0) {
   i64 *p = user0;
   if (!wcscmp(d->FileName, L".") || !wcscmp(d->FileName, L".."))
     return;
@@ -267,9 +279,6 @@ bool truncfile(char const *path, i64 sz) {
   int fd = _open(path, _O_RDWR | _O_BINARY);
   if (veryunlikely(fd == -1))
     return false;
-  /* I'm not particularly fond of the fact that _chsize_s
-   * is one of those "safe" routines, but I have to use it since
-   * it's the one that supports 64-bit sizes */
   bool ret = !_chsize_s(fd, sz);
   _close(fd);
   return ret;
@@ -348,6 +357,9 @@ bool isvalidptr(void *p) {
 
 /* CITATIONS:
  * [1] https://stackoverflow.com/a/35576777 (https://archive.md/ehBq4)
+ * [2]
+ * https://learn.microsoft.com/en-us/windows-hardware/drivers/ddi/ntifs/ns-ntifs-_file_names_information
+ * (https://archive.is/00lXG)
  */
 /*═════════════════════════════════════════════════════════════════════════════╡
 │ EXODUS: Executable Divine Operating System in Userspace                      │
