@@ -62,23 +62,108 @@ void closefd(int fd) {
 }
 
 /* W routines are faster than A routines because A routines convert to WTF16 and
- * call W routines internally, so better to use simple quick routines instead
+ * call W routines internally, so better to use quick routines instead
  * of whatever Windows has for converting text */
 
-/* ASCII to wide char string */
+typedef char u8x16 __attribute__((aligned(1), vector_size(16)));
+typedef short u16x8 __attribute__((aligned(1), vector_size(16)));
+
+/* commit a war crime to avoid compilers optimizing the remainder loop (sz<16)
+ * __builtin_assume doesn't work */
+#define Loop(a...)                                     \
+  asm goto("test %[sz],%[sz]\n"                        \
+           ".Lloop%=:\n"                               \
+           "jz %l[ret]\n" /* */                        \
+           a              /* */                        \
+           "add $2,%[ws]\n"                            \
+           "inc %[s]\n"                                \
+           "dec %[sz]\n"                               \
+           "jmp .Lloop%=\n"                            \
+           : [sz] "+r"(sz), [ws] "+r"(ws), [s] "+r"(s) \
+           :                                           \
+           : "eax", "memory"                           \
+           : ret);                                     \
+  ret:
+
+/* ASCII to wide char string
+ * this really doesn't matter the majority of the time is spent on IO anyway
+ * but hey, I just want to show off
+ * */
 static void a2wcs(char const *s, WCHAR *ws, i64 sz) {
-  i64 i;
-  for (i = 0; i < sz; ++i)
-    ws[i] = s[i];
-  ws[i] = 0;
+  u8x16 a = {0}, b, c;
+  while (sz >= 16) {
+    c = b = *(u8x16 *)s;
+    /* PUNPCKLBW b,a
+     * a: 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+     * b: P O N M L K J I H G F E D C B A
+     *      ┌─────────────┘ │ │ │ │ │ │ │
+     *      │   ┌───────────┘ │ │ │ │ │ │
+     *      │   │   ┌─────────┘ │ │ │ │ │
+     *      │   │   │   ┌───────┘ │ │ │ │
+     *      │   │   │   │   ┌─────┘ │ │ │
+     *      │   │   │   │   │   ┌───┘ │ │
+     *      │   │   │   │   │   │   ┌─┘ │
+     *    ┌─┤ ┌─┤ ┌─┤ ┌─┤ ┌─┤ ┌─┤ ┌─┤ ┌─┤
+     * b: H 0 G 0 F 0 E 0 D 0 C 0 B 0 A 0
+     *
+     * PUNPCKHBW c,a
+     * a: 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+     * c: P O N M L K J I H G F E D C B A
+     *    │ │ │ │ │ │ │ └─────────────┐
+     *    │ │ │ │ │ │ └───────────┐   │
+     *    │ │ │ │ │ └─────────┐   │   │
+     *    │ │ │ │ └───────┐   │   │   │
+     *    │ │ │ └─────┐   │   │   │   │
+     *    │ │ └───┐   │   │   │   │   │
+     *    │ └─┐   │   │   │   │   │   │
+     *    ├─┐ ├─┐ ├─┐ ├─┐ ├─┐ ├─┐ ├─┐ ├─┐
+     * c: P 0 O 0 N 0 M 0 L 0 K 0 J 0 I 0
+     */
+    asm("punpcklbw %[a], %[b]\n"
+        "punpckhbw %[a], %[c]\n"
+        : [b] "+v"(b), [c] "+v"(c)
+        : [a] "v"(a));
+    ((u8x16 *)ws)[0] = b;
+    ((u8x16 *)ws)[1] = c;
+    ws += 16, s += 16, sz -= 16;
+  }
+  Loop("movzbl (%[s]), %%eax\n"
+       "mov    %%ax,(%[ws])\n");
+  *ws = 0;
 }
 
 /* wide char string to ASCII */
 static void wcs2a(WCHAR const *ws, char *s, i64 sz) {
-  i64 i;
-  for (i = 0; i < sz; ++i)
-    s[i] = ws[i] & 0xFF;
-  s[i] = 0;
+  u16x8 a, b;
+  while (sz >= 16) {
+    a = ((u16x8 *)ws)[0];
+    b = ((u16x8 *)ws)[1];
+    /* PACKUSWB a,b
+     *
+     * 1 lane is i16, clamp each lane in range 0..=0xFF
+     * each wide char uses the lower byte, so this inst
+     * is applicable without PAND
+     *
+     * b: θ0 η0 ζ0 ε0 δ0 γ0 β0 α0
+     * a: H0 G0 F0 E0 D0 C0 B0 A0
+     *
+     * clamp 0A, 0B, 0C, ..., 0H inside a
+     * repeat for b in upper 64 bits of a
+     *
+     * a: θη ζε δγ βα HG FE DC BA
+     */
+    /* GCC doesn't acknowledge that the argument to __builtin_ia32_packuswb128
+     * is unaligned and generates a memory operand, which throws a #GP(0)
+     *
+     * TODO: file a bug? I don't use intrinsics anyway so I don't really care
+     */
+    asm("packuswb %1, %0" : "+v"(a) : "v"(b));
+    *(u16x8 *)s = a;
+    s += 16, ws += 16, sz -= 16;
+  }
+  Loop("movzwl (%[ws]),%%eax\n"
+       "mov    %%al,(%[s])\n");
+  *s = 0;
 }
 
 bool fexists(char const *path) {
@@ -143,7 +228,8 @@ func:
   cur->strcur -= 3;
   *cur->strcur = 0;
   do {
-    if (!wcscmp(cur->data.cFileName, L".") || !wcscmp(cur->data.cFileName, L".."))
+    if (!wcscmp(cur->data.cFileName, L".") ||
+        !wcscmp(cur->data.cFileName, L".."))
       continue;
     wcscpy(cur->strcur, cur->data.cFileName);
     if (PathIsDirectoryW(cur->buf)) {

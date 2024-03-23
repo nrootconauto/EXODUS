@@ -89,20 +89,6 @@ void _dtor(void *_p);
 #define MiB(b) (1024 * KiB(b))
 #define GiB(b) (1024 * MiB(b))
 
-/* SSE */
-typedef char uxmm __attribute__((vector_size(16), aligned(1)));
-// typedef long long axmm __attribute__((vector_size(16), aligned(16)));
-
-#ifndef __clang__
-  #define loaddqu(a...)      __builtin_ia32_loaddqu((char const *)(a))
-  #define storedqu(dst, src) __builtin_ia32_storedqu((char *)(dst), (uxmm)(src))
-// #define movntdq(dst, src)  __builtin_ia32_movntdq((axmm *)(dst), (axmm)(src))
-#else
-  #define loaddqu(a...)      (*(uxmm *)(a))
-  #define storedqu(dst, src) (*(uxmm *)(dst) = (src))
-// #define movntdq(dst, src)  __builtin_nontemporal_store(src, (axmm *)dst)
-#endif
-
 /* STRINGS (MINGW IS NOT REALLY POSIX) */
 /* Trivia: GCC will just automatically replace any stpcpy call it sees with MOVs
  *         and strcpy+ADD rax,r64 for long strings of unknown size.

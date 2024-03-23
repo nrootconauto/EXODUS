@@ -40,18 +40,9 @@ enum {
 static void updatescrn(u8 *px) {
   SDL_LockSurface(win.surf);
   u8 *dst = win.surf->pixels, *src = px;
-  uxmm xmm0, xmm1, xmm2, xmm3;
-  u64 const lim = WIDTH * HEIGHT;
-  for (u64 i = 0; i < lim; i += 64) {
-    xmm0 = loaddqu(src + i);
-    xmm1 = loaddqu(src + i + 0x10);
-    xmm2 = loaddqu(src + i + 0x20);
-    xmm3 = loaddqu(src + i + 0x30);
-    storedqu(dst + i, xmm0);
-    storedqu(dst + i + 0x10, xmm1);
-    storedqu(dst + i + 0x20, xmm2);
-    storedqu(dst + i + 0x30, xmm3);
-  }
+  u64 sz = WIDTH * HEIGHT;
+  asm("rep movsb"
+      : "+D"(dst), "+S"(src), "+c"(sz), "=m"(*(char(*)[sz])dst));
   SDL_UnlockSurface(win.surf);
   SDL_RenderClear(win.rend);
   int w, h, w2, h2, margin_x = 0, margin_y = 0;
