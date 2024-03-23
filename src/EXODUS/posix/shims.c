@@ -76,8 +76,7 @@ void deleteall(char *s) {
     return;
   FTSENT *ent;
   /* fts changes directory while traversing,
-   * so we don't have to care about long path names
-   * it also returns ./.. */
+   * so we don't have to care about long path names */
   while ((ent = fts_read(fts))) {
     switch (ent->fts_info) {
     /* FTS_D comes before its contents
@@ -164,13 +163,15 @@ bool dirmk(char const *path) {
   return !mkdir(path, 0700);
 }
 
+static void _closefd(int *fd) {
+  close(*fd);
+}
+
 bool truncfile(char const *path, i64 sz) {
-  int fd = open(path, O_RDWR);
+  int cleanup(_closefd) fd = open(path, O_RDWR);
   if (veryunlikely(fd == -1))
     return false;
-  bool ret = !ftruncate(fd, sz);
-  close(fd);
-  return ret;
+  return !ftruncate(fd, sz);
 }
 
 u64 unixtime(char const *path) {
@@ -181,17 +182,13 @@ u64 unixtime(char const *path) {
 
 /* readv/writev probably will not yield measurable perf benefits */
 bool readfile(char const *path, u8 *buf, i64 sz) {
-  int fd = open(path, O_RDONLY);
-  bool ret = sz == read(fd, buf, sz);
-  close(fd);
-  return ret;
+  int cleanup(_closefd) fd = open(path, O_RDONLY);
+  return sz == read(fd, buf, sz);
 }
 
 bool writefile(char const *path, u8 const *data, i64 sz) {
-  int fd = open(path, O_WRONLY | O_CREAT, 0666);
-  bool ret = sz == write(fd, data, sz);
-  close(fd);
-  return ret;
+  int cleanup(_closefd) fd = open(path, O_WRONLY | O_CREAT, 0666);
+  return sz == write(fd, data, sz);
 }
 
 i64 getticksus(void) {

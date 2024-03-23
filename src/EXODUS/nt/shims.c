@@ -96,10 +96,9 @@ bool isdir(char const *path) {
 /* emulated stack frame */
 typedef struct {
   HANDLE fh;
-  char const *cwd;
-  char *strcur;
-  char findbuf[MAX_PATH], entbuf[MAX_PATH];
-  WIN32_FIND_DATAA data;
+  WCHAR const *cwd;
+  WCHAR buf[MAX_PATH], *strcur;
+  WIN32_FIND_DATAW data;
 } delstkframe;
 
 typedef vec_t(delstkframe *) delstk;
@@ -112,46 +111,51 @@ static delstkframe *stkpop(delstk *v) {
   return v->data[v->length-- - 1];
 }
 
+static WCHAR *wcpcpy2(WCHAR *restrict dst, WCHAR const *src) {
+  u64 sz = wcslen(src);
+  return (WCHAR *)memcpy(dst, src, sizeof(WCHAR[sz + 1])) + sz;
+}
+
 /* works in the same spirit as std::filesystem::remove_all */
 /* Ugly because I manually flattened out the recursive function.
  * SHFileOperation is too slow to be used here. */
 void deleteall(char *s) {
-  if (!PathIsDirectoryA(s)) {
-    DeleteFileA(s);
+  WCHAR path[MAX_PATH];
+  a2wcs(s, path, strlen(s));
+  if (!PathIsDirectoryW(path)) {
+    DeleteFileW(path);
     return;
   }
   delstk stk = {0};
   delstkframe *cur;
 func:
   cur = malloc(sizeof *cur);
-  if (!stk.length)
-    cur->cwd = s;
-  else {
-    cur->cwd = stkcur(&stk)->entbuf; // parent dir
-  }
-  cur->data = (WIN32_FIND_DATAA){0};
-  cur->strcur = stpcpy2(cur->findbuf, cur->cwd);
-  strcpy(cur->strcur, "\\*.*");
-  cur->fh = FindFirstFileA(cur->findbuf, &cur->data);
+  cur->cwd = stk.length ? stkcur(&stk)->buf /* parent dir */ : path;
+  cur->data = (WIN32_FIND_DATAW){0};
+  cur->strcur = wcpcpy2(cur->buf, cur->cwd);
+  cur->strcur = wcpcpy2(cur->strcur, L"\\*.*");
+  cur->fh = FindFirstFileW(cur->buf, &cur->data);
   if (veryunlikely(cur->fh == INVALID_HANDLE_VALUE))
     goto endfunc;
-  cur->strcur = stpcpy2(cur->entbuf, cur->cwd);
+  /*  -3  cur
+   *   ↓  ↓
+   * \\*.*\0 */
+  cur->strcur -= 3;
+  *cur->strcur = 0;
   do {
-    if (!strcmp(cur->data.cFileName, ".") || !strcmp(cur->data.cFileName, ".."))
+    if (!wcscmp(cur->data.cFileName, L".") || !wcscmp(cur->data.cFileName, L".."))
       continue;
-    cur->strcur = stpcpy2(cur->entbuf, cur->cwd);
-    cur->strcur = stpcpy2(cur->strcur, "\\");
-    strcpy(cur->strcur, cur->data.cFileName);
-    if (PathIsDirectoryA(cur->entbuf)) {
+    wcscpy(cur->strcur, cur->data.cFileName);
+    if (PathIsDirectoryW(cur->buf)) {
       vec_push(&stk, cur);
       goto func;
     } else {
-      DeleteFileA(cur->entbuf);
+      DeleteFileW(cur->buf);
     }
   dir:; /* Clang wants a semicolon here */
-  } while (FindNextFileA(cur->fh, &cur->data));
+  } while (FindNextFileW(cur->fh, &cur->data));
   FindClose(cur->fh);
-  RemoveDirectoryA(cur->cwd);
+  RemoveDirectoryW(cur->cwd);
 endfunc:
   free(cur);
   if (!stk.length) {
@@ -252,13 +256,15 @@ bool dirmk(char const *path) {
   return !mkdir(path);
 }
 
+static void _closefd(int *fd) {
+  _close(*fd);
+}
+
 bool truncfile(char const *path, i64 sz) {
-  int fd = _open(path, _O_RDWR | _O_BINARY);
+  int cleanup(_closefd) fd = _open(path, _O_RDWR | _O_BINARY);
   if (veryunlikely(fd == -1))
     return false;
-  bool ret = !_chsize_s(fd, sz);
-  _close(fd);
-  return ret;
+  return !_chsize_s(fd, sz);
 }
 
 u64 unixtime(char const *path) {
@@ -268,17 +274,14 @@ u64 unixtime(char const *path) {
 }
 
 bool readfile(char const *path, u8 *buf, i64 sz) {
-  int fd = _open(path, _O_RDONLY | _O_BINARY);
-  bool ret = sz == _read(fd, buf, sz);
-  _close(fd);
-  return ret;
+  int cleanup(_closefd) fd = _open(path, _O_RDONLY | _O_BINARY);
+  return sz == _read(fd, buf, sz);
 }
 
 bool writefile(char const *path, u8 const *data, i64 sz) {
-  int fd = _open(path, _O_WRONLY | _O_CREAT | _O_BINARY, _S_IREAD | _S_IWRITE);
-  bool ret = sz == _write(fd, data, sz);
-  _close(fd);
-  return ret;
+  int cleanup(_closefd) fd =
+      _open(path, _O_WRONLY | _O_CREAT | _O_BINARY, _S_IREAD | _S_IWRITE);
+  return sz == _write(fd, data, sz);
 }
 
 i64 getticksus(void) {
