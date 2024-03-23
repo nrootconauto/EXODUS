@@ -21,7 +21,8 @@ project(exodus
 
 set(default_build_type "Release")
 
-if (NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
+if ((NOT CMAKE_BUILD_TYPE OR CMAKE_BUILD_TYPE MATCHES "None")
+    AND NOT CMAKE_CONFIGURATION_TYPES)
   message(STATUS "Setting build type to '${default_build_type}' as none was specified.")
   set(CMAKE_BUILD_TYPE "${default_build_type}"
     CACHE STRING "Choose the type of build." FORCE)
