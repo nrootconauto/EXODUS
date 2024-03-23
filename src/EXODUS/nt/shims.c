@@ -97,10 +97,7 @@ bool isdir(char const *path) {
 typedef struct {
   HANDLE fh;
   char const *cwd;
-  /* fnp: ptr to filename
-            ↓
-     <path>/????? */
-  char *strcur, *fnp;
+  char *strcur;
   char findbuf[MAX_PATH], entbuf[MAX_PATH];
   WIN32_FIND_DATAA data;
 } delstkframe;
@@ -123,7 +120,6 @@ void deleteall(char *s) {
     DeleteFileA(s);
     return;
   }
-  void *lbl = &&func;
   delstk stk = {0};
   delstkframe *cur;
 func:
@@ -148,7 +144,6 @@ func:
     strcpy(cur->strcur, cur->data.cFileName);
     if (PathIsDirectoryA(cur->entbuf)) {
       vec_push(&stk, cur);
-      lbl = &&dir;
       goto func;
     } else {
       DeleteFileA(cur->entbuf);
@@ -164,7 +159,7 @@ endfunc:
     return;
   }
   cur = stkpop(&stk);
-  goto *lbl;
+  goto dir;
 }
 
 typedef FILE_NAMES_INFORMATION FileInfo;
@@ -177,7 +172,7 @@ static bool traversedir(char const *path, void cb(FileInfo *d, void *_user0),
   IO_STATUS_BLOCK iosb;
   /* [2] */
   _Alignas(LONG) WCHAR buf[0x8000], pathbuf[MAX_PATH];
-  FileInfo *di = (FileInfo *)buf;
+  FileInfo *di;
   a2wcs(path, pathbuf, strlen(path));
   h = CreateFileW(pathbuf, FILE_LIST_DIRECTORY,
                   FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, NULL,
@@ -194,10 +189,14 @@ static bool traversedir(char const *path, void cb(FileInfo *d, void *_user0),
         ret = false;
       break;
     }
-    do {
+    di = (FileInfo *)buf;
+    while (true) {
       cb(di, user0);
+      /* 0 signifies the end of the buffer */
+      if (unlikely(!di->NextEntryOffset))
+        break;
       di = (FileInfo *)((u8 *)di + di->NextEntryOffset);
-    } while (di->NextEntryOffset); /* 0 signifies the end of the buffer */
+    }
   }
   CloseHandle(h);
   return ret;
