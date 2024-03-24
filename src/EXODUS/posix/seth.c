@@ -75,7 +75,9 @@ static void div0(argign int sig) {
   pthread_sigmask(SIG_UNBLOCK, &set, NULL);
   HolyThrow("DivZero");
 }
-static void ProfRt(int sig, siginfo_t *info, void *_ctx);
+
+static void profcb(int sig, siginfo_t *info, void *_ctx);
+
 static void *ThreadRoutine(void *arg) {
   VFsThrdInit();
   SetupDebugger();
@@ -201,7 +203,7 @@ void SleepUs(u64 us) {
   #define RegRbp REG(rbp)
 #endif
 
-static void ProfRt(argign int sig, argign siginfo_t *info, void *_ctx) {
+static void profcb(argign int sig, argign siginfo_t *info, void *_ctx) {
   if (!self)
     return;
   CCore *c = self;
@@ -213,7 +215,7 @@ static void ProfRt(argign int sig, argign siginfo_t *info, void *_ctx) {
   if (!pthread_equal(pthread_self(), c->thread) ||
       veryunlikely(!c->profiler_int))
     return;
-  /* Fake RBP because ProfRt is called from the kernel and
+  /* fake RBP because profcb is called from the kernel and
    * we need the context of the HolyC side (ctx) instead
    * or ProfRep will print bogus */
   FFI_CALL_TOS_1_CUSTOM_BP(c->profiler_int, RegRbp, RegRip);

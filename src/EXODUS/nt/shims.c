@@ -118,8 +118,8 @@ static void a2wcs(char const *s, WCHAR *ws, i64 sz) {
      *    ├─┐ ├─┐ ├─┐ ├─┐ ├─┐ ├─┐ ├─┐ ├─┐
      * c: P 0 O 0 N 0 M 0 L 0 K 0 J 0 I 0
      */
-    asm("punpcklbw %1, %0" : "+v"(b) : "v"(a));
-    asm("punpckhbw %1, %0" : "+v"(c) : "v"(a));
+    asm("punpcklbw %1, %0" : "+x"(b) : "x"(a));
+    asm("punpckhbw %1, %0" : "+x"(c) : "x"(a));
     *(xmm_t *)(ws + 0) = b;
     *(xmm_t *)(ws + 8) = c;
     ws += 16;
@@ -134,8 +134,8 @@ static void a2wcs(char const *s, WCHAR *ws, i64 sz) {
 static void wcs2a(WCHAR const *ws, char *s, i64 sz) {
   xmm_t a, b;
   while (sz >= 16) {
-    a = *(xmm_t *)(ws + 0);
-    b = *(xmm_t *)(ws + 8);
+    a = *(xmm_t *)(ws + 000);
+    b = *(xmm_t *)(ws + 010);
     /* PACKUSWB a,b
      *
      * 1 lane is i16, clamp each lane in range 0..=0xFF
@@ -150,7 +150,7 @@ static void wcs2a(WCHAR const *ws, char *s, i64 sz) {
      *
      * a: θη ζε δγ βα HG FE DC BA
      */
-    asm("packuswb %1, %0" : "+v"(a) : "v"(b));
+    asm("packuswb %1, %0" : "+x"(a) : "x"(b));
     *(xmm_t *)s = a;
     ws += 16, s += 16, sz -= 16;
   }
@@ -186,7 +186,7 @@ static delstkframe *stkcur(delstk *v) {
 }
 
 static delstkframe *stkpop(delstk *v) {
-  return v->data[v->length-- - 1];
+  return v->data[--v->length];
 }
 
 static WCHAR *wcpcpy2(WCHAR *restrict dst, WCHAR const *src) {
@@ -219,7 +219,6 @@ func:
    *   ↓  ↓
    * \\*.*\0 */
   cur->strcur -= 3;
-  *cur->strcur = 0;
   do {
     if (!wcscmp(cur->data.cFileName, L".") ||
         !wcscmp(cur->data.cFileName, L".."))

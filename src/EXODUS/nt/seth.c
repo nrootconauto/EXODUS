@@ -91,19 +91,16 @@ void InterruptCore(u64 core) {
 }
 
 void CreateCore(vec_void_t ptrs) {
-  static int n = 0;
-  if (!n)
-    nproc = mp_cnt();
-  CCore *c = cores + n;
+  CCore *c = cores + nproc;
   *c = (CCore){
       .funcptrs = ptrs,
-      .core_num = n,
+      .core_num = nproc,
       .event = CreateEvent(NULL, FALSE, FALSE, NULL),
   };
   InitializeCriticalSectionEx(&c->mtx, 2000, CRITICAL_SECTION_NO_DEBUG_INFO);
   c->thread = (HANDLE)_beginthread(ThreadRoutine, 0, c);
   SetThreadPriority(c->thread, THREAD_PRIORITY_HIGHEST);
-  ++n;
+  nproc++;
   /* Win32 cannot thread names unless it's MSVC[1]
    * or Clang due to Microsoft adding Clang-cl to their toolchain.
    * There IS a way to do this on GCC, but it's stupid[2].
