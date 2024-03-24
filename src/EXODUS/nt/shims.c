@@ -62,7 +62,7 @@ void closefd(int fd) {
 }
 
 /* W routines are faster than A routines because A routines convert to WTF16 and
- * call W routines internally, so better to use quick routines instead
+ * call W routines internally, so better to use quick unchecked routines instead
  * of whatever Windows has for converting text */
 
 typedef long long xmm_t __attribute__((vector_size(16), may_alias, aligned(1)));
@@ -225,7 +225,7 @@ func:
         !wcscmp(cur->data.cFileName, L".."))
       continue;
     wcscpy(cur->strcur, cur->data.cFileName);
-    if (PathIsDirectoryW(cur->buf)) {
+    if (cur->data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) {
       vec_push(&stk, cur);
       goto func;
     } else {
