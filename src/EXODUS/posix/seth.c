@@ -83,7 +83,7 @@ static void *ThreadRoutine(void *arg) {
   SetupDebugger();
   struct sigaction sigfpe = {.sa_handler = div0},
                    holysigint = {.sa_handler = ctrlaltc},
-                   holyprof = {.sa_sigaction = ProfRt};
+                   holyprof = {.sa_sigaction = profcb};
   sigaction(SIGFPE, &sigfpe, NULL);
   sigaction(SIGUSR1, &holysigint, NULL);
   sigaction(SIGPROF, &holyprof, NULL);
