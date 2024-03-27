@@ -270,17 +270,15 @@ U0 Ui(U8 *buf,U8 **_rip,I64 seg_size=64,I64 *_jmp_dst=NULL,Bool just_ins=FALSE)
   }
   *arg1_st=0;
   *arg2_st=0;
-  if (!IsRaw && PutSrcLink(rip,1,line1))
-    CatPrint(line1,"\n");
-  else
-    *line1=0;
-  StrPrint(line1+StrLen(line1),"%24tp ",rip);
+  if (IsRaw) StrPrint(line1,"%p ",rip);
+  else StrPrint(line1,"%P ",rip);
   bin_data_area1=line1+StrLen(line1);
   for (i=0;i<6;i++)
     CatPrint(line1,"%02X",rip[i]);
   CatPrint(line1," ");
 
-  StrPrint(line2,"%24tp ",rip+6);
+  if (IsRaw) StrPrint(line2,"%p ",rip+6);
+  else StrPrint(line2,"%P ",rip+6);
   bin_data_area2=line2+StrLen(line2);
   for (i=6;i<12;i++)
     CatPrint(line2,"%02X",rip[i]);
