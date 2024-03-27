@@ -14,21 +14,14 @@ __TOSTHUNK_START:
     push   rbp
     mov    rbp,rsp
     and    rsp,-16 // ...F0h, both ABIs require alignment
-    push   rsi
-    push   rdi
     push   r10
     push   r11
-    push   r12
-    push   r13
-    push   r14
-    push   r15
 #ifdef _WIN32
+    sub    rsp,0x20 /* 4 register homes required for win32[1] */
     lea    rcx,[rbp+0x10]
-    push   r9 /* 4 register homes required for win32[1] */
-    push   r8
-    push   rdx
-    push   rcx
 #else
+    push   rsi
+    push   rdi
     lea    rdi,[rbp+0x10]
 #endif
 /* CCh is INT3, an assembler won't just randomly insert a bunch of them */
@@ -36,15 +29,12 @@ __TOSTHUNK_START:
     call   rax
 #ifdef _WIN32
     add    rsp,0x20 // volatile regs don't need restore, so no pop
-#endif
-    pop    r15
-    pop    r14
-    pop    r13
-    pop    r12
-    pop    r11
-    pop    r10
+#else
     pop    rdi
     pop    rsi
+#endif
+    pop    r11
+    pop    r10
     leave
 /* F4h is HLT, a ring0 opcode, so we can safely assume this is the only instance */
     ret   0xF4F4

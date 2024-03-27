@@ -11,8 +11,7 @@
 
 #ifdef _WIN32
   #include <direct.h>
-static char *savedregs[] = {"rbx", "rdi", "rsi", "r12", "r13", "r14", "r15"};
-static char *argregs[] = {"rcx", "rdx", "r8", "r9"};
+static char *savedregs[] = {"rbx"}, *argregs[] = {"rcx", "rdx", "r8", "r9"};
   /* STK ARGS START FROM RBP+0x30 [1]
    * first stack arg: +0x30
    * r9 home  +0x28
@@ -26,8 +25,8 @@ static char *argregs[] = {"rcx", "rdx", "r8", "r9"};
   #define mkdir(a, b) _mkdir(a)
 #else
   #include <sys/stat.h>
-static char *savedregs[] = {"rbx", "r12", "r13", "r14", "r15"};
-static char *argregs[] = {"rdi", "rsi", "rdx", "rcx", "r8", "r9"};
+static char *savedregs[] = {"rbx"},
+            *argregs[] = {"rdi", "rsi", "rdx", "rcx", "r8", "r9"};
 // STARTS STK ARGS FROM RBP+0x10
   #define STARTSTKARG 0x10
 #endif
