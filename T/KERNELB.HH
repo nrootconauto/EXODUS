@@ -14,6 +14,8 @@ public _extern _CALLEXTSTR I64 CallExtStr(
 //Can have any fixed number of arguments.
 public _extern _CALL_IND I64 CallInd(
 	/*argpop*/I64 (*fp_addr)(...),...); //Call with fixed number of args.
+public _extern _CALL_VA_ARGS I64 CallVaArgs(
+	/*noargpop*/U8 *fptr,I64 argc1,I64 *argv1,...);
 
 public _extern _ARG F64 Arg(F64 x,F64 y); //Polar coordinate angle.
 public _extern _CEIL F64 Ceil(F64 d); //Ceiling of F64.
