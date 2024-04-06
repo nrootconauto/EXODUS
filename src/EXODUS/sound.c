@@ -8,7 +8,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include <SDL2/SDL.h>
+#include <SDL.h>
 
 #include <EXODUS/misc.h>
 #include <EXODUS/shims.h>
@@ -19,11 +19,11 @@ static SDL_AudioSpec have;
 static f64 volume = .2;
 
 enum {
-  MAX = 1 << 14 // headspace for vol=1.f
+  MAX = (1 << 15) - 1
 };
 
-static void AudioCB(argign void *ud, Uint8 *_out, int _len) {
-  Sint16 *out = (Sint16 *)_out;
+static void AudioCB(argign void *ud, u8 *_out, int _len) {
+  i16 *out = (i16 *)_out;
   int len = _len / 2;
   if (unlikely(!freq)) {
     memset(_out, 0, _len);
@@ -31,10 +31,10 @@ static void AudioCB(argign void *ud, Uint8 *_out, int _len) {
   }
   for (int i = 0; i < len / have.channels; ++i) {
     f64 t = (f64)++sample / have.freq;
-    double w = sin(2 * M_PI * t * freq);
+    f64 w = sin(2 * M_PI * t * freq);
     w /= fabs(w);
     w *= MAX;
-    Sint16 maxed = w * volume;
+    i16 maxed = w * volume;
     for (int j = 0; j < have.channels; ++j)
       out[have.channels * i + j] = maxed;
   }
@@ -53,7 +53,7 @@ void InitSound(void) {
                                                   .freq = 24000,
                                                   .format = AUDIO_S16,
                                                   .channels = 1,
-                                                  .samples = 512,
+                                                  .samples = 256,
                                                   .callback = AudioCB,
                                               },
                                               &have, 0);

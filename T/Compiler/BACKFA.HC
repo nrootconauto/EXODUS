@@ -260,7 +260,7 @@ U0 ICFMod(CCmpCtrl *cc,CIntermediateCode *tmpi,I64 rip)
 	  MDF_REG+RT_I64,REG_RAX,0,rip);
 }
 
-U0 ICFs(CCmpCtrl *cc,CIntermediateCode *tmpi,U8 *buf,I64 rip) {
+/*U0 ICFs(CCmpCtrl *cc,CIntermediateCode *tmpi,U8 *buf,I64 rip) {
   I64 i;
   CAOTImportExport *tmpie;
   CHashExport *tmpex;
@@ -366,7 +366,7 @@ U0 ICGs(CCmpCtrl *cc,CIntermediateCode *tmpi,U8 *buf,I64 rip) {
   tmpi->ic_flags&=~ICF_CODE_FINAL;
   ICMov(tmpi,tmpi->res.type,tmpi->res.reg,tmpi->res.disp,
 	MDF_REG+RT_I64,REG_RAX,0,rip);
-}
+}*/
 
 U0 ICFPow(CCmpCtrl *cc,CIntermediateCode *tmpi,U8 *buf,I64 rip)
 {//for POW

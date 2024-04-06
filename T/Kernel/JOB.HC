@@ -538,7 +538,7 @@ U0 CoreAPSethTask()
     TaskInit(Fs,0);
   }
   if (!Gs)
-    SetGs(mp_cores[__CoreNum]);
+    SetGs(&cpu_structs[__CoreNum]);
   //cpu_structs[__CoreNum]=Gs;
   QueInit(&(Gs->next_dying));
   Gs->num=__CoreNum;
@@ -547,7 +547,6 @@ U0 CoreAPSethTask()
     Fs->parent_task=adam_task;
     Fs->hash_table->next=adam_task->hash_table;
   }
-  mp_cores[Gs->num]=Gs;
   CJobCtrl *ctrl=&(Fs->srv_ctrl);
   LBts(&(Gs->ready),0);
   LBts(&seth_tasks_ready,__CoreNum);
@@ -602,7 +601,7 @@ CJob *JobQue(I64 (*fp_addr)(U8 *data),U8 *data=NULL,
   tmpc->flags=flags;
   tmpc->aux1=aux1;
   tmpc->aux2=aux2;
-  seth=mp_cores[target_cpu]->seth_task;
+  seth=cpu_structs[target_cpu].seth_task;
   tmpc->ctrl=ctrl=&seth->srv_ctrl;
   while (LBts(&ctrl->flags,JOBCf_LOCKED))
     Yield;

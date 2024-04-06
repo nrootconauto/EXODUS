@@ -30,7 +30,7 @@
 #define vec_push(v, val) \
   (vec_expand_(vec_unpack_(v)) ? -1 : ((v)->data[(v)->length++] = (val), 0))
 
-#define vec_pop(v) (v)->data[--(v)->length]
+#define vec_pop(v) (void)((v)->data[--(v)->length])
 
 #define vec_splice(v, start, count) \
   (vec_splice_(vec_unpack_(v), start, count), (v)->length -= (count))
@@ -63,15 +63,16 @@
 
 #define vec_compact(v) vec_compact_(vec_unpack_(v))
 
-#define vec_pusharr(v, arr, count)                                \
-  do {                                                            \
-    int i__, n__ = (count);                                       \
-    if (vec_reserve_po2_(vec_unpack_(v), (v)->length + n__) != 0) \
-      break;                                                      \
-    for (i__ = 0; i__ < n__; i__++) {                             \
-      (v)->data[(v)->length++] = (arr)[i__];                      \
-    }                                                             \
+#define vec_pusharr(v, arr, count)                                    \
+  do {                                                                \
+    int n__ = (count);                                                \
+    if (vec_reserve_po2_(vec_unpack_(v), (v)->length + n__) != 0)     \
+      break;                                                          \
+    memcpy((v)->data + (v)->length, arr, n__ * sizeof((v)->data[0])); \
+    (v)->length += n__;                                               \
   } while (0)
+
+#define vec_pushstr(v, a...) vec_pusharr((v), (a), strlen(a))
 
 #define vec_extend(v, v2) vec_pusharr((v), (v2)->data, (v2)->length)
 

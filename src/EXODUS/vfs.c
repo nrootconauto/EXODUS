@@ -17,7 +17,7 @@
 
 _Thread_local char thrd_pwd[0x200], thrd_drv;
 
-static char mount_points['z' - 'a' + 1][0x100];
+static char mount_points['z' - 'a' + 1][0x200];
 
 static char *VFsFNameAbs(char const *path) {
   char *cur, *prev, ret[0x200];

@@ -9,14 +9,25 @@
 #include <fcntl.h>
 #include <fts.h>
 #include <sys/mman.h>
+#include <sys/resource.h>
 #include <sys/syscall.h>
 #include <unistd.h>
+
 #ifdef __FreeBSD__
   #include <kvm.h>
   #include <sys/param.h>
   #include <sys/sysctl.h>
   #include <sys/user.h>
   #include <libprocstat.h>
+  #include <machine/sysarch.h>
+#endif
+
+#ifdef __linux__
+  #if __has_include(<asm/prctl.h>)
+    #include <asm/prctl.h>
+  #else // musl
+    #define ARCH_SET_GS 0x1001
+  #endif
 #endif
 
 #include <inttypes.h>
@@ -24,6 +35,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <time.h>
 
@@ -305,6 +317,26 @@ u64 get31(void) {
   procstat_close(ps);
   return prev;
 #endif
+}
+
+void preparetls(void) {
+  /* we store pointers (not the struct itself)
+   * to Fs on gs:0x28 and Gs on gs:0x2c
+   * blame Microsoft for this */
+#define Fsgs ((u8 *)malloc(8) - 0x28)
+#ifdef __linux__
+  syscall(SYS_arch_prctl, ARCH_SET_GS, (u64)Fsgs);
+#elif defined(__FreeBSD__)
+  amd64_set_gsbase(Fsgs);
+#endif
+}
+
+void prepare(void) {
+  struct rlimit rl;
+  getrlimit(RLIMIT_NOFILE, &rl);
+  rl.rlim_cur = rl.rlim_max;
+  setrlimit(RLIMIT_NOFILE, &rl);
+  preparetls();
 }
 
 /* CITATIONS:

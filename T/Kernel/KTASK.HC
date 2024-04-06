@@ -222,7 +222,7 @@ Bool TaskValidate(CTask *task)
     return FALSE;
   //if(!cpu_structs) goto defacto;
   for (c=0;c!=mp_cnt;c++) {
-    t=mp_cores[c]->seth_task;
+    t=cpu_structs[c].seth_task;
     if (!t) goto defacto;
     if (t!=task) { 
       for (t2=t->next_task;t2!=t;t2=t2->next_task) {
@@ -322,10 +322,10 @@ CTask *Spawn(U0 (*fp_start_addr)(U8 *data),U8 *data=NULL,U8 *task_name=NULL,
   } else if (target_cpu==-1) {
     target_cpu=Gs->num;
   }
-  task=CAlloc32(sizeof(CTask),adam_task);
+  task=CAlloc32(sizeof(CTask),adam_task);//MUST BE IN LOWER32 BITS
   if(!parent) {
     //if(cpu_structs[target_cpu])
-    parent=mp_cores[target_cpu]->seth_task;
+    parent=cpu_structs[target_cpu].seth_task;
     if(!parent)
       parent=adam_task;
   }
@@ -347,10 +347,10 @@ CTask *Spawn(U0 (*fp_start_addr)(U8 *data),U8 *data=NULL,U8 *task_name=NULL,
   stack[-2]=&Exit;
   task->rsp=stack-2;
   task->rip=fp_start_addr;
-  if (Bt(&flags,JOBf_ADD_TO_QUE)) {
+  if (Bt(&flags,JOBf_ADD_TO_QUE)) {
     TaskQueInsChild(task);
-    if (mp_cores[target_cpu]->seth_task)
-      TaskQueIns(task,mp_cores[target_cpu]->seth_task);
+    if (cpu_structs[target_cpu].seth_task)
+      TaskQueIns(task,cpu_structs[target_cpu].seth_task);
     else
       TaskQueIns(task,adam_task);
     //TaskQueIns(task);

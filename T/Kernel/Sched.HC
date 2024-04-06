@@ -53,20 +53,14 @@ U0 TaskFocusNext()
 I64 GetTicks() {
   return __GetTicksHP;
 }
-U0 SetFs2(CTask *t) {
-  SetFs(t);
-}
+
 asm {
 TASK_CONTEXT_SAVE::
 //OUT:	RSI=FS
 	PUSH	RSI
 	PUSHFD
-	PUSH R8
-	PUSH R9
-	CALL	&Fs2
-	POP R9
-	POP R8
-	MOV	RSI, RAX
+	CALL	&GetFs
+	MOV	RSI,RAX
 	POP	U64 CTask.rflags[RSI]
 	POP	U64 CTask.rsi[RSI]
 	MOV	U64 CTask.rax[RSI],RAX
@@ -106,13 +100,13 @@ It's a little faster.
 @@10:	RET
 //************************************
 _TASK_CONTEXT_RESTORE::
-	CALL	&Gs2
+	CALL	&GetGs
 	INC	U64 CCPU.swap_cnter[RAX]
-	CALL &Fs2
+	CALL	&GetFs
 	MOV	RSI,CTask.addr[RAX]
 	BT	U32 CTask.rflags[RSI],RFLAGf_INT
 	JNC	@@05
-	CALL	&Gs2
+	CALL	&GetGs
 	BTS	U32 CCPU.cpu_flags[RAX],CPUf_RAN_A_TASK
 @@05:	BT	U64 CTask.task_flags[RSI],TASKf_DISABLE_BPTS
 	JC	@@15
@@ -202,7 +196,7 @@ RESTORE_RSI_TASK2:
 	JMP	I32 _TASK_CONTEXT_RESTORE
 
 @@25:	MOV	RSI,U64 CTask.next_task[RSI]
-	CALL	&Gs2
+	CALL	&GetGs
 	CMP	U64 CCPU.seth_task[RAX],RSI
 	JMP	@@20	//Jmp if not Seth
 	/*
@@ -214,21 +208,21 @@ RESTORE_RSI_TASK2:
 	CALL	SET_FS_BASE
 	*/
 RESTORE_SETH_TASK_IF_READY:
-	CALL	&Gs2
+	CALL	&GetGs
 	MOV	RSI,CCPU.seth_task[RAX]
 	JMP	RESTORE_RSI_TASK
 RESTORE_FS_TASK:
-	CALL &Fs2
+	CALL	&GetFs
 	MOV	RSI,RAX
 	JMP	I32 RESTORE_RSI_TASK
 SET_FS_BASE:
 	PUSH RAX
-	CALL	&SetFs2
+	CALL	&SetFs
 	RET
 HANDLE_SYSF_KEY_EVENT::
 	MOV	RAX,RSI
 	CALL	SET_FS_BASE
-	CALL	&Gs2
+	CALL	&GetGs
 	MOV	RBX,RAX
 	MOV	RAX,CCPU.num[RBX]
 	TEST	RAX,RAX

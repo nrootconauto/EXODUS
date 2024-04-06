@@ -1,7 +1,7 @@
 asm {
 #assert !((REGG_LOCAL_NON_PTR_VARS|REGG_LOCAL_VARS)&~0xFCC0)
 _TEST_EXCEPT::
-    CALL &Fs2
+	CALL	&GetFs
 	MOV	RAX,U64 CTask.last_except[RAX]
 	MOV	RBP,U64 CExcept.rbp[RAX]
 	MOV	RSI,U64 CExcept.rsi[RAX]
@@ -17,7 +17,7 @@ _TEST_EXCEPT::
 	JMP	U64 CExcept.hndlr_catch[RAX]
 
 _TAKE_EXCEPT::
-	CALL &Fs2
+	CALL	&GetFs
 	MOV	RAX,U64 CTask.last_except[RAX]
 	MOV	RSP,U64 CExcept.rsp[RAX]
 	JMP	U64 CExcept.hndlr_untry[RAX]

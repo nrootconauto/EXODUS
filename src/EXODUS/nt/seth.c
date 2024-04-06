@@ -51,24 +51,6 @@ static void ThreadRoutine(void *arg) {
   }
 }
 
-static _Thread_local void *Fs, *Gs;
-
-void *GetFs(void) {
-  return Fs;
-}
-
-void SetFs(void *f) {
-  Fs = f;
-}
-
-void *GetGs(void) {
-  return Gs;
-}
-
-void SetGs(void *g) {
-  Gs = g;
-}
-
 u64 CoreNum(void) {
   return self->core_num;
 }

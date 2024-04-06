@@ -100,7 +100,7 @@ if (NOT SDL2_FOUND)
   message(FATAL_ERROR "INSTALL SDL2")
 endif ()
 target_include_directories(${PROJECT_NAME} PRIVATE ${SDL2_INCLUDE_DIRS})
-target_link_libraries(${PROJECT_NAME} PRIVATE SDL2::SDL2)
+target_link_libraries(${PROJECT_NAME} PRIVATE ${SDL2_LIBRARIES})
 
 target_include_directories(${PROJECT_NAME} PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}")
 
@@ -132,8 +132,7 @@ if (CMAKE_SYSTEM_NAME STREQUAL "Linux" OR
 elseif (WIN32)
   target_compile_definitions(${PROJECT_NAME} PRIVATE __USE_MINGW_ANSI_STDIO=1)
   target_link_libraries(${PROJECT_NAME} PRIVATE
-    ws2_32 synchronization shlwapi shcore dbghelp winmm ntdll -static)
-  # We don't need winpthreads
+    ws2_32 synchronization shlwapi shcore dbghelp winmm ntdll)
 endif ()
 
 

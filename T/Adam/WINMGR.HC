@@ -192,10 +192,10 @@ U0 WinCalcIdles()
 	(calc_idle_time=tS)-t->last_calc_idle_time)>.5) {
     total_jiffies=__GetTicksHP;
     for (i=0;i<mp_cnt;i++)
-      idle_pt_hits[i]=mp_cores[i]->idle_pt_hits;
+      idle_pt_hits[i]=cpu_structs[i].idle_pt_hits;
     total_jiffies_delta=total_jiffies-t->last_total_jiffies;
     for (i=0;i<mp_cnt;i++) {
-      c=mp_cores[i];
+      c=&cpu_structs[i];
       if (total_jiffies_delta && (k=idle_pt_hits[i]-t->last_idle_pt_hits[i])>=0)
 	c->idle_factor=Clamp(ToF64(k)/total_jiffies_delta,0.01,0.99);
       else

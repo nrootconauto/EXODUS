@@ -515,7 +515,7 @@ static U0 KBCb(I64 s) {
   await_yield:
         time_out=__GetTicks;
         while (time_out-__GetTicks<ToI64(0.05*1000)) {
-          if (IsFrozen(mp_cores[0])) {
+          if (IsFrozen(&cpu_structs[0])) {
             InterruptCore(0);
             break;
           } else

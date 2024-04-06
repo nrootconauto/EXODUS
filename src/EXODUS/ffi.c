@@ -44,19 +44,17 @@ void *HolyCAlloc(u64 sz) {
 }
 
 char *HolyStrDup(char const *str) {
-  return strcpy(HolyMAlloc(strlen(str) + 1), str);
+  u64 sz = strlen(str) + 1;
+  return memcpy(HolyMAlloc(sz), str, sz);
 }
 
 noret void HolyThrow(char const *s) {
-  static void *fp;
-  union {
-    char s[8];
-    u64 i;
-  } u;
-  memcpy(u.s, s, Min(strlen(s), (u64)8));
-  if (!fp)
-    fp = map_get(&symtab, "throw")->val;
-  FFI_CALL_TOS_1(fp, u.i);
+  static CSymbol *sym;
+  u64 i = 0;
+  memcpy(&i, s, Min(strlen(s), 8ul));
+  if (!sym)
+    sym = map_get(&symtab, "throw");
+  FFI_CALL_TOS_1(sym->val, i);
   Unreachable();
 }
 
@@ -278,14 +276,6 @@ static void STK___Sleep(u64 *stk) {
   SleepUs(stk[0] * 1000);
 }
 
-static void STK_SetFs(void **stk) {
-  SetFs(stk[0]);
-}
-
-static void STK_SetGs(void **stk) {
-  SetGs(stk[0]);
-}
-
 static void STK_SndFreq(u64 *stk) {
   SndFreq(stk[0]);
 }
@@ -432,8 +422,6 @@ void BootstrapLoader(void) {
   HolyFFI ffis[] = {
       R("__CmdLineBootText", CmdLineBootText, 0),
       R("__CoreNum", CoreNum, 0),
-      R("GetFs", GetFs, 0),
-      R("GetGs", GetGs, 0),
       S(MPSetProfilerInt, 3),
       S(mp_cnt, 0),
       R("__IsCmdLine", IsCmdLine, 0),
@@ -452,8 +440,6 @@ void BootstrapLoader(void) {
       S(__Sleep, 1),
       S(__SleepHP, 1),
       S(__AwakeCore, 1),
-      S(SetFs, 1),
-      S(SetGs, 1),
       S(SetKBCallback, 1),
       S(SetMSCallback, 1),
       S(__GetTicks, 0),

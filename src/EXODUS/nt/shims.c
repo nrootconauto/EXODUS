@@ -120,10 +120,9 @@ static void a2wcs(char const *s, WCHAR *ws, i64 sz) {
      */
     asm("punpcklbw %1, %0" : "+x"(b) : "x"(a));
     asm("punpckhbw %1, %0" : "+x"(c) : "x"(a));
-    *(xmm_t *)(ws + 0) = b;
-    *(xmm_t *)(ws + 8) = c;
-    ws += 16;
-    s += 16, sz -= 16;
+    *(xmm_t *)(ws + 000) = b;
+    *(xmm_t *)(ws + 010) = c;
+    ws += 16, s += 16, sz -= 16;
   }
   Loop("movzbl (%[s]), %%eax\n"
        "mov    %%ax,(%[ws])\n");
@@ -248,7 +247,6 @@ typedef FILE_NAMES_INFORMATION FileInfo;
 
 static bool traversedir(char const *path, void cb(FileInfo *d, void *_user0),
                         void *user0) {
-  bool ret = true;
   NTSTATUS st;
   HANDLE h;
   IO_STATUS_BLOCK iosb;
@@ -261,16 +259,9 @@ static bool traversedir(char const *path, void cb(FileInfo *d, void *_user0),
                   OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, NULL);
   if (veryunlikely(h == INVALID_HANDLE_VALUE))
     return false;
-  while (true) {
-    st = NtQueryDirectoryFile(h, NULL, NULL, NULL, &iosb, buf, sizeof buf,
-                              FileNamesInformation, FALSE, NULL, FALSE);
-    if (!NT_SUCCESS(st)) {
-      /* we've reached the end if st == STATUS_NO_MORE_FILES,
-       * if anything else, it's a failure */
-      if (st != STATUS_NO_MORE_FILES)
-        ret = false;
-      break;
-    }
+  while (NT_SUCCESS(st = NtQueryDirectoryFile(h, NULL, NULL, NULL, &iosb, buf,
+                                              sizeof buf, FileNamesInformation,
+                                              FALSE, NULL, FALSE))) {
     di = (FileInfo *)buf;
     while (true) {
       cb(di, user0);
@@ -281,7 +272,11 @@ static bool traversedir(char const *path, void cb(FileInfo *d, void *_user0),
     }
   }
   CloseHandle(h);
-  return ret;
+  /* we've reached the end if st == STATUS_NO_MORE_FILES,
+   * if anything else, it's a failure */
+  if (st != STATUS_NO_MORE_FILES)
+    return false;
+  return true;
 }
 
 static void listdircb(FileInfo *d, void *user0) {
@@ -381,7 +376,7 @@ noret static BOOL WINAPI ctrlchndlr(argign DWORD dw) {
   terminate(ERROR_CONTROL_C_EXIT);
 }
 
-void handlectrlc(void) {
+void prepare(void) {
   SetConsoleCtrlHandler(&ctrlchndlr, 1);
 }
 

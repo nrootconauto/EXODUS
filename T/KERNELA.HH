@@ -5911,8 +5911,7 @@ extern U0 ODERK4OneStep(CMathODE *ode);
 extern U0 ODECashKarp(CMathODE *ode);
 extern U0 ODERK5OneStep(CMathODE *ode);
 extern U0 ODEsUpdate(CTask *task);
-extern CCPU cpu_structs[MP_PROCESSORS_NUM],
-           *mp_cores[MP_PROCESSORS_NUM];
+extern CCPU cpu_structs[MP_PROCESSORS_NUM];
 public extern I64 gr_x_offsets[8],
 	   gr_y_offsets[8],
 	  gr_x_offsets2[4],
@@ -7244,7 +7243,6 @@ extern U0 ScanFlags(U8 *_dst_flags,U8 *lst,U8 *src);
 extern U8 *StrPrintFlags(U8 *dst,U8 *lst,I64 flags);
 extern U0 GetOutOfDollar();
 extern I64 GetTicks() ;
-extern U0 SetFs2(CTask *t) ;
 extern I64 DEPtrCompare(CDocEntry **e1,CDocEntry **e2);
 extern I64 DocWordsFile(CDoc *doc_out=NULL,U8 *filename,U32 *char_bmp);
 extern I64 Words(U8 *files_find_mask="*",U32 *char_bmp,	U8 *fu_flags=NULL);
@@ -7366,8 +7364,7 @@ extern U0 PutS(U8 *s) ;
 extern U0 ScanFlags(U8 *_dst_flags,U8 *lst,U8 *src);
 extern U8 *StrPrintFlags(U8 *dst,U8 *lst,I64 flags);
 extern U0 GetOutOfDollar();
-extern I64 GetTicks() ;
-extern U0 SetFs2(CTask *t) ;
+extern I64 GetTicks() ;
 extern I64 DEPtrCompare(CDocEntry **e1,CDocEntry **e2);
 extern I64 DocWordsFile(CDoc *doc_out=NULL,U8 *filename,U32 *char_bmp);
 extern I64 Words(U8 *files_find_mask="*",U32 *char_bmp,	U8 *fu_flags=NULL);
@@ -7507,10 +7504,6 @@ import U0i DyadSetCloseCallback(CDyadStream *,I64,U0i(*fptr)(CDyadStream *,U8i *
 import U0i DyadSetListenCallback(CDyadStream *,I64,U0i(*fptr)(CDyadStream *,U8i *),U8i *)
 import U0i DyadSetReadCallback(CDyadStream *,I64,U0i(*fptr)(CDyadStream *,U8i *,I64i,U8i *),U8i *);
 import U64 mp_cnt();
-import U0i SetFs(CTask*);
-import CTask* GetFs();
-import CCPU *GetGs();
-import U0 SetGs(CCPU *);
 import U0i Shutdown(I32i ec=0);
 import Bool __IsCmdLine();
 import Bool __FExists(U8i *);
@@ -7581,7 +7574,7 @@ extern U0i DyadEnd(CDyadStream *);
 extern U0i DyadClose(CDyadStream *);
 extern U8i *DyadGetAddress(CDyadStream *);
 extern U64 mp_cnt();
-extern U0i SetFs(CTask*);
+extern U0 SetFs(CTask*);
 extern CTask* GetFs();
 extern CCPU *GetGs();
 extern U0 SetGs(CCPU *);

@@ -9,7 +9,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include <SDL2/SDL.h>
+#include <SDL.h>
 
 #include <EXODUS/ffi.h>
 #include <EXODUS/main.h>
@@ -41,8 +41,7 @@ static void updatescrn(u8 *px) {
   SDL_LockSurface(win.surf);
   u8 *dst = win.surf->pixels, *src = px;
   u64 sz = WIDTH * HEIGHT;
-  asm("rep movsb"
-      : "+D"(dst), "+S"(src), "+c"(sz), "=m"(*(char(*)[sz])dst));
+  asm("rep movsb" : "+D"(dst), "+S"(src), "+c"(sz), "=m"(*(char(*)[sz])dst));
   SDL_UnlockSurface(win.surf);
   SDL_RenderClear(win.rend);
   int w, h, w2, h2, margin_x = 0, margin_y = 0;

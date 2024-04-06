@@ -33,7 +33,7 @@ public U0 TaskRep()
   CCPU *c;
   bl=BreakLock;
   for (i=0;i<mp_cnt;i++) {
-    c=mp_cores[i];
+    c=&cpu_structs[i];
     "$$PURPLE$$CPU%02X$$FG$$\n",i;
     TaskRepTask(c->seth_task,2);
   }

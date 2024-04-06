@@ -4,15 +4,12 @@
 │                                                                              │
 │ See end of file for extended copyright information and citations.            │
 ╚─────────────────────────────────────────────────────────────────────────────*/
-#ifndef _WIN32
-  #include <sys/resource.h>
-#endif
-
 #include <locale.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
+#include <SDL.h>
 #include <argtable3.h>
 #include <isocline.h>
 
@@ -27,7 +24,7 @@
 #include <EXODUS/tos_aot.h>
 #include <EXODUS/vfs.h>
 
-static char bin_path[0x400], *boot_str;
+static char bin_path[0x200], *boot_str;
 __attribute__((constructor)) static void init(void) {
   strcpy(bin_path, "HCRT.BIN");
 }
@@ -50,14 +47,7 @@ int GetFPS(void) {
 
 int main(int argc, char **argv) {
   setlocale(LC_ALL, "C");
-#ifndef _WIN32
-  struct rlimit rl;
-  getrlimit(RLIMIT_NOFILE, &rl);
-  rl.rlim_cur = rl.rlim_max;
-  setrlimit(RLIMIT_NOFILE, &rl);
-#else
-  handlectrlc();
-#endif
+  prepare();
   void *argtable[] = {
       help = arg_lit0("h", "help", "This help message"),
       _60fps = arg_lit0("6", "60fps", "Run in 60 FPS"),
@@ -84,25 +74,27 @@ int main(int argc, char **argv) {
     return 1;
   }
   VFsMountDrive('Z', ".");
+  vec_char_t boot = {0};
   if (cli->count) {
     ic_set_history(NULL, -1);
     ic_enable_auto_tab(true);
-    vec_char_t tmp;
-    vec_init(&tmp);
-    char buf[0x200];
+    char buf[0x100];
     for (int i = 0; i < clifiles->count; ++i) {
       snprintf(buf, sizeof buf, "#include \"%s\";\n", clifiles->filename[i]);
-      vec_pusharr(&tmp, buf, strlen(buf));
+      vec_pushstr(&boot, buf);
     }
-    vec_push(&tmp, 0);
 #ifdef _WIN32
+    vec_push(&boot, '\0');
     char *s;
-    while ((s = strchr(tmp.data, '\\')))
+    while ((s = strchr(boot.data, '\\')))
       *s++ = '/';
+    vec_pop(&boot);
 #endif
-    boot_str = strdup(tmp.data);
-  } else if (_60fps->count)
-    boot_str = strdup("SetFPS(60.);\n");
+  }
+  if (_60fps->count)
+    vec_pushstr(&boot, "SetFPS(60.);\n");
+  vec_push(&boot, '\0');
+  boot_str = boot.data;
   if (hcrt->count)
     strcpy(bin_path, hcrt->filename[0]);
   if (!fexists(bin_path)) {
@@ -115,6 +107,7 @@ int main(int argc, char **argv) {
   BootstrapLoader();
   CreateCore(LoadHCRT(bin_path));
   EventLoop();
+  return 0;
 }
 
 /*═════════════════════════════════════════════════════════════════════════════╡

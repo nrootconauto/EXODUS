@@ -277,7 +277,7 @@ U0 Ui(U8 *buf,U8 **_rip,I64 seg_size=64,I64 *_jmp_dst=NULL,Bool just_ins=FALSE)
     CatPrint(line1,"%02X",rip[i]);
   CatPrint(line1," ");
 
-  if (IsRaw) StrPrint(line2,"%p ",rip+6);
+  if (IsRaw) StrPrint(line2,"%p ",rip+6);
   else StrPrint(line2,"%P ",rip+6);
   bin_data_area2=line2+StrLen(line2);
   for (i=6;i<12;i++)

@@ -9,10 +9,37 @@ SYS_FIXED_AREA=&sys_fixed_area;
 U0 InitFX() {
   I64 noreg ptr;
   ptr=SYS_FIXED_AREA;
-  MOV RAX,U64 &ptr[RBP];
+  MOV RAX,&ptr[RBP]
   FXSAVE U64[RAX]
 }
 InitFX;
+CCPU cpu_structs[MP_PROCESSORS_NUM];
+U32 SYS_CTRL_ALT_FLAGS=0;
+//Due to Microsoft and WINE agreeing on different ways of using the TEB
+//I had to resort to a single unused(not really but you can rely on it)
+//ULONG and store Fs on the low half and Gs on the high half
+//Using C side thread-local storage with FFI reduces headache but also performance
+CTask *GetFs() {
+  XOR EAX,EAX
+  MOV EAX,U32 GS:0x28[EAX]
+}
+U0 SetFs(CTask *) {
+  MOV RCX,SF_ARG1[RBP]
+  XOR EAX,EAX
+  MOV U32 GS:0x28[EAX],ECX
+}
+CCPU *GetGs() {
+  XOR EAX,EAX
+  MOV EAX,U32 GS:0x2C[EAX]
+}
+U0 SetGs(CCPU *) {
+  MOV RCX,SF_ARG1[RBP]
+  XOR EAX,EAX
+  MOV U32 GS:0x2C[EAX],ECX
+}
+Bool IsRaw() {
+  return __IsCmdLine;
+}
 CHeapCtrl ahc,ahd;
 CTask _boot_task;
 SetFs(&_boot_task);
@@ -20,28 +47,10 @@ HeapCtrlInit(&ahc,Fs,0);
 HeapCtrlInit(&ahd,Fs,1);
 Fs->data_heap=&ahd;
 Fs->code_heap=&ahc;
-CCPU cpu_structs[MP_PROCESSORS_NUM],
-    *mp_cores[MP_PROCESSORS_NUM];
-U32 SYS_CTRL_ALT_FLAGS=0;
-U0 _InitCpus() {
-  I64 i;
-  for (i=0;i<mp_cnt;++i)
-    mp_cores[i]=cpu_structs+i;
-}
-_InitCpus;
-SetGs(mp_cores[0]);
-CCPU *Gs2() {
-  return GetGs;
-}
+SetGs(&cpu_structs[0]);
 QueInit(&Gs->next_dying);
 TaskInit(Fs,0);
-CTask *Fs2() {
-  return Fs;
-}
-Bool IsRaw() {
-  return __IsCmdLine;
-}
-Bool dol_doc_inited=FALSE;
+CTask *adam_task=Fs;
 #include "Kernel/KGLBLS.HC"
 #include "DOLDOC/DocExt.HC"
 #include "Kernel/KUTILS.HC"
@@ -50,8 +59,6 @@ Bool dol_doc_inited=FALSE;
 #include "Kernel/STR.HC"
 #include "KERNELB.HH"
 #include "GR/Gr.HH"
-public extern I64 ExeCmdLine(CCmpCtrl *cc);
-CTask *adam_task=Fs;
 #include "Kernel/KDate.HC"
 #include "Compiler/CHASH.HC"
 #include "Kernel/STRB.HC"

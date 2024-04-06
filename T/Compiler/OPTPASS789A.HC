@@ -419,11 +419,15 @@ cc->pass==10 is final pass, code is placed into buf.
 	case IC_RET:
 	  ICU8(tmpi,0xC3);
 	  break;
-	case IC_FS:
-	  ICFs(cc,tmpi,buf,rip2);
+	case IC_FS://Consult HCRT_TOS.HC
+	  ICZero(tmpi,REG_RAX);
+	  ICU8(tmpi,0x65);
+	  ICU32(tmpi,0x28408B67);
 	  break;
 	case IC_GS:
-          ICGs(cc,tmpi,buf,rip2);
+	  ICZero(tmpi,REG_RAX);
+	  ICU8(tmpi,0x65);
+	  ICU32(tmpi,0x2C408B67);
 	  break;
 	case IC_MOV_FS:
 	  ICZero(tmpi,REG_RAX);

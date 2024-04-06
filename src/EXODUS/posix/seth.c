@@ -28,6 +28,7 @@
 #include <EXODUS/main.h>
 #include <EXODUS/misc.h>
 #include <EXODUS/seth.h>
+#include <EXODUS/shims.h>
 #include <EXODUS/tos_aot.h>
 #include <EXODUS/tos_callconv.h>
 #include <EXODUS/types.h>
@@ -88,6 +89,7 @@ static void *ThreadRoutine(void *arg) {
   sigaction(SIGUSR1, &holysigint, NULL);
   sigaction(SIGPROF, &holyprof, NULL);
   self = arg;
+  preparetls();
   /* IET_MAIN routines + kernel entry point <- Core 0.
    * CoreAPSethTask() <- else
    *   ZERO_BP so the return addr&rbp is 0 and
@@ -100,39 +102,6 @@ static void *ThreadRoutine(void *arg) {
   }
   /* does not actually return */
   return NULL;
-}
-
-/*
- * =====TEMPLEOS EXCERPT=====
- * How do you use the FS and GS segment registers.
- * MOV RAX,FS:[RAX] : FS can be set with a WRMSR,
- * but displacement is RIP relative, so it's tricky to use.  FS is used for
- * the current CTask, GS for CCPU.
- * ========HOW I DO IT=======
- * We do not use FS directly. The host operating system occupies it already
- * so we will simply make changes to the compiler to allow &Fs->code_heap.
- * ================= TRIVIA =================
- * I tried copying the machine code of these routines because they're called
- * so frequently (3~400k/s), but TLS on Windows calls a function to get the
- * thread-local variable so I really can't because it messes up all the
- * registers.
- */
-static _Thread_local void *Fs, *Gs;
-
-void *GetFs(void) {
-  return Fs;
-}
-
-void SetFs(void *f) {
-  Fs = f;
-}
-
-void *GetGs(void) {
-  return Gs;
-}
-
-void SetGs(void *g) {
-  Gs = g;
 }
 
 u64 CoreNum(void) {

@@ -141,12 +141,15 @@ U0 CtrlAltF(I64)
   SwapI64(&text.font,&text.aux_font);
 }
 
-U0 CtrlAltM(I64)
+U0 CtrlAltM(I64)
 {
-  if (GetVolume>0.)
+  static F64 vol;
+  F64 cur=GetVolume;
+  if (cur>0.) {
+    vol=cur;
     SetVolume(0.);
-  else
-    SetVolume(.2);
+  } else
+    SetVolume(vol);
 }
 
 U0 CtrlAltT(I64)

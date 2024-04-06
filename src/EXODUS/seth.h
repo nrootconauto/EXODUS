@@ -10,12 +10,6 @@
 
 #include <EXODUS/types.h>
 
-void SetFs(void *fs);
-void *GetFs(void);
-
-void SetGs(void *gs);
-void *GetGs(void);
-
 u64 CoreNum(void);
 /* CTRL+ALT+C */
 void InterruptCore(u64 core);
