@@ -18,25 +18,32 @@ U32 SYS_CTRL_ALT_FLAGS=0;
 //Due to Microsoft and WINE agreeing on different ways of using the TEB
 //I had to resort to "ArbitraryUserPointer" that guarantees consistency unofficially
 //and "ActiveRpcHandle" where it's not touched by anything according to Windows/WINE/ReactOS source code
-//Using C side thread-local storage with FFI reduces headache but also performance
-CTask *GetFs() {
-  XOR EAX,EAX
-  MOV RAX,GS:0x28[RAX]
+//Using C side thread-local storage with FFI reduces headache but also performance
+asm {
+_GET_FS::
+	XOR	EAX,EAX
+	MOV	RAX,GS:0x28[RAX]
+	RET
+_SET_FS::
+	XOR	EAX,EAX
+	MOV	RCX,8[RSP]
+	MOV	GS:0x28[RAX],RCX
+	RET1	8
+_GET_GS::
+	XOR	EAX,EAX
+	MOV	EAX,GS:0x50[RAX]
+	RET
+_SET_GS::
+	XOR	EAX,EAX
+	MOV	RCX,8[RSP]
+	MOV	GS:0x50[RAX],RCX
+	RET1	8
 }
-U0 SetFs(CTask *) {
-  MOV RCX,SF_ARG1[RBP]
-  XOR EAX,EAX
-  MOV GS:0x28[RAX],RCX
-}
-CCPU *GetGs() {
-  XOR EAX,EAX
-  MOV RAX,GS:0x50[RAX]
-}
-U0 SetGs(CCPU *) {
-  MOV RCX,SF_ARG1[RBP]
-  XOR EAX,EAX
- MOV GS:0x50[RAX],RCX
-}
+_extern _GET_FS CTask* GetFs();
+_extern _SET_FS U0 SetFs(CTask *);
+_extern _GET_GS CCPU *GetGs();
+_extern _SET_GS U0 SetGs(CCPU *);
+
 Bool IsRaw() {
   return __IsCmdLine;
 }

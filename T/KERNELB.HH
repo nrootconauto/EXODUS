@@ -17,6 +17,11 @@ public _extern _CALL_IND I64 CallInd(
 public _extern _CALL_VA_ARGS I64 CallVaArgs(
 	/*noargpop*/U8 *fptr,I64 argc1,I64 *argv1,...);
 
+_extern _GET_FS CTask* GetFs();
+_extern _SET_FS U0 SetFs(CTask *);
+_extern _GET_GS CCPU *GetGs();
+_extern _SET_GS U0 SetGs(CCPU *);
+
 public _extern _ARG F64 Arg(F64 x,F64 y); //Polar coordinate angle.
 public _extern _CEIL F64 Ceil(F64 d); //Ceiling of F64.
 public _extern _CLAMP_I64 I64 ClampI64(
@@ -47,7 +52,7 @@ public _extern _D3_DIST_SQR F64 D3DistSqr(CD3 *d1,CD3 *d2); //Distance Squared
 public _extern _D3_DIV CD3 *D3Div(CD3 *quot,CD3 *d,F64 s); //quot=d/s
 public _extern _D3_DIV_EQU CD3 *D3DivEqu(CD3 *quot,F64 s); //quot/=s
 public _extern _D3_DOT F64 D3Dot(CD3 *d1,CD3 *d2); //d1 dot d2
-public _extern _D3_EQU CD3 *D3Equ(
+public _extern _D3_EQU CD3 *D3Equ(
 	CD3 *dst,F64 x=0,F64 y=0,F64 z=0); //dst=(x,y,z)
 public _extern _D3_MUL CD3 *D3Mul(CD3 *prod,F64 s,CD3 *d); //prod=s*d
 public _extern _D3_MUL_EQU CD3 *D3MulEqu(CD3 *prod,F64 s); //prod*=s
