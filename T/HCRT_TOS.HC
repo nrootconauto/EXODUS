@@ -16,26 +16,26 @@ InitFX;
 CCPU cpu_structs[MP_PROCESSORS_NUM];
 U32 SYS_CTRL_ALT_FLAGS=0;
 //Due to Microsoft and WINE agreeing on different ways of using the TEB
-//I had to resort to a single unused(not really but you can rely on it)
-//ULONG and store Fs on the low half and Gs on the high half
-//Using C side thread-local storage with FFI reduces headache but also performance
+//I had to resort to "ArbitraryUserPointer" that guarantees consistency unofficially
+//and "ActiveRpcHandle" where it's not touched by anything according to Windows/WINE/ReactOS source code
+//Using C side thread-local storage with FFI reduces headache but also performance
 CTask *GetFs() {
   XOR EAX,EAX
-  MOV EAX,U32 GS:0x28[EAX]
+  MOV RAX,GS:0x28[RAX]
 }
 U0 SetFs(CTask *) {
   MOV RCX,SF_ARG1[RBP]
   XOR EAX,EAX
-  MOV U32 GS:0x28[EAX],ECX
+  MOV GS:0x28[RAX],RCX
 }
 CCPU *GetGs() {
   XOR EAX,EAX
-  MOV EAX,U32 GS:0x2C[EAX]
+  MOV RAX,GS:0x50[RAX]
 }
 U0 SetGs(CCPU *) {
   MOV RCX,SF_ARG1[RBP]
   XOR EAX,EAX
-  MOV U32 GS:0x2C[EAX],ECX
+ MOV GS:0x50[RAX],RCX
 }
 Bool IsRaw() {
   return __IsCmdLine;
