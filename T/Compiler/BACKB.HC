@@ -246,6 +246,11 @@ U0 ICBitOps(CIntermediateCode *tmpi,CICArg *arg1,CICArg *arg2,
     ICU8(tmpi,OC_LOCK_PREFIX);
   if (arg1->type&MDF_IMM && arg1->disp<32)
     t2=t2&MDG_MASK+RT_U32;
+  //32bit regs clears upper 32 bits so always use 64 bit reg ops
+  if (t2&MDF_REG) {
+    t2-=RT_U32;
+    t2+=RT_I64;
+  }
   i=ICModr1(r1,t2,r2,d2);
   ICRex(tmpi,i.u8[1]);
   if (arg1->type&MDF_IMM && arg1->disp<64) {
