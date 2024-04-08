@@ -151,8 +151,6 @@ char **listdir(char const *path) {
 
 static void fsizecb(struct dirent *e, void *user0) {
   i64 *i = user0;
-  if (!strcmp(e->d_name, ".") || !strcmp(e->d_name, ".."))
-    return;
   if (verylikely(strlen(e->d_name) <= 37))
     ++*i;
 }
@@ -167,7 +165,7 @@ i64 fsize(char const *path) {
     i64 ret = 0;
     if (veryunlikely(!traversedir(path, fsizecb, &ret)))
       return -1;
-    return ret;
+    return ret - 2; /* ".", ".." */
   }
 }
 

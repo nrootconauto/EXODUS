@@ -195,7 +195,8 @@ static WCHAR *wcpcpy2(WCHAR *restrict dst, WCHAR const *src) {
 
 /* works in the same spirit as std::filesystem::remove_all */
 /* Ugly because I manually flattened out the recursive function.
- * SHFileOperation is too slow to be used here. */
+ * SHFileOperation is too slow to be used here (5 seconds opposed to 0.3).
+ * *NIX can do it 10x faster with FTS */
 void deleteall(char *s) {
   WCHAR path[MAX_PATH];
   a2wcs(s, path, strlen(s));
@@ -211,7 +212,9 @@ func:
   cur->data = (WIN32_FIND_DATAW){0};
   cur->strcur = wcpcpy2(cur->buf, cur->cwd);
   cur->strcur = wcpcpy2(cur->strcur, L"\\*.*");
-  cur->fh = FindFirstFileW(cur->buf, &cur->data);
+  cur->fh =
+      FindFirstFileExW(cur->buf, FindExInfoBasic, &cur->data,
+                       FindExSearchNameMatch, NULL, FIND_FIRST_EX_LARGE_FETCH);
   if (veryunlikely(cur->fh == INVALID_HANDLE_VALUE))
     goto endfunc;
   /*  -3  cur
@@ -283,10 +286,10 @@ static void listdircb(FileInfo *d, void *user0) {
   vec_str_t *p = user0;
   i64 len = d->FileNameLength / sizeof(WCHAR);
   if (verylikely(len <= 37)) {
-    char buf[len + 1], *dup;
+    char buf[MAX_PATH], *dup;
     wcs2a(d->FileName, buf, len);
-    dup = HolyMAlloc(sizeof buf);
-    memcpy(dup, buf, sizeof buf);
+    dup = HolyMAlloc(len + 1);
+    memcpy(dup, buf, len + 1);
     vec_push(p, dup);
   }
 }
