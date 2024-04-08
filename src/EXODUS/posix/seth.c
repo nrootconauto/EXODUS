@@ -43,7 +43,7 @@ typedef struct {
    * -- man 2 futex
    * FreeBSD: specify UMTX_OP_WAIT_UINT instead of UMTX_OP_WAIT
    */
-  _Alignas(4) _Atomic(u32) is_sleeping;
+  _Atomic(u32) is_sleeping;
   int core_num;
   /* U0 (*profiler_int)(U8 *rip) */
   void *profiler_int;

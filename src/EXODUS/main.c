@@ -4,7 +4,6 @@
 │                                                                              │
 │ See end of file for extended copyright information and citations.            │
 ╚─────────────────────────────────────────────────────────────────────────────*/
-#include <locale.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -46,7 +45,6 @@ int GetFPS(void) {
 }
 
 int main(int argc, char **argv) {
-  setlocale(LC_ALL, "C");
   prepare();
   void *argtable[] = {
       help = arg_lit0("h", "help", "This help message"),

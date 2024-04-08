@@ -10,6 +10,7 @@
 #include <winternl.h>
 #include <direct.h> /* _mkdir */
 #include <io.h>     /* _chsize_s */
+#include <mbctype.h>
 #include <memoryapi.h>
 #include <processthreadsapi.h>
 #include <profileapi.h>
@@ -25,6 +26,7 @@
 #include <fcntl.h> /* _O_* */
 
 #include <inttypes.h>
+#include <locale.h>
 #include <stdbool.h>
 #include <stdio.h> /* big brother Microsoft wants you to use stdio.h for SEEK_SET */
 #include <stdlib.h>
@@ -61,113 +63,12 @@ void closefd(int fd) {
   _close(fd);
 }
 
-/* W routines are faster than A routines because A routines convert to WTF16 and
- * call W routines internally, so better to use quick unchecked routines instead
- * of whatever Windows has for converting text */
-
-typedef long long xmm_t __attribute__((vector_size(16), may_alias, aligned(1)));
-
-/* commit a war crime to avoid compilers optimizing the remainder loop (sz<16)
- * __builtin_assume doesn't work */
-#define Loop(a...)                                     \
-  asm goto("test %[sz],%[sz]\n"                        \
-           ".Lloop%=:\n"                               \
-           "jz %l[ret]\n" /* */                        \
-           a              /* */                        \
-           "add $2,%[ws]\n"                            \
-           "inc %[s]\n"                                \
-           "dec %[sz]\n"                               \
-           "jmp .Lloop%=\n"                            \
-           : [sz] "+r"(sz), [ws] "+r"(ws), [s] "+r"(s) \
-           :                                           \
-           : "eax", "memory", "cc"                     \
-           : ret);                                     \
-  ret:
-
-/* ASCII to wide char string
- * this really doesn't matter the majority of the time is spent on IO anyway
- * but hey, I just want to show off
- * */
-static void a2wcs(char const *s, WCHAR *ws, i64 sz) {
-  xmm_t a = {0}, b, c;
-  while (sz >= 16) {
-    c = b = *(xmm_t *)s;
-    /* PUNPCKLBW b,a
-     * a: 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
-     * b: P O N M L K J I H G F E D C B A
-     *      ┌─────────────┘ │ │ │ │ │ │ │
-     *      │   ┌───────────┘ │ │ │ │ │ │
-     *      │   │   ┌─────────┘ │ │ │ │ │
-     *      │   │   │   ┌───────┘ │ │ │ │
-     *      │   │   │   │   ┌─────┘ │ │ │
-     *      │   │   │   │   │   ┌───┘ │ │
-     *      │   │   │   │   │   │   ┌─┘ │
-     *    ┌─┤ ┌─┤ ┌─┤ ┌─┤ ┌─┤ ┌─┤ ┌─┤ ┌─┤
-     * b: H 0 G 0 F 0 E 0 D 0 C 0 B 0 A 0
-     *
-     * PUNPCKHBW c,a
-     * a: 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
-     * c: P O N M L K J I H G F E D C B A
-     *    │ │ │ │ │ │ │ └─────────────┐
-     *    │ │ │ │ │ │ └───────────┐   │
-     *    │ │ │ │ │ └─────────┐   │   │
-     *    │ │ │ │ └───────┐   │   │   │
-     *    │ │ │ └─────┐   │   │   │   │
-     *    │ │ └───┐   │   │   │   │   │
-     *    │ └─┐   │   │   │   │   │   │
-     *    ├─┐ ├─┐ ├─┐ ├─┐ ├─┐ ├─┐ ├─┐ ├─┐
-     * c: P 0 O 0 N 0 M 0 L 0 K 0 J 0 I 0
-     */
-    asm("punpcklbw %1, %0" : "+x"(b) : "x"(a));
-    asm("punpckhbw %1, %0" : "+x"(c) : "x"(a));
-    *(xmm_t *)(ws + 000) = b;
-    *(xmm_t *)(ws + 010) = c;
-    ws += 16, s += 16, sz -= 16;
-  }
-  Loop("movzbl (%[s]), %%eax\n"
-       "mov    %%ax,(%[ws])\n");
-  *ws = 0;
-}
-
-/* wide char string to ASCII */
-static void wcs2a(WCHAR const *ws, char *s, i64 sz) {
-  xmm_t a, b;
-  while (sz >= 16) {
-    a = *(xmm_t *)(ws + 000);
-    b = *(xmm_t *)(ws + 010);
-    /* PACKUSWB a,b
-     *
-     * 1 lane is i16, clamp each lane in range 0..=0xFF
-     * each wide char uses the lower byte, so this inst
-     * is applicable without PAND
-     *
-     * b: θ0 η0 ζ0 ε0 δ0 γ0 β0 α0
-     * a: H0 G0 F0 E0 D0 C0 B0 A0
-     *
-     * clamp 0A, 0B, 0C, ..., 0H inside a
-     * repeat for b in upper 64 bits of a
-     *
-     * a: θη ζε δγ βα HG FE DC BA
-     */
-    asm("packuswb %1, %0" : "+x"(a) : "x"(b));
-    *(xmm_t *)s = a;
-    ws += 16, s += 16, sz -= 16;
-  }
-  Loop("movzwl (%[ws]),%%eax\n"
-       "mov    %%al,(%[s])\n");
-  *s = 0;
-}
-
 bool fexists(char const *path) {
-  WCHAR buf[MAX_PATH];
-  a2wcs(path, buf, strlen(path));
-  return PathFileExistsW(buf);
+  return PathFileExistsA(path);
 }
 
 bool isdir(char const *path) {
-  WCHAR buf[MAX_PATH];
-  a2wcs(path, buf, strlen(path));
-  return PathIsDirectoryW(buf);
+  return PathIsDirectoryA(path);
 }
 
 /* emulated stack frame */
@@ -193,13 +94,34 @@ static WCHAR *wcpcpy2(WCHAR *restrict dst, WCHAR const *src) {
   return (WCHAR *)memcpy(dst, src, sizeof(WCHAR[sz + 1])) + sz;
 }
 
-/* works in the same spirit as std::filesystem::remove_all */
-/* Ugly because I manually flattened out the recursive function.
- * SHFileOperation is too slow to be used here (5 seconds opposed to 0.3).
- * *NIX can do it 10x faster with FTS */
+/* mbsrtowcs/wcsrtombs are too weird to use
+ * and I don't want to deal with locales */
+static void a2wcs(WCHAR *dst, char const *src, i64 sz) {
+  while (sz--)
+    *dst++ = *src++;
+  *dst = 0;
+}
+
+static void wcs2a(char *dst, WCHAR const *src, i64 sz) {
+  while (sz--)
+    *dst++ = *src++;
+  *dst = 0;
+}
+
+/* basically std::filesystem::remove_all */
+/* SHFileOperation is too slow
+ *   when called directly for 10 layers of directories with 9 files each
+ *     SHFileOperation: 5s
+ *     this: 0.3s
+ *   used from DelTree for 30 layers of directories with 29 files each
+ *     SHFileOperation: 30s
+ *     this: 0.7s
+ * it's probably because SHFileOperation calls into Explorer and does a bunch
+ * of other stuff. on a side note, *NIX utilizing FTS can do it 10x faster
+ */
 void deleteall(char *s) {
   WCHAR path[MAX_PATH];
-  a2wcs(s, path, strlen(s));
+  a2wcs(path, s, strlen(s));
   if (!PathIsDirectoryW(path)) {
     DeleteFileW(path);
     return;
@@ -254,10 +176,9 @@ static bool traversedir(char const *path, void cb(FileInfo *d, void *_user0),
   HANDLE h;
   IO_STATUS_BLOCK iosb;
   /* [2] */
-  _Alignas(LONG) WCHAR buf[0x8000], pathbuf[MAX_PATH];
+  _Alignas(LONG) WCHAR buf[0x8000];
   FileInfo *di;
-  a2wcs(path, pathbuf, strlen(path));
-  h = CreateFileW(pathbuf, FILE_LIST_DIRECTORY,
+  h = CreateFileA(path, FILE_LIST_DIRECTORY,
                   FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, NULL,
                   OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, NULL);
   if (veryunlikely(h == INVALID_HANDLE_VALUE))
@@ -287,9 +208,8 @@ static void listdircb(FileInfo *d, void *user0) {
   i64 len = d->FileNameLength / sizeof(WCHAR);
   if (verylikely(len <= 37)) {
     char buf[MAX_PATH], *dup;
-    wcs2a(d->FileName, buf, len);
-    dup = HolyMAlloc(len + 1);
-    memcpy(dup, buf, len + 1);
+    wcs2a(buf, d->FileName, len);
+    dup = memcpy(HolyMAlloc(len + 1), buf, len + 1);
     vec_push(p, dup);
   }
 }
@@ -381,6 +301,8 @@ noret static BOOL WINAPI ctrlchndlr(argign DWORD dw) {
 
 void prepare(void) {
   SetConsoleCtrlHandler(&ctrlchndlr, 1);
+  setlocale(LC_ALL, "C.UTF-8");
+  _setmbcp(_MB_CP_LOCALE); /* [3] */
 }
 
 u64 mp_cnt(void) {
@@ -416,6 +338,9 @@ bool isvalidptr(void *p) {
  * [2]
  * https://learn.microsoft.com/en-us/windows-hardware/drivers/ddi/ntifs/ns-ntifs-_file_names_information
  * (https://archive.is/00lXG)
+ * [3]
+ * https://git.lighttpd.net/lighttpd/lighttpd1.4/src/commit/4ebc8afa04ece0ed5c661bec5ab49c7614477f03/src/server.c#L2285
+ * (https://archive.is/QWFMu#selection-89791.3-89963.1)
  */
 /*═════════════════════════════════════════════════════════════════════════════╡
 │ EXODUS: Executable Divine Operating System in Userspace                      │

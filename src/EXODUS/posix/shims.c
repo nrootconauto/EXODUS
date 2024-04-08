@@ -35,6 +35,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
+#include <locale.h>
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
@@ -330,6 +331,7 @@ void preparetls(void) {
 }
 
 void prepare(void) {
+  setocale(LC_ALL, "C");
   struct rlimit rl;
   getrlimit(RLIMIT_NOFILE, &rl);
   rl.rlim_cur = rl.rlim_max;
