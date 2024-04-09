@@ -18,7 +18,7 @@ U32 SYS_CTRL_ALT_FLAGS=0;
 //Due to Microsoft and WINE agreeing on different ways of using the TEB
 //I had to resort to "ArbitraryUserPointer" that guarantees consistency unofficially
 //and "ActiveRpcHandle" where it's not touched by anything according to Windows/WINE/ReactOS source code
-//Using C side thread-local storage with FFI reduces headache but also performance
+//Using C side thread-local storage with FFI reduces headache but also performance
 asm {
 _GET_FS::
 	XOR	EAX,EAX

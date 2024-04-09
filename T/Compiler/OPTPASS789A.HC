@@ -427,7 +427,7 @@ cc->pass==10 is final pass, code is placed into buf.
 	case IC_GS:
 	  ICZero(tmpi,REG_RAX);
 	  ICU8(tmpi,0x65);
-	  ICU32(tmpi,0x50408B48);
+	  ICU32(tmpi,0x50408B48);
 	  break;
 	case IC_MOV_FS:
 	  ICZero(tmpi,REG_RAX);

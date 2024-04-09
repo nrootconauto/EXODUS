@@ -518,6 +518,8 @@ I64 PrsFunCall(CCmpCtrl *cc,CPrsStk *ps,Bool indirect,CHashFun *tmpf)
     tmpi->ic_data=argc_cnt++; //++ so add_esp latter works
   }
   if (needs_right_paren) {
+    if (!is_first_arg && cc->token==',')//allow calling with an extra comma
+      Lex(cc);
     if (cc->token==')')
       Lex(cc);
     else

@@ -248,7 +248,7 @@ U0 ICBitOps(CIntermediateCode *tmpi,CICArg *arg1,CICArg *arg2,
     t2=t2&MDG_MASK+RT_U32;
   //32bit regs clears upper 32 bits so always use 64 bit reg ops
   if (t2&MDF_REG) {
-    t2-=RT_U32;
+    t2-=RT_U32;
     t2+=RT_I64;
   }
   i=ICModr1(r1,t2,r2,d2);

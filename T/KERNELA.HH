@@ -7574,7 +7574,7 @@ extern U0i DyadEnd(CDyadStream *);
 extern U0i DyadClose(CDyadStream *);
 extern U8i *DyadGetAddress(CDyadStream *);
 extern U64 mp_cnt();
-extern U8i *__CmdLineBootText();
+extern U8i *__CmdLineBootText();
 extern U0i Shutdown(I32i ec=0);
 extern Bool __IsCmdLine();
 extern Bool __FExists(U8i *);

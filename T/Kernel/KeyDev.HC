@@ -141,7 +141,7 @@ U0 CtrlAltF(I64)
   SwapI64(&text.font,&text.aux_font);
 }
 
-U0 CtrlAltM(I64)
+U0 CtrlAltM(I64)
 {
   static F64 vol;
   F64 cur=GetVolume;

@@ -347,7 +347,7 @@ CTask *Spawn(U0 (*fp_start_addr)(U8 *data),U8 *data=NULL,U8 *task_name=NULL,
   stack[-2]=&Exit;
   task->rsp=stack-2;
   task->rip=fp_start_addr;
-  if (Bt(&flags,JOBf_ADD_TO_QUE)) {
+  if (Bt(&flags,JOBf_ADD_TO_QUE)) {
     TaskQueInsChild(task);
     if (cpu_structs[target_cpu].seth_task)
       TaskQueIns(task,cpu_structs[target_cpu].seth_task);
