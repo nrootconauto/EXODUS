@@ -74,9 +74,9 @@ bool isdir(char const *path) {
 /* emulated stack frame */
 typedef struct {
   HANDLE fh;
-  WCHAR const *cwd;
-  WCHAR buf[MAX_PATH], *strcur;
-  WIN32_FIND_DATAW data;
+  char const *cwd;
+  char buf[MAX_PATH], *strcur;
+  WIN32_FIND_DATAA data;
 } delstkframe;
 
 typedef vec_t(delstkframe *) delstk;
@@ -87,25 +87,6 @@ static delstkframe *stkcur(delstk *v) {
 
 static delstkframe *stkpop(delstk *v) {
   return v->data[--v->length];
-}
-
-static WCHAR *wcpcpy2(WCHAR *restrict dst, WCHAR const *src) {
-  u64 sz = wcslen(src);
-  return (WCHAR *)memcpy(dst, src, sizeof(WCHAR[sz + 1])) + sz;
-}
-
-/* mbsrtowcs/wcsrtombs are too weird to use
- * and I don't want to deal with locales */
-static void a2wcs(WCHAR *dst, char const *src, i64 sz) {
-  while (sz--)
-    *dst++ = *src++;
-  *dst = 0;
-}
-
-static void wcs2a(char *dst, WCHAR const *src, i64 sz) {
-  while (sz--)
-    *dst++ = *src++;
-  *dst = 0;
 }
 
 /* basically std::filesystem::remove_all */
@@ -120,22 +101,20 @@ static void wcs2a(char *dst, WCHAR const *src, i64 sz) {
  * of other stuff. on a side note, *NIX utilizing FTS can do it 10x faster
  */
 void deleteall(char *s) {
-  WCHAR path[MAX_PATH];
-  a2wcs(path, s, strlen(s));
-  if (!PathIsDirectoryW(path)) {
-    DeleteFileW(path);
+  if (!PathIsDirectoryA(s)) {
+    DeleteFileA(s);
     return;
   }
   delstk stk = {0};
   delstkframe *cur;
 func:
   cur = malloc(sizeof *cur);
-  cur->cwd = stk.length ? stkcur(&stk)->buf /* parent dir */ : path;
-  cur->data = (WIN32_FIND_DATAW){0};
-  cur->strcur = wcpcpy2(cur->buf, cur->cwd);
-  cur->strcur = wcpcpy2(cur->strcur, L"\\*.*");
+  cur->cwd = stk.length ? stkcur(&stk)->buf /* parent dir */ : s;
+  cur->data = (WIN32_FIND_DATAA){0};
+  cur->strcur = stpcpy2(cur->buf, cur->cwd);
+  cur->strcur = stpcpy2(cur->strcur, "\\*.*");
   cur->fh =
-      FindFirstFileExW(cur->buf, FindExInfoBasic, &cur->data,
+      FindFirstFileExA(cur->buf, FindExInfoBasic, &cur->data,
                        FindExSearchNameMatch, NULL, FIND_FIRST_EX_LARGE_FETCH);
   if (veryunlikely(cur->fh == INVALID_HANDLE_VALUE))
     goto endfunc;
@@ -144,20 +123,20 @@ func:
    * \\*.*\0 */
   cur->strcur -= 3;
   do {
-    if (!wcscmp(cur->data.cFileName, L".") ||
-        !wcscmp(cur->data.cFileName, L".."))
+    if (!strcmp(cur->data.cFileName, ".") ||
+        !strcmp(cur->data.cFileName, ".."))
       continue;
-    wcscpy(cur->strcur, cur->data.cFileName);
+    strcpy(cur->strcur, cur->data.cFileName);
     if (cur->data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) {
       vec_push(&stk, cur);
       goto func;
     } else {
-      DeleteFileW(cur->buf);
+      DeleteFileA(cur->buf);
     }
   dir:; /* Clang wants a semicolon here */
-  } while (FindNextFileW(cur->fh, &cur->data));
+  } while (FindNextFileA(cur->fh, &cur->data));
   FindClose(cur->fh);
-  RemoveDirectoryW(cur->cwd);
+  RemoveDirectoryA(cur->cwd);
 endfunc:
   free(cur);
   if (!stk.length) {
@@ -203,13 +182,21 @@ static bool traversedir(char const *path, void cb(FileInfo *d, void *_user0),
   return true;
 }
 
+/* mbsrtowcs/wcsrtombs are too weird to use
+ * and I don't want to deal with locales */
+
+static void wcs2a(char *dst, WCHAR const *src, i64 sz) {
+  while (sz--)
+    *dst++ = *src++;
+  *dst = 0;
+}
+
 static void listdircb(FileInfo *d, void *user0) {
   vec_str_t *p = user0;
   i64 len = d->FileNameLength / sizeof(WCHAR);
   if (verylikely(len <= 37)) {
-    char buf[MAX_PATH], *dup;
-    wcs2a(buf, d->FileName, len);
-    dup = memcpy(HolyMAlloc(len + 1), buf, len + 1);
+    char *dup = HolyMAlloc(len + 1);
+    wcs2a(dup, d->FileName, len);
     vec_push(p, dup);
   }
 }
@@ -228,8 +215,6 @@ char **listdir(char const *path) {
 
 static void fsizecb(FileInfo *d, void *user0) {
   i64 *p = user0;
-  if (!wcscmp(d->FileName, L".") || !wcscmp(d->FileName, L".."))
-    return;
   if (verylikely(d->FileNameLength / sizeof(WCHAR) <= 37))
     ++*p;
 }
@@ -244,7 +229,7 @@ i64 fsize(char const *path) {
     i64 ret = 0;
     if (veryunlikely(!traversedir(path, fsizecb, &ret)))
       return -1;
-    return ret;
+    return ret - 2; /* ".", ".." */
   }
 }
 

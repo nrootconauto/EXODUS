@@ -331,7 +331,7 @@ void preparetls(void) {
 }
 
 void prepare(void) {
-  setocale(LC_ALL, "C");
+  setlocale(LC_ALL, "C");
   struct rlimit rl;
   getrlimit(RLIMIT_NOFILE, &rl);
   rl.rlim_cur = rl.rlim_max;
