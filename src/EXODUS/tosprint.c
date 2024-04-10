@@ -187,9 +187,8 @@ static vec_char_t MStrPrint(char const *fmt, argign u64 argc, i64 *argv) {
 }
 
 void TOSPrint(char const *fmt, i64 argc, i64 *argv) {
-  vec_char_t s = MStrPrint(fmt, argc, argv);
+  vec_char_t cleanup(_vecdtor) s = MStrPrint(fmt, argc, argv);
   writefd(1, s.data, s.length);
-  free(s.data);
 }
 
 /*═════════════════════════════════════════════════════════════════════════════╡

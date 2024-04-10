@@ -44,14 +44,13 @@ void *HolyCAlloc(u64 sz) {
 }
 
 char *HolyStrDup(char const *str) {
-  u64 sz = strlen(str) + 1;
-  return memcpy(HolyMAlloc(sz), str, sz);
+  return memdup(HolyMAlloc, str, strlen(str) + 1);
 }
 
 noret void HolyThrow(char const *s) {
   static CSymbol *sym;
   u64 i = 0;
-  memcpy(&i, s, Min(strlen(s), 8ul));
+  __builtin_memcpy(&i, s, Min(strlen(s), 8ul));
   if (!sym)
     sym = map_get(&symtab, "throw");
   FFI_CALL_TOS_1(sym->val, i);

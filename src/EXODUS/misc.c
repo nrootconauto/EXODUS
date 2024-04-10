@@ -69,8 +69,12 @@ void *memmem2(void *haystk, u64 haystklen, void *needle, u64 needlelen) {
   return NULL;
 }
 
-void *mempcpy2(void *restrict dst, void *src, u64 sz) {
+void *mempcpy2(void *restrict dst, void const *src, u64 sz) {
   return (char *)memcpy(dst, src, sz + 1) + sz;
+}
+
+void *memdup(void *alloc(u64 _sz), void const *src, u64 sz) {
+  return memcpy(alloc(sz), src, sz);
 }
 
 void _dtor(void *_p) {

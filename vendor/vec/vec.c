@@ -1,5 +1,6 @@
 /** 
  * Copyright (c) 2014 rxi
+ * Copyright (c) 2024 1fishe2fishe
  *
  * This library is free software; you can redistribute it and/or modify it
  * under the terms of the MIT license. See LICENSE for details.
@@ -112,3 +113,9 @@ void vec_swap_(char **data, int *length, int *capacity, int memsz,
   }
 }
 
+void _vecdtor(void *p) {
+  // free(*(char **)p); // works quoth ISO/IEC 9899:1999 6.7.2.1.13, but ugly
+  // all vec_* structures have the malloced memory as its first member
+  vec_void_t *v = p;
+  free(v->data);
+}

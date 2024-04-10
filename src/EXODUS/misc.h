@@ -95,7 +95,8 @@ void _dtor(void *_p);
  *         Clang doesn't do this. */
 char *stpcpy2(char *restrict dst, char const *src);
 void *memmem2(void *haystk, u64 haystklen, void *needle, u64 needlelen);
-void *mempcpy2(void *restrict dst, void *src, u64 sz);
+void *mempcpy2(void *restrict dst, void const *src, u64 sz);
+void *memdup(void *alloc(u64 _sz), void const *src, u64 sz);
 #define flushprint(f, a...) \
   do {                      \
     fprintf(f, a);          \

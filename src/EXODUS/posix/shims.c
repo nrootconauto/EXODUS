@@ -31,11 +31,11 @@
 #endif
 
 #include <inttypes.h>
+#include <locale.h>
 #include <signal.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
-#include <locale.h>
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
@@ -139,15 +139,11 @@ static void listdircb(struct dirent *e, void *user0) {
 }
 
 char **listdir(char const *path) {
-  vec_str_t ls;
-  vec_init(&ls);
+  vec_str_t cleanup(_vecdtor) ls = {0};
   if (veryunlikely(!traversedir(path, listdircb, &ls)))
     return NULL;
   vec_push(&ls, NULL);
-  u64 sz = ls.length * sizeof ls.data[0];
-  char **ret = memcpy(HolyMAlloc(sz), ls.data, sz);
-  vec_deinit(&ls);
-  return ret;
+  return memdup(HolyMAlloc, ls.data, sizeof(char *) * ls.length);
 }
 
 static void fsizecb(struct dirent *e, void *user0) {

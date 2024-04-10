@@ -110,7 +110,6 @@ void deleteall(char *s) {
 func:
   cur = malloc(sizeof *cur);
   cur->cwd = stk.length ? stkcur(&stk)->buf /* parent dir */ : s;
-  cur->data = (WIN32_FIND_DATAA){0};
   cur->strcur = stpcpy2(cur->buf, cur->cwd);
   cur->strcur = stpcpy2(cur->strcur, "\\*.*");
   cur->fh =
@@ -202,15 +201,11 @@ static void listdircb(FileInfo *d, void *user0) {
 }
 
 char **listdir(char const *path) {
-  vec_str_t ls;
-  vec_init(&ls);
+  vec_str_t cleanup(_vecdtor) ls = {0};
   if (veryunlikely(!traversedir(path, listdircb, &ls)))
     return NULL;
   vec_push(&ls, NULL);
-  u64 sz = ls.length * sizeof ls.data[0];
-  char **ret = memcpy(HolyMAlloc(sz), ls.data, sz);
-  vec_deinit(&ls);
-  return ret;
+  return memdup(HolyMAlloc, ls.data, sizeof(PSTR[ls.length]));
 }
 
 static void fsizecb(FileInfo *d, void *user0) {

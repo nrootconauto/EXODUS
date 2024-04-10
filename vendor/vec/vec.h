@@ -133,6 +133,7 @@ void vec_swapsplice_(char **data, int *length, int *capacity, int memsz,
                      int start, int count);
 void vec_swap_(char **data, int *length, int *capacity, int memsz, int idx1,
                int idx2);
+void _vecdtor(void *);
 
 typedef vec_t(void *) vec_void_t;
 typedef vec_t(char *) vec_str_t;
