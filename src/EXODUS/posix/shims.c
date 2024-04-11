@@ -139,7 +139,7 @@ static void listdircb(struct dirent *e, void *user0) {
 }
 
 char **listdir(char const *path) {
-  vec_str_t cleanup(_vecdtor) ls = {0};
+  vec_str_t cleanup(_dtor) ls = {0};
   if (veryunlikely(!traversedir(path, listdircb, &ls)))
     return NULL;
   vec_push(&ls, NULL);

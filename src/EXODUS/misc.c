@@ -78,6 +78,8 @@ void *memdup(void *alloc(u64 _sz), void const *src, u64 sz) {
 }
 
 void _dtor(void *_p) {
+  /* works with vec_* quoth ISO/IEC 9899:1999 6.7.2.1.13 because
+   * all vec_* structures have the malloced ptr as their first member */
   void **p = _p;
   free(*p);
 }
