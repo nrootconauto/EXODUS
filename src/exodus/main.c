@@ -75,7 +75,7 @@ int main(int argc, char **argv) {
       end = arg_end(10),
   };
   int errs = arg_parse(argc, argv, argtable);
-  if (help->count || errs > 0 || !drv->count) {
+  if (help->count || errs > 0) {
     if (errs)
       arg_print_errors(stderr, end, argv[0]);
     flushprint(stderr, "Usage: %s", argv[0]);
@@ -83,6 +83,8 @@ int main(int argc, char **argv) {
     arg_print_glossary_gnu(stderr, argtable);
     return 1;
   }
+  if (!drv->count)
+    drv->filename[0] = "T";
   if (fexists(drv->filename[0])) {
     VFsMountDrive('T', drv->filename[0]);
   } else {

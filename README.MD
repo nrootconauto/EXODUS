@@ -47,11 +47,7 @@ cd ..
 
 # Running EXODUS
 
-Execute the following to run EXODUS:
-
-```sh
-./exodus -t T
-```
+Run EXODUS with `./exodus`.
 
 Consult `./exodus -h` for more command-line options such as CLI mode.
 
