@@ -511,10 +511,9 @@ Bool Kill(CTask *task,Bool wait=TRUE,Bool just_break=FALSE)
       }
     } else {
       if (task!=sys_winmgr_task) {
-	//TODOurgent restore
-	//for (i=0;i<mp_cnt;i++)
-	//   if (task==cpu_structs[i].seth_task)
-	//    return FALSE;
+	for (i=0;i<mp_cnt;i++)
+	  if (task==cpu_structs[i].seth_task)
+	    return FALSE;
 	LBts(&task->task_flags,TASKf_KILL_TASK);
 	if (wait) {
 	  do Yield;

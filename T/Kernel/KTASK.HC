@@ -322,7 +322,7 @@ CTask *Spawn(U0 (*fp_start_addr)(U8 *data),U8 *data=NULL,U8 *task_name=NULL,
   } else if (target_cpu==-1) {
     target_cpu=Gs->num;
   }
-  task=CAlloc32(sizeof(CTask),adam_task);//MUST BE IN LOWER32 BITS
+  task=CAlloc32(sizeof(CTask),adam_task);
   if(!parent) {
     //if(cpu_structs[target_cpu])
     parent=cpu_structs[target_cpu].seth_task;

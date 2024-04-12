@@ -696,7 +696,7 @@ U0 Serve(CServer *srv) {
     srv_task=Spawn(&ServeTask,srv,"Server",core);
     Free(__GetStr);
   }
-  DyadShutdown;
   Kill(srv_task);
+  DyadShutdown; // shutdown after task died to avoid race cond
 }
 

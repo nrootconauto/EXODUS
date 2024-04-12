@@ -100,7 +100,7 @@ static void genthunks(HolyFFI *list, i64 cnt) {
   for (i64 i = 0; i < cnt; i++) {
     cur = list + i;
     blob = mempcpy2(prev = blob, __TOSTHUNK_START, thunksz);
-    *(u64 *)(prev + calloff) = cur->fp;
+    *(u64 *)(prev + calloff) = (u64)cur->fp;
     *(u16 *)(prev + ret1off) = cur->arity * 8;
     map_set(&symtab, cur->name, (CSymbol){.type = HTT_FUN, .val = prev});
   }
@@ -146,9 +146,9 @@ static char *STK_DyadGetAddress(dyad_Stream **stk) {
 
 static i64 STK__DyadGetCallbackMode(char **stk) {
   char *s = stk[0];
-#define C(a)          \
-  if (!strcmp(s, #a)) \
-    return a;
+#define C(a) else if (!strcmp(s, #a)) return a
+  if (false)
+    ;
   C(DYAD_EVENT_LINE);
   C(DYAD_EVENT_DATA);
   C(DYAD_EVENT_CLOSE);
@@ -432,9 +432,9 @@ static void STK_MPSetProfilerInt(i64 *stk) {
 }
 
 void BootstrapLoader(void) {
-#define R(h, c, a) {.name = h, .fp = (u64)(c), .arity = a}
+#define R(h, c, a) {.name = h, .fp = c, .arity = a}
 #define S(h, a) \
-  { .name = #h, .fp = (u64)(STK_##h), .arity = a }
+  { .name = #h, .fp = STK_##h, .arity = a }
   HolyFFI ffis[] = {
       R("__CmdLineBootText", CmdLineBootText, 0),
       R("__CoreNum", CoreNum, 0),
