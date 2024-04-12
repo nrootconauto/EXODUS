@@ -30,6 +30,7 @@
 #include <isocline.h>
 
 #include <exodus/alloc.h>
+#include <exodus/asm/tosthunk.h>
 #include <exodus/callconv.h>
 #include <exodus/loader.h>
 #include <exodus/main.h>
@@ -82,10 +83,8 @@ typedef struct {
   u16 arity; // <= 0xffFF/8
 } HolyFFI;
 
-extern u8 __TOSTHUNK_START[], __TOSTHUNK_END[];
-
 static void genthunks(HolyFFI *list, i64 cnt) {
-  i64 thunksz = __TOSTHUNK_END - __TOSTHUNK_START;
+  i64 thunksz = __TOSTHUNK_END - __TOSTHUNK_START; /* asm/c2holyc.s */
   u8 *blob = NewVirtualChunk(thunksz * cnt, true), *prev;
   /* We get the offset of the placeholder values so we can fill
    * each of them in for the FFI functions
