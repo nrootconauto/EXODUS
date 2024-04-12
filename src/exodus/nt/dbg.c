@@ -28,10 +28,10 @@
 #include <errhandlingapi.h>
 
 #include <exodus/backtrace.h>
+#include <exodus/callconv.h>
 #include <exodus/dbg.h>
 #include <exodus/ffi.h>
-#include <exodus/tos_aot.h>
-#include <exodus/tos_callconv.h>
+#include <exodus/loader.h>
 #include <exodus/types.h>
 
 static LONG WINAPI VEHandler(struct _EXCEPTION_POINTERS *info) {
@@ -77,7 +77,7 @@ static LONG WINAPI VEHandler(struct _EXCEPTION_POINTERS *info) {
   static CSymbol *sym;
   if (!sym)
     sym = map_get(&symtab, "DebuggerLandWin");
-  FFI_CALL_TOS_2(sym->val, sig, (u64)regs);
+  FFI_CALL_TOS_2(sym->val, sig, regs);
   return E(CONTINUE_EXECUTION);
 }
 

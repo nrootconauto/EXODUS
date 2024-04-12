@@ -69,19 +69,10 @@ void VFsSetPwd(char const *pwd) {
 
 bool VFsDirMk(char const *to) {
   char cleanup(_dtor) *p = VFsFNameAbs(to);
-  /* Poor man's tuple matcher */
-  switch ((isdir(p) << 1) | fexists(p)) {
-  case 0b11:
-    return true;
-  case 0b10:
-    Unreachable();
-  case 0b01:
-    return false;
-  case 0b00:
+  if (fexists(p)) {
+    return isdir(p);
+  } else
     return dirmk(p);
-  default:
-    Unreachable();
-  }
 }
 
 bool VFsDel(char const *p) {

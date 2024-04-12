@@ -35,13 +35,13 @@
 #include <stdio.h>
 #include <string.h>
 
+#include <exodus/callconv.h>
 #include <exodus/dbg.h>
+#include <exodus/loader.h>
 #include <exodus/main.h>
 #include <exodus/misc.h>
 #include <exodus/seth.h>
 #include <exodus/shims.h>
-#include <exodus/tos_aot.h>
-#include <exodus/tos_callconv.h>
 #include <exodus/vfs.h>
 
 typedef struct {

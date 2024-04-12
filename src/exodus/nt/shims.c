@@ -140,8 +140,7 @@ func:
    * \\*.*\0 */
   cur->strcur -= 3;
   do {
-    if (!strcmp(cur->data.cFileName, ".") ||
-        !strcmp(cur->data.cFileName, ".."))
+    if (!strcmp(cur->data.cFileName, ".") || !strcmp(cur->data.cFileName, ".."))
       continue;
     strcpy(cur->strcur, cur->data.cFileName);
     if (cur->data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) {

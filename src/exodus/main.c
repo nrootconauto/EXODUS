@@ -32,14 +32,14 @@
 
 #include <exodus/dbg.h>
 #include <exodus/ffi.h>
+#include <exodus/loader.h>
 #include <exodus/main.h>
 #include <exodus/misc.h>
-#include <exodus/sdl_window.h>
 #include <exodus/seth.h>
 #include <exodus/shims.h>
 #include <exodus/sound.h>
-#include <exodus/tos_aot.h>
 #include <exodus/vfs.h>
+#include <exodus/window.h>
 
 static char bin_path[0x200], *boot_str;
 __attribute__((constructor)) static void init(void) {

@@ -30,8 +30,8 @@
 #include <vec/vec.h>
 
 #include <exodus/backtrace.h>
+#include <exodus/loader.h>
 #include <exodus/misc.h>
-#include <exodus/tos_aot.h>
 
 static vec_str_t sortedsyms;
 static char unknown[] = "UNKNOWN";
@@ -40,6 +40,7 @@ static int compar(void const *_a, void const *_b) {
   char *const *a = _a, *const *b = _b;
   CSymbol *as = map_get(&symtab, *a);
   CSymbol *bs = map_get(&symtab, *b);
+  /* this is ok because vals are in signed int bit range */
   return (i64)as->val - (i64)bs->val;
 }
 
@@ -103,7 +104,7 @@ void BackTrace(u64 _rbp, u64 _rip) {
 }
 
 /* (gdb) p (char*)WhichFun($pc) */
-__attribute__((used, visibility("default"))) char *WhichFun(u8 *ptr) {
+__attribute__((used, visibility("default"))) char const *WhichFun(u8 *ptr) {
   sortsyms();
   char const *last = unknown, *s;
   int iter;
@@ -111,8 +112,8 @@ __attribute__((used, visibility("default"))) char *WhichFun(u8 *ptr) {
   vec_foreach(&sortedsyms, s, iter) {
     sym = map_get(&symtab, s);
     if (sym->val >= ptr)
-      return strdup(s);
+      return s;
     last = s;
   }
-  return strdup(last);
+  return last;
 }

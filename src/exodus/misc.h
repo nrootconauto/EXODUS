@@ -50,15 +50,15 @@ void _dtor(void *_p);
 /* QoL MACROS */
 #define Min(x, y)              \
   ({                           \
-    typeof(x) XRes = (x);      \
-    typeof(y) YRes = (y);      \
+    __auto_type XRes = (x);    \
+    __auto_type YRes = (y);    \
     XRes < YRes ? XRes : YRes; \
   })
 
 #define Max(x, y)              \
   ({                           \
-    typeof(x) XRes = (x);      \
-    typeof(y) YRes = (y);      \
+    __auto_type XRes = (x);    \
+    __auto_type YRes = (y);    \
     XRes > YRes ? XRes : YRes; \
   })
 
@@ -96,7 +96,6 @@ void *memdup(void *alloc(u64 _sz), void const *src, u64 sz);
     fprintf(f, a);          \
     fflush(f);              \
   } while (0)
-
 
 #define Times2(a...) a a
 #define Times4(a...) Times2(a) Times2(a)

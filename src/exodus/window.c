@@ -29,14 +29,14 @@
 
 #include <SDL.h>
 
+#include <exodus/callconv.h>
 #include <exodus/ffi.h>
 #include <exodus/main.h>
 #include <exodus/misc.h>
-#include <exodus/sdl_window.h>
 #include <exodus/shims.h>
 #include <exodus/sound.h>
-#include <exodus/tos_callconv.h>
 #include <exodus/types.h>
+#include <exodus/window.h>
 
 static struct {
   SDL_mutex *screen_mutex;

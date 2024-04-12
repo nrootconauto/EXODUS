@@ -31,9 +31,9 @@
 #include <vec/vec.h>
 
 #include <exodus/alloc.h>
+#include <exodus/loader.h>
 #include <exodus/misc.h>
 #include <exodus/shims.h>
-#include <exodus/tos_aot.h>
 
 map_sym_t symtab;
 

@@ -30,31 +30,31 @@
 #include <isocline.h>
 
 #include <exodus/alloc.h>
+#include <exodus/callconv.h>
+#include <exodus/loader.h>
 #include <exodus/main.h>
 #include <exodus/misc.h>
-#include <exodus/sdl_window.h>
 #include <exodus/seth.h>
 #include <exodus/shims.h>
 #include <exodus/sound.h>
-#include <exodus/tos_aot.h>
-#include <exodus/tos_callconv.h>
 #include <exodus/tosprint.h>
 #include <exodus/types.h>
 #include <exodus/vfs.h>
+#include <exodus/window.h>
 
 /* HolyC -> C FFI */
 void HolyFree(void *ptr) {
   static CSymbol *sym;
   if (!sym)
     sym = map_get(&symtab, "_FREE");
-  FFI_CALL_TOS_1(sym->val, (u64)ptr);
+  FFI_CALL_TOS_1(sym->val, ptr);
 }
 
 void *HolyMAlloc(u64 sz) {
   static CSymbol *sym;
   if (!sym)
     sym = map_get(&symtab, "_MALLOC");
-  return (void *)FFI_CALL_TOS_2(sym->val, sz, (u64)NULL);
+  return (void *)FFI_CALL_TOS_2(sym->val, sz, NULL);
 }
 
 void *HolyCAlloc(u64 sz) {
@@ -91,17 +91,17 @@ static void genthunks(HolyFFI *list, i64 cnt) {
    * each of them in for the FFI functions
    *
    * Refer to asm/c2holyc.s for the hexadecimals */
-#define OFF(var, mark)                                                       \
+#define ImmOff(var, mark)                                                    \
   u8 *var##addr = memmem2(__TOSTHUNK_START, thunksz, mark, sizeof mark - 1); \
   i64 var##off = var##addr - __TOSTHUNK_START
-  OFF(call, Times8("\xF3"));
-  OFF(ret1, Times2("\xF4"));
+  ImmOff(call, Times8("\xF3"));
+  ImmOff(ret1, Times2("\xF4"));
   HolyFFI *cur;
   for (i64 i = 0; i < cnt; i++) {
     cur = list + i;
     blob = mempcpy2(prev = blob, __TOSTHUNK_START, thunksz);
-    __builtin_memcpy(prev + calloff, &cur->fp, 8);
-    __builtin_memcpy(prev + ret1off, &(u16){cur->arity * 8}, 2);
+    *(u64 *)(prev + calloff) = cur->fp;
+    *(u16 *)(prev + ret1off) = cur->arity * 8;
     map_set(&symtab, cur->name, (CSymbol){.type = HTT_FUN, .val = prev});
   }
 }
@@ -164,16 +164,15 @@ static i64 STK__DyadGetCallbackMode(char **stk) {
 }
 
 static void readcallback(dyad_Event *e) {
-  FFI_CALL_TOS_4(e->udata, (u64)e->stream, (u64)e->data, e->size,
-                 (u64)e->udata2);
+  FFI_CALL_TOS_4(e->udata, e->stream, e->data, e->size, e->udata2);
 }
 
 static void closecallback(dyad_Event *e) {
-  FFI_CALL_TOS_2(e->udata, (u64)e->stream, (u64)e->udata2);
+  FFI_CALL_TOS_2(e->udata, e->stream, e->udata2);
 }
 
 static void listencallback(dyad_Event *e) {
-  FFI_CALL_TOS_2(e->udata, (u64)e->remote, (u64)e->udata2);
+  FFI_CALL_TOS_2(e->udata, e->remote, e->udata2);
 }
 
 static void STK_DyadSetReadCallback(void **stk) {
@@ -229,7 +228,7 @@ static void STK___BootstrapForeachSymbol(void **stk) {
   CSymbol *v;
   while ((k = map_next(&symtab, &it))) {
     v = map_iter_val(&symtab, &it);
-    FFI_CALL_TOS_3(stk[0], (u64)k, (u64)v->val,
+    FFI_CALL_TOS_3(stk[0], k, v->val,
                    v->type == HTT_EXPORT_SYS_SYM ? HTT_FUN : v->type);
   }
 }
@@ -433,9 +432,9 @@ static void STK_MPSetProfilerInt(i64 *stk) {
 }
 
 void BootstrapLoader(void) {
-#define R(h, c, a) {.name = h, .fp = c, .arity = a}
+#define R(h, c, a) {.name = h, .fp = (u64)(c), .arity = a}
 #define S(h, a) \
-  { .name = #h, .fp = STK_##h, .arity = a }
+  { .name = #h, .fp = (u64)(STK_##h), .arity = a }
   HolyFFI ffis[] = {
       R("__CmdLineBootText", CmdLineBootText, 0),
       R("__CoreNum", CoreNum, 0),

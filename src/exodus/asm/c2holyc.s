@@ -30,7 +30,8 @@
 __TOSTHUNK_START:
 	push	%rbp
 	mov	%rsp,%rbp
-	and	$-16,%rsp /* both ABIs require alignment so we just cut down */
+/* both ABIs require alignment so we just cut down (this is okay since the stack grows down) */
+	and	$~0xF,%rsp
 	push	%r10
 	push	%r11
 #ifdef _WIN32
@@ -42,7 +43,7 @@ __TOSTHUNK_START:
 	lea	0x10(%rbp),%rdi
 #endif
 /* F3h is the REP prefix, a repeated sequence of it isn't valid code */
-	movabs	$0xF3F3F3F3F3F3F3F3,%rax
+	movabs  $0xF3f3F3f3F3f3F3f3,%rax
 	call	*%rax
 #ifdef _WIN32
 	add	$0x20,%rsp /* volatile regs don't need restore, so just add */
@@ -52,9 +53,11 @@ __TOSTHUNK_START:
 #endif
 	pop	%r11
 	pop	%r10
- 	leave
+/* restoring %rsp is mandatory here because we cut %rsp down and the callee expects a preserved %rsp */
+	mov	%rbp,%rsp 
+	pop	%rbp
 /* F4h is HLT, a ring0 opcode, so we can safely assume this is the only instance */
-	ret	$0xF4F4
+	ret	$0xF4f4
 __TOSTHUNK_END:
 
 #ifndef _WIN32

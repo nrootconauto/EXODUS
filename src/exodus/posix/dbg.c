@@ -33,10 +33,10 @@
 #include <map/map.h>
 
 #include <exodus/backtrace.h>
+#include <exodus/callconv.h>
 #include <exodus/dbg.h>
+#include <exodus/loader.h>
 #include <exodus/misc.h>
-#include <exodus/tos_aot.h>
-#include <exodus/tos_callconv.h>
 #include <exodus/types.h>
 
 static void routine(int sig, argign siginfo_t *siginfo, void *_ctx) {
@@ -75,7 +75,7 @@ static void routine(int sig, argign siginfo_t *siginfo, void *_ctx) {
   static CSymbol *sym;
   if (!sym)
     sym = map_get(&symtab, "DebuggerLand");
-  FFI_CALL_TOS_2(sym->val, sig, (u64)regs);
+  FFI_CALL_TOS_2(sym->val, sig, regs);
 }
 
 void SetupDebugger(void) {

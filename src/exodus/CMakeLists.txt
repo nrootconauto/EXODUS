@@ -4,8 +4,8 @@ set(SRC_FILES
   sound.c
   misc.c
   main.c
-  sdl_window.c
-  tos_aot.c
+  window.c
+  loader.c
   ffi.c
   tosprint.c
   vfs.c
