@@ -218,7 +218,7 @@ Bool TaskValidate(CTask *task)
 {//return TRUE if task looks valid.
   I64 c=0,found=FALSE,unlock=FALSE;
   CTask *t,*t2;
-  if (!task || !__IsValidPtr(task))
+  if (!task || !ChkPtr(task))
     return FALSE;
   //if(!cpu_structs) goto defacto;
   for (c=0;c!=mp_cnt;c++) {

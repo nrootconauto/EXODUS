@@ -32,7 +32,7 @@ Bool ClassRep2(CDoc *doc,U8 *_d,U8 *class_name=lastclass,
     if (tmpc2->type & HTT_INTERNAL_TYPE) {
       DocPrint(doc,"$$GREEN$$%-20ts:$$FG$$",ml->str);
       //ml->reg is lesser or equal to 0xf as there are 16 gp registers including 0
-      if(!__IsValidPtr(ptr)||(0<=ml->reg<=0xf&&!include_regs)) { //if is a register and we dont want registers
+      if(!ChkPtr(ptr)||(0<=ml->reg<=0xf&&!include_regs)) { //if is a register and we dont want registers
         "(Unreadable)\n";
       } else if (stars==1 && (tmpc2->raw_type==RT_I8 || tmpc2->raw_type==RT_U8)) {
         ptr=*ptr;
@@ -41,7 +41,7 @@ Bool ClassRep2(CDoc *doc,U8 *_d,U8 *class_name=lastclass,
 	    doc_e=DocPrint(doc,"$$DA-TRM-P+RD,LEN=64,A=\"%%40ts\"$$\n");
 	    doc_e->data=ptr;
 	    DocDataFmt(doc,doc_e);
-	  } else if(__IsValidPtr(ptr))
+	  } else if(ChkPtr(ptr))
 	    DocPrint(doc,"%40ts\n",ptr);
 	  else
 	    DocPrint(doc,"%40X\n",ptr);
@@ -61,14 +61,14 @@ Bool ClassRep2(CDoc *doc,U8 *_d,U8 *class_name=lastclass,
 	      doc_e=DocPrint(doc,"$$DA-TRM-P+RD,LEN=64,A=\"%%40ts\"$$\n");
 	      doc_e->data=ptr;
 	      DocDataFmt(doc,doc_e);
-	    } else if(__IsValidPtr(ptr))
+	    } else if(ChkPtr(ptr))
 	      DocPrint(doc,"%40ts\n",ptr);
 	    else
 	      DocPrint(doc,"%40X\n",ptr);
 	  }
         }
         for (i=0;i<j;i++) {
-	  if(__IsValidPtr(ptr))
+	  if(ChkPtr(ptr))
 	    switch (tmpc2->raw_type) {
 	      case RT_I0:
 	      case RT_U0:

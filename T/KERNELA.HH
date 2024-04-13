@@ -7390,6 +7390,8 @@ extern CDoc *WinCursorPosSet(CTask *task,I64 msx,I64 msy,Bool set_cursor=TRUE);
 extern Bool WinKeyNavMenu();
 extern U0 WinMgrTask(I64);
 extern U0 CPURep(Bool full=FALSE);
+extern Bool ChkPtr(U8 *ptr);
+extern Bool ChkCodePtr(U8 *ptr);
 #help_index "Processor"
 public _intern IC_RDTSC I64 GetTSC();
 #help_index ""

@@ -1,9 +1,20 @@
+Bool ChkPtr(U8 *ptr)
+{//Check if addr is valid ptr.
+  return __IsValidPtr(ptr);
+}
+
+Bool ChkCodePtr(U8 *ptr)
+{//Check if addr is valid code addr.
+  return __IsValidPtr(ptr) && ptr < I32_MAX;
+}
+
 public Bool ChkOnStk(U8 *ptr,CTask *task=NULL) {
   if (!task) task=Fs;
   U8 *stk=task->stk;
   I64 stk_size=MSize(stk);
   return stk<=ptr<stk+stk_size;
 }
+
 U8 *Caller(I64 num=1)
 {//Returns the addr of the fun which called this one,
 //or the caller of the caller, etc.
@@ -18,12 +29,13 @@ U8 *Caller(I64 num=1)
   ptr=rbp+1;
   return *ptr;
 }
+
 U8 *__CallerBP(U8 **rbp,I64 num=1)
 {//Returns the addr of the fun which called this one,
 //or the caller of the caller, etc.
   U8 **ptr;
   while (num--) {
-    if(!__IsValidPtr(rbp)) return NULL;
+    if(!ChkPtr(rbp)) return NULL;
     if (rbp>=*rbp)
       return NULL;
     rbp=*rbp;
@@ -31,9 +43,10 @@ U8 *__CallerBP(U8 **rbp,I64 num=1)
       return NULL;
   }
   ptr=rbp+1;
-  if(!__IsValidPtr(ptr)) return NULL;
+  if(!ChkPtr(ptr)) return NULL;
   return *ptr;
 }
+
 U8 *TaskCaller(CTask *task=NULL,I64 num=0,Bool saved_context=FALSE)
 {//Fetches addr of Nth caller on task's stk.
   U8 **ptr,**rbp,**rsp;
@@ -184,7 +197,7 @@ U0 DebuggerLandWin(I64 sig,I64 *gps) {
     if(bp=BptFind(_RIP,Fs)) {
         LBts(&Fs->task_flags,TASKf_DISABLE_BPTS);
         Fs->rflags|=1<<RFLAGf_TRAP;
-    } else if(__IsValidPtr(_RIP))
+    } else if(ChkPtr(_RIP))
       if(_RIP(U8*)[0]==OC_BPT) //Advance if we hit a stray BPT
         _RIP++;
   }
