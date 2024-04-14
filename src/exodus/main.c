@@ -106,7 +106,7 @@ int main(int argc, char **argv) {
     char *s;
     while ((s = strchr(boot.data, '\\')))
       *s++ = '/';
-    vec_pop(&boot);
+    (void)vec_pop(&boot);
 #endif
   }
   if (_60fps->count)

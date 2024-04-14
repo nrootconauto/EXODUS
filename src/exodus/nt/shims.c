@@ -103,10 +103,6 @@ static delstkframe *stkcur(delstk *v) {
   return v->data[v->length - 1];
 }
 
-static delstkframe *stkpop(delstk *v) {
-  return v->data[--v->length];
-}
-
 /* basically std::filesystem::remove_all */
 /* SHFileOperation is too slow
  *   when called directly for 10 layers of directories with 9 files each
@@ -159,7 +155,7 @@ endfunc:
     free(stk.data);
     return;
   }
-  cur = stkpop(&stk);
+  cur = vec_pop(&stk);
   goto dir;
 }
 

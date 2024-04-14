@@ -30,7 +30,7 @@
 #define vec_push(v, val) \
   (vec_expand_(vec_unpack_(v)) ? -1 : ((v)->data[(v)->length++] = (val), 0))
 
-#define vec_pop(v) (void)((v)->data[--(v)->length])
+#define vec_pop(v) ((v)->data[--(v)->length])
 
 #define vec_splice(v, start, count) \
   (vec_splice_(vec_unpack_(v), start, count), (v)->length -= (count))
