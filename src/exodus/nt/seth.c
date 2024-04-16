@@ -46,8 +46,8 @@
 
 typedef struct {
   HANDLE thread, event;
-  CRITICAL_SECTION mtx;
-  _Alignas(u64) u64 awakeat;
+  SRWLOCK mtx;
+  u64 awakeat;
   int core_num;
   void *profiler_int;
   u64 profiler_freq, next_prof_int;
@@ -97,7 +97,7 @@ void CreateCore(vec_void_t ptrs) {
       .core_num = nproc,
       .event = CreateEvent(NULL, FALSE, FALSE, NULL),
   };
-  InitializeCriticalSectionEx(&c->mtx, 2000, CRITICAL_SECTION_NO_DEBUG_INFO);
+  InitializeSRWLock(&c->mtx);
   c->thread = (HANDLE)_beginthread(ThreadRoutine, 0, c);
   SetThreadPriority(c->thread, THREAD_PRIORITY_HIGHEST);
   nproc++;
@@ -111,9 +111,10 @@ void WakeCoreUp(u64 core) {
   CCore *c = cores + core;
   /* the timeSetEvent callback will automatiacally
    * wake things up so just wait for the event. */
-  EnterCriticalSection(&c->mtx);
+  AcquireSRWLockExclusive(&c->mtx);
   SetEvent(c->event);
-  LeaveCriticalSection(&c->mtx);
+  c->awakeat = 0;
+  ReleaseSRWLockExclusive(&c->mtx);
 }
 
 static u32 inc;
@@ -141,13 +142,13 @@ static void tickscb(u32 id, u32 msg, u64 userptr, u64 dw1, u64 dw2) {
   ticks += inc;
   for (u64 i = 0; i < nproc; ++i) {
     CCore *c = cores + i;
-    EnterCriticalSection(&c->mtx);
+    AcquireSRWLockExclusive(&c->mtx);
     u64 wake = c->awakeat;
     if (ticks >= wake && wake > 0) {
       SetEvent(c->event);
       c->awakeat = 0;
     }
-    LeaveCriticalSection(&c->mtx);
+    ReleaseSRWLockExclusive(&c->mtx);
   }
 }
 
@@ -168,7 +169,7 @@ static void profcb(u32 id, u32 msg, u64 userptr, u64 dw1, u64 dw2) {
   (void)dw2;
   for (u64 i = 0; i < nproc; ++i) {
     CCore *c = cores + i;
-    EnterCriticalSection(&c->mtx);
+    AcquireSRWLockExclusive(&c->mtx);
     if (c->profiler_int && ticks >= c->next_prof_int) {
       CONTEXT ctx = {.ContextFlags = CONTEXT_FULL};
       SuspendThread(c->thread);
@@ -181,16 +182,16 @@ static void profcb(u32 id, u32 msg, u64 userptr, u64 dw1, u64 dw2) {
       ResumeThread(c->thread);
       c->next_prof_int = c->profiler_freq / 1000. + ticks;
     }
-    LeaveCriticalSection(&c->mtx);
+    ReleaseSRWLockExclusive(&c->mtx);
   }
 }
 
 void SleepUs(u64 us) {
   CCore *c = self;
   u64 curticks = elapsedus();
-  EnterCriticalSection(&c->mtx);
+  AcquireSRWLockExclusive(&c->mtx);
   c->awakeat = curticks + us / 1000;
-  LeaveCriticalSection(&c->mtx);
+  ReleaseSRWLockExclusive(&c->mtx);
   WaitForSingleObject(c->event, INFINITE);
 }
 
@@ -202,11 +203,11 @@ void MPSetProfilerInt(void *fp, i64 idx, i64 freq) {
     init = true;
   }
   CCore *c = cores + idx;
-  EnterCriticalSection(&c->mtx);
+  AcquireSRWLockExclusive(&c->mtx);
   c->profiler_freq = freq;
   c->profiler_int = fp;
   c->next_prof_int = 0;
-  LeaveCriticalSection(&c->mtx);
+  ReleaseSRWLockExclusive(&c->mtx);
 }
 
 /* CITATIONS:

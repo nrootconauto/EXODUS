@@ -55,7 +55,7 @@
 
 #include <exodus/ffi.h>
 #include <exodus/misc.h>
-#include <exodus/nt/ddk.h>
+#include <exodus/nt/ntdll.h>
 #include <exodus/shims.h>
 
 noret void terminate(int i) {

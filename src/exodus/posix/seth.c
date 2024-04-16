@@ -173,7 +173,7 @@ void SleepUs(u64 us) {
   /* Cannot call the Sleep function if we are sleeping.
    * So to remove extra code, just store 1 */
   LBts(&c->is_sleeping, 0);
-  Sleep(&c->is_sleeping, UINT32_C(1),
+  Sleep(&c->is_sleeping, 1u,
         &(struct timespec){
             .tv_nsec = (us % 1000000) * 1000,
             .tv_sec = us / 1000000,

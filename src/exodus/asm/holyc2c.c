@@ -23,7 +23,7 @@
 │ 3. This notice may not be removed or altered from any source distribution.   │
 ╚─────────────────────────────────────────────────────────────────────────────*/
 /* generates routines allowing calling HolyC routines from C
- * you wouldn't want to touch this file without a ten feet pole
+ * you wouldn't want to touch this file without a ten foot pole
  *
  * macros are att syntax */
 /* clang-format off */
