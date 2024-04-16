@@ -156,14 +156,24 @@ U0 DebuggerSpawn(CTask *debugee) {
  */
 U0 DebuggerLandWin(I64 sig,I64 *gps) {
   CBpt *bp;
+  CHashTable *old;
   CTask clone;
-  FaultCB(gps[5],gps[16]);
   UnblockSignals;
   if(Fs==sys_winmgr_task) {
     //Oh no,you crashed the window manager
-    TOSPrint("You crashed the window manager,aborting\n");
-    Shutdown;
+    TOSPrint("You crashed the window manager, attempting restart\n");
+    //Shutdown;
+    old=Fs->hash_table;
+    Fs->hash_table=sys_task_being_scrn_updated->hash_table;
+    FaultCB(gps[5],gps[16]);
+    Fs->hash_table=old;
+    sys_task_being_scrn_updated->draw_it=NULL;
+    //Don't use Kill() normally, just directly shut it down
+    LBts(&sys_task_being_scrn_updated->task_flags,TASKf_KILL_TASK);
+    sys_winmgr_task=Spawn(&WinMgrTask);
+    Exit;
   }
+  FaultCB(gps[5],gps[16]);
   Bool b=FALSE;
 //General purpose registers are in this order,16 is RIP
   _RAX=gps[0];
@@ -208,7 +218,7 @@ U0 DebuggerLandWin(I64 sig,I64 *gps) {
     Exit;
 fin:
   //There  are 16 gps,and rip and rflags
-  MemCpy(&(Fs->rip),&clone.rip,(16+2)*8);
+  MemCpy(&Fs->rip,&clone.rip,(16+2)*8);
   MemCpy(Fs->fpu_mmx,gps[17],sizeof CFPU);
   Fs->task_flags=clone.task_flags;
   Fs->bpt_lst=clone.bpt_lst;
@@ -220,17 +230,26 @@ fin:
 //On linux,the trap comes after the INT3
 //So keep this in mind as check _RIP-1 for the breakpoint
 //
-
+//TODO unify with win
 U0 DebuggerLand(I64 sig,I64 *gps) {
   CBpt*bp;
+  CHashTable *old;
   CTask clone;
   UnblockSignals;
-  FaultCB(gps[5],gps[16]);
   if(Fs==sys_winmgr_task) {
-    //Oh no,you crashed the window manager
-    TOSPrint("You crashed the window manager,aborting\n");
-    Shutdown;
+    TOSPrint("You crashed the window manager, attempting restart\n");
+    //Shutdown;
+    old=Fs->hash_table;
+    Fs->hash_table=sys_task_being_scrn_updated->hash_table;
+    FaultCB(gps[5],gps[16]);
+    Fs->hash_table=old;
+    sys_task_being_scrn_updated->draw_it=NULL;
+    //Equivalent to Exit() on the task in question
+    LBts(&sys_task_being_scrn_updated->task_flags,TASKf_KILL_TASK);
+    sys_winmgr_task=Spawn(&WinMgrTask);
+    Exit;
   }
+  FaultCB(gps[5],gps[16]);
   //General purpose registers are in this order,16 is RIP
   /* http://wiki.osdev.org/X86-64_Instruction_Encoding
    * (https://archive.md/kdCG4) */

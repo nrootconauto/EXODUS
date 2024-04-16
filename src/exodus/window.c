@@ -103,7 +103,7 @@ static void newwindow(void) {
   win.screen_done_cond = SDL_CreateCond();
   SDL_LockMutex(win.screen_mutex);
   win.window =
-      SDL_CreateWindow("exodus", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
+      SDL_CreateWindow("EXODUS", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
                        640, 480, SDL_WINDOW_RESIZABLE);
   win.surf = SDL_CreateRGBSurface(0, 640, 480, 8, 0, 0, 0, 0);
   win.palette = SDL_AllocPalette(256);

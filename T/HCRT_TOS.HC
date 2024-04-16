@@ -79,11 +79,8 @@ CTask *adam_task=Fs;
 #include "Mem/MakeMem.HC"
 #include "BlkDev2/MakeBlkDev.HC"
 #include "Kernel/Sched.HC"
-#include "Kernel/KDBG.HC"
-#ifdef COMPONENT_COMPILER
-#include "Compiler/CMP_PRJ.HC"
+#include "Compiler/CMP_PRJ.HC"
 CInit;
-#endif
 #include "Adam/AMATH.HC"
 #include "Kernel/FONT.HC"
 #include "Kernel/FONT2.HC"
@@ -96,7 +93,6 @@ CInit;
 #include "Kernel/KLOAD.HC"
 #include "Kernel/KEND.HC"
 #include "Kernel/EDLITE.HC"
-#ifdef COMPONENT_GRAPHICS
 #include "Adam/TASK_SETTINGS.HC"
 #include "Adam/ASND.HC"
 #include "Adam/AMathODE.HC.Z";
@@ -104,12 +100,13 @@ CInit;
 #include "Adam/MENU.HC"
 #include "Adam/WIN.HC"
 #include "DOLDOC/MakeDoc.HC"
-
 #help_index "Ctrls"
 #include "Ctrls/CTRLSA.HC"
 #include "Ctrls/CTRLSBTTN.HC"
 #include "Ctrls/CTRLSSLIDER.HC"
+#help_index ""
 #include "Adam/WINMGR.HC"
+#include "Kernel/KDBG.HC"
 #include "AutoComplete/MakeAC.HC"
 #include "God/MakeGod.HC"
 #include "Adam/Opt/Find.HC"
@@ -132,4 +129,3 @@ CInit;
 #include "Adam/Opt/Profiler.HC"
 #include "HomeKeyPlugIns.HC"
 #include "Adam/MakeISOFile.HC"
-#endif
