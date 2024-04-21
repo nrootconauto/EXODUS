@@ -96,7 +96,6 @@ static void saveregs(FILE *fp) {
     fprintf(fp, PushReg(%s), savedregs[i]);
 }
 
-// returns how many regs to push for args
 static void pushstkargs(FILE *fp, int nargs) {
   /* the -1's here are for the first arg (fun ptr) */
   int remain = nargs - (ArgRegCnt - 1);
