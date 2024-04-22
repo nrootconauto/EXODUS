@@ -88,7 +88,7 @@ void *memmem2(void *haystk, u64 haystklen, void *needle, u64 needlelen) {
 }
 
 void *mempcpy2(void *restrict dst, void const *src, u64 sz) {
-  return (char *)memcpy(dst, src, sz + 1) + sz;
+  return (char *)memcpy(dst, src, sz) + sz;
 }
 
 void *memdup(void *alloc(u64 _sz), void const *src, u64 sz) {

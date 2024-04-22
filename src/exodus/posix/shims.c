@@ -302,6 +302,10 @@ u64 get31(void) {
   i64 readb;
   char maps[MAPSBUFSIZ], *s = maps;
   int mapsfd = open("/proc/self/maps", O_RDONLY);
+  if (veryunlikely(mapsfd == -1)) {
+    flushprint(stderr, "\e[0;31mCRITICAL\e[0m: /proc/self/maps not found\n");
+    return DFTADDR;
+  }
   while ((readb = read(mapsfd, s, BUFSIZ)) > 0 && s - maps < MAPSBUFSIZ)
     s += readb;
   *s = 0;
