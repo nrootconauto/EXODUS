@@ -288,7 +288,7 @@ u64 get31(void) {
   u64 max = UINT32_MAX >> 1;
 #ifdef __linux__
   int addrfd = open("/proc/sys/vm/mmap_min_addr", O_RDONLY);
-  u64 ret;
+  u64 ret, min;
   /* mmap pivot, also minimum address if we don't find any maps
    * in the lower 32 bits
    * mmap_min_addr is a number, 0x1f is more than enough */
@@ -296,6 +296,7 @@ u64 get31(void) {
   if (addrfd != -1) {
     buf[read(addrfd, buf, 0x1f)] = 0;
     sscanf(buf, "%ju", &ret);
+    min = ret;
     close(addrfd);
   } else
     ret = DFTADDR;
@@ -319,10 +320,10 @@ u64 get31(void) {
     }
     prev = end;
     s = strchr(s, '\n');
-    /* always {prev,start} < max. prev >= max can't happen
-     * This means there's nothing mapped in >32bits (practically impossible) */
+    /* always {prev,start} < max if mapping exists in <32bits
+     * if nothing exists in <32bits, just return lowest address possible */
     if (!s)
-      return start;
+      return start > max ? DFTADDR : prev;
   }
   return ret;
 #elif defined(__FreeBSD__)
