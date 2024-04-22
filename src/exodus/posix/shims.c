@@ -323,7 +323,7 @@ u64 get31(void) {
     /* always {prev,start} < max if mapping exists in <32bits
      * if nothing exists in <32bits, just return lowest address possible */
     if (!s)
-      return start > max ? DFTADDR : prev;
+      return start > max ? min : prev;
   }
   return ret;
 #elif defined(__FreeBSD__)
