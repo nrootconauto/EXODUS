@@ -296,10 +296,10 @@ u64 get31(void) {
   if (addrfd != -1) {
     buf[read(addrfd, buf, 0x1f)] = 0;
     sscanf(buf, "%ju", &ret);
-    min = ret;
     close(addrfd);
   } else
     ret = DFTADDR;
+  min = ret;
   i64 readb;
   char maps[MAPSBUFSIZ], *s = maps;
   int mapsfd = open("/proc/self/maps", O_RDONLY);
