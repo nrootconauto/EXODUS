@@ -279,6 +279,11 @@ bool isvalidptr(void *p) {
  *   Tough luck, but I haven't seen anything that does that.
  *   If anything it's around 0x400000 (on Fedora)
  */
+enum {
+  DFTADDR = 0x10000, /* minimum MAP_FIXED possible alloc addr on both OS'es */
+  MAPSBUFSIZ = 0x8000,
+};
+
 u64 get31(void) {
   u64 max = UINT32_MAX >> 1;
 #ifdef __linux__
@@ -288,13 +293,13 @@ u64 get31(void) {
    * in the lower 32 bits
    * mmap_min_addr is a number, 0x1f is more than enough */
   char buf[0x20];
-  buf[read(addrfd, buf, 0x1f)] = 0;
-  sscanf(buf, "%ju", &ret);
-  close(addrfd);
+  if (addrfd != -1) {
+    buf[read(addrfd, buf, 0x1f)] = 0;
+    sscanf(buf, "%ju", &ret);
+    close(addrfd);
+  } else
+    ret = DFTADDR;
   i64 readb;
-  enum {
-    MAPSBUFSIZ = 0x8000
-  };
   char maps[MAPSBUFSIZ], *s = maps;
   int mapsfd = open("/proc/self/maps", O_RDONLY);
   while ((readb = read(mapsfd, s, BUFSIZ)) > 0 && s - maps < MAPSBUFSIZ)
@@ -323,7 +328,7 @@ u64 get31(void) {
   struct kinfo_proc *kproc =
       procstat_getprocs(ps, KERN_PROC_PID, getpid(), &(u32){0});
   struct kinfo_vmentry *vments = procstat_getvmmap(ps, kproc, &cnt), *e;
-  u64 prev = 0x10000;
+  u64 prev = DFTADDR;
   for (e = vments; e != vments + cnt; e++) {
     if (prev < max && max <= e->kve_start)
       break;
