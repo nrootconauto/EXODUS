@@ -395,15 +395,15 @@ Bool AreYouSure()
   return YorN;
 }
 //TODO TODO TODO
-/*
+
 U0 Help()
 {//Dbg help or master help index file.
-  if (IsDbgMode)
+  if (HashFind("DFs",Fs->hash_table,HTT_GLBL_VAR))
     DbgHelp;
   else
     PopUp("Type(\"::/Doc/HelpIndex.DD\");DocTop;View;");
 }
-*/
+
 U0 ScanFlags(U8 *_dst_flags,U8 *lst,U8 *src)
 {/*More than 64 flags. Flags passed by ref.
 

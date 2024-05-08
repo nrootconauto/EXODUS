@@ -58,6 +58,7 @@ __TOSTHUNK_START:
 	pop	%rbp
 /* F4h is HLT, a ring0 opcode, so we can safely assume this is the only instance */
 	ret	$0xF4f4
+.align 8,0xCC
 __TOSTHUNK_END:
 
 #ifndef _WIN32

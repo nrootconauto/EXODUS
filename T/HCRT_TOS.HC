@@ -79,7 +79,7 @@ CTask *adam_task=Fs;
 #include "Mem/MakeMem.HC"
 #include "BlkDev2/MakeBlkDev.HC"
 #include "Kernel/Sched.HC"
-#include "Compiler/CMP_PRJ.HC"
+#include "Compiler/CMP_PRJ.HC"
 CInit;
 #include "Adam/AMATH.HC"
 #include "Kernel/FONT.HC"

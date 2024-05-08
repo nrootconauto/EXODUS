@@ -7621,3 +7621,4 @@ extern U0 (*fp_update_ctrls)(CTask *task);
 extern CCmpGlbls cmp;
 public extern U0 ProfRep(I64 filter_cnt=1,Bool leave_it=OFF);
 public extern U0 Prof(I64 depth=10,I64 cpu_num=0);
+public extern Bool Help();

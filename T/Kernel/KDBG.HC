@@ -222,7 +222,7 @@ fin:
   MemCpy(Fs->fpu_mmx,gps[17],sizeof CFPU);
   Fs->task_flags=clone.task_flags;
   Fs->bpt_lst=clone.bpt_lst;
-  CALL(_TASK_CONTEXT_RESTORE);
+  Call(_TASK_CONTEXT_RESTORE);
 }
 
 //
@@ -246,7 +246,7 @@ U0 DebuggerLand(I64 sig,I64 *gps) {
     sys_task_being_scrn_updated->draw_it=NULL;
     //Equivalent to Exit() on the task in question
     LBts(&sys_task_being_scrn_updated->task_flags,TASKf_KILL_TASK);
-    sys_winmgr_task=Spawn(&WinMgrTask);
+    sys_winmgr_task=Spawn(&WinMgrTask);
     Exit;
   }
   FaultCB(gps[5],gps[16]);
@@ -274,12 +274,10 @@ U0 DebuggerLand(I64 sig,I64 *gps) {
 //18 is rflags
   Fs->rflags=gps[18];
   Fs->rflags&=~(1<<RFLAGf_TRAP);
-  if(sig==5) { //SIGTRAP
-    if(LBtr(&(Fs->task_flags),TASKf_DISABLE_BPTS)) {
-      if(!LBtr(&(Fs->task_flags),TASKf_JUST_STEPPED)) {
-        MemCpy(&clone,Fs,sizeof CTask);
+  if (sig==5) { //SIGTRAP
+    if (LBtr(&Fs->task_flags,TASKf_DISABLE_BPTS)) {
+      if (!LBtr(&Fs->task_flags,TASKf_JUST_STEPPED))
         goto fin;
-      }
     } else {
 //ONLYCHECK IFBREAKPOINTSWEREN'tDISABLED
       //If we SIGTRAP'ed,we probaly hit an IHT3
@@ -294,14 +292,14 @@ U0 DebuggerLand(I64 sig,I64 *gps) {
   MemCpy(&clone,Fs,sizeof CTask);
   CTask *task=Spawn(&DebuggerSpawn,&clone,"Debugger",0,Fs,,1<<JOBf_WAKE_MASTER|1<<JOBf_ADD_TO_QUE);
   DeathWait(&task);
-  if(sig!=5) //SIGTRAP
+  if (sig!=5) //SIGTRAP
     Exit;
 fin:
-  MemCpy(&(Fs->rip),&clone.rip,(16+2)*8);
+  MemCpy(&Fs->rip,&clone.rip,(16+2)*8);
   MemCpy(Fs->fpu_mmx,gps[17],sizeof CFPU);
   Fs->task_flags=clone.task_flags;
   Fs->bpt_lst=clone.bpt_lst;
-  CALL(_TASK_CONTEXT_RESTORE);
+  Call(_TASK_CONTEXT_RESTORE);
 }
 CBpt *BptFind(U8 *needle_addr,CTask *haystack_task=NULL,Bool rem=FALSE)
 {
@@ -502,7 +500,7 @@ public U0 S(U8 *ip=INVALID_PTR,CTask *task=NULL) //Single-step.
   PUSHFD
   if (ip!=INVALID_PTR) task->rip=ip;
 /* https://en.wikipedia.org/wiki/Trap_flag
- * (https://archive.md/wip/1GmTs) */
+ * (https://archive.md/1GmTs) */
   LBts(&task->task_flags,TASKf_DISABLE_BPTS);
   LBts(&task->task_flags,TASKf_JUST_STEPPED);
   LBts(&task->rflags,RFLAGf_TRAP);

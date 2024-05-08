@@ -99,17 +99,13 @@ static void genthunks(HolyFFI *list, i64 cnt) {
   for (i64 i = 0; i < cnt; i++) {
     cur = list + i;
     blob = mempcpy2(prev = blob, __TOSTHUNK_START, thunksz);
-    *(u64 *)(prev + calloff) = (u64)cur->fp;
+    *(u8 **)(prev + calloff) = cur->fp;
     *(u16 *)(prev + ret1off) = cur->arity * 8;
     map_set(&symtab, cur->name, (CSymbol){.type = HTT_FUN, .val = prev});
   }
 }
 
 /* C -> HolyC FFI */
-static u64 STK_mp_cnt(argign void *args) {
-  return mp_cnt();
-}
-
 static void STK_DyadInit(argign void *args) {
   static int init;
   if (init)
@@ -438,7 +434,7 @@ void BootstrapLoader(void) {
       R("__CmdLineBootText", CmdLineBootText, 0),
       R("__CoreNum", CoreNum, 0),
       S(MPSetProfilerInt, 3),
-      S(mp_cnt, 0),
+      R("mp_cnt", mp_cnt, 0),
       R("__IsCmdLine", IsCmdLine, 0),
       S(__IsValidPtr, 1),
       S(__SpawnCore, 1),

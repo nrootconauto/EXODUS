@@ -10,7 +10,7 @@ CDoc *(*fp_doc_put)(CTask *task=NULL);
 U0 (*fp_update_ctrls)(CTask *task)=NULL;
 I64 sys_num_spawned_tasks;
 CTask *sys_focus_task=Fs;
-CSema *sys_semas=CAlloc(SEMA_SEMAS_NUM*sizeof(CSema));
+CSema sys_semas[SEMA_SEMAS_NUM];
 CTask *sys_winmgr_task,*sys_task_being_scrn_updated;
 #help_index "Bit"
 U8 *rev_bits_table, //Table with U8 bits revd
