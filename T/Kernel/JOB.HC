@@ -537,6 +537,7 @@ U0 CoreAPSethTask()
     SetGs(&cpu_structs[__CoreNum]);
   QueInit(&Gs->next_dying);
   Gs->num=__CoreNum;
+  Gs->idle_pt_hits=0;
   Gs->seth_task=Fs;
   if (!Fs->parent_task) {
     Fs->parent_task=adam_task;
@@ -546,30 +547,33 @@ U0 CoreAPSethTask()
   LBts(&Gs->ready,0);
   LBts(&mp_cnt_lock,__CoreNum);
   CTask *task,*task1=Fs;
-  I64 us,t;
+  I64 mS,t;
+  Bool bl;
   while (TRUE) {
+    bl=BreakLock;
     do {
       TaskKillDying;
       do PAUSE
       while (LBts(&ctrl->flags,JOBCf_LOCKED));
     } while (ctrl->next_waiting!=ctrl && JobRunOne(GetRFlags,ctrl));
+    if (bl) BreakUnlock;
     //LBts(&Fs->task_flags,TASKf_AWAITING_MSG);
     LBtr(&ctrl->flags,JOBCf_LOCKED);
     LBts(&Fs->task_flags,TASKf_IDLE);
-    us=0.1*JIFFY_FREQ*1000,t=cnts.jiffies;
+    mS=0.1*JIFFY_FREQ,t=cnts.jiffies;
     for (task=Fs->next_task;task!=task1;task=task->next_task) {
       if (Bt(&task->task_flags,TASKf_SUSPENDED) ||
           Bt(&task->task_flags,TASKf_AWAITING_MSG))
         goto next;
       if (!Bt(&task->task_flags,TASKf_IDLE))
-        us=0;
-      if (task->wake_jiffy-t<us)
-        us=task->wake_jiffy-t;
+        mS=0;
+      if (task->wake_jiffy-t<mS)
+        mS=task->wake_jiffy-t;
 next:
     }
-    if (us>0) {
-      Gs->idle_pt_hits+=us;
-      __SleepHP(us);
+    if (mS>0) {
+      Gs->idle_pt_hits+=mS;
+      __SleepHP(mS*1000);
     }
     Yield;
     LBtr(&Fs->task_flags,TASKf_IDLE);
