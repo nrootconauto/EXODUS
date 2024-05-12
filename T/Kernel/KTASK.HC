@@ -457,7 +457,7 @@ U0 DeathWait(CTask **_task,Bool send_exit=FALSE)
   Yield;
 }
 
-/*U0 TaskKillDying()
+U0 TaskKillDying()
 {//Delay freeing to prevent asking for trouble with quick reincarnations.
 //What if the user is doing this: DoTreeCheckers.
   CTaskDying *task,*task1;
@@ -474,9 +474,9 @@ U0 DeathWait(CTask **_task,Bool send_exit=FALSE)
     LBtr(&Gs->cpu_flags,CPUf_DYING_TASK_QUE);
     Gs->kill_jiffy=cnts.jiffies+DYING_JIFFIES;
   }
-}*/
+}
 
-U0 TaskKillDying() {
+/*U0 TaskKillDying() {
   while (LBts(&(Gs->cpu_flags),CPUf_DYING_TASK_QUE))
     PAUSE
   CTaskDying *task=Gs->next_dying,*task1;
@@ -491,4 +491,4 @@ U0 TaskKillDying() {
     task=task1;
   }
   LBtr(&Gs->cpu_flags,CPUf_DYING_TASK_QUE);
-}
+}*/

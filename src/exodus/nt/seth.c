@@ -153,9 +153,12 @@ static void tickscb(u32 id, u32 msg, u64 userptr, u64 dw1, u64 dw2) {
 }
 
 static u64 elapsedus(void) {
-  if (veryunlikely(!inc)) {
+  static bool init;
+  if (veryunlikely(!inc))
     incinit();
+  if (veryunlikely(!init)) {
     timeSetEvent(inc, inc, tickscb, 0, TIME_PERIODIC);
+    init = true;
   }
   return ticks;
 }
@@ -214,7 +217,7 @@ void SleepUs(u64 us) {
   AcquireSRWLockExclusive(&c->mtx);
   c->awakeat = curticks + us / 1000;
   ReleaseSRWLockExclusive(&c->mtx);
-  WaitForSingleObject(c->event, INFINITE);
+  WaitForSingleObject(c->event, us / 1000); /* failsafe for tickscb() */
 }
 
 void MPSetProfilerInt(void *fp, i64 idx, i64 freq) {
