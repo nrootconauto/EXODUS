@@ -62,9 +62,9 @@ I64 BCnt(I64 i)
 
 #help_index "Time"
 
-U0 IntCore0TimerHndlr() {
-  lock cnts.jiffies++;
-  cnts.timer+=SYS_TIMER0_PERIOD+1;
+U0 IntCore0TimerHndlr(I64 mS) {
+  lock cnts.jiffies+=mS;
+  cnts.timer+=mS*SYS_TIMER0_PERIOD+1;
 }
 
 public U0 SleepUntil(I64 wake_jiffy) {

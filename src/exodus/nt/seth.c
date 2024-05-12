@@ -172,7 +172,7 @@ static void irq0(u32 id, u32 msg, u64 userptr, u64 dw1, u64 dw2) {
   static void *fp;
   if (veryunlikely(!fp))
     fp = map_get(&symtab, "IntCore0TimerHndlr")->val;
-  FFI_CALL_TOS_0(fp);
+  FFI_CALL_TOS_1(fp, inc);
 }
 
 void InitIRQ0(void) {

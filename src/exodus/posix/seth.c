@@ -164,15 +164,22 @@ void CreateCore(vec_void_t ptrs) {
 /* porting IRQ_TIMER and firing the signal to all Seth threads
  * was an option, but that introduced way too much lag and
  * HANDLE_SYSF_KEY_EVENT didn't like it */
-static void irq0(int) {
+static void irq0(argign int sig) {
   static void *fp;
+  static i64 interval, prev;
+  struct timespec ts;
+  i64 ms;
   if (veryunlikely(!fp))
     fp = map_get(&symtab, "IntCore0TimerHndlr")->val;
-  FFI_CALL_TOS_0(fp);
+  clock_gettime(CLOCK_MONOTONIC, &ts);
+  ms = ts.tv_sec * 1e3 + ts.tv_nsec / 1e6;
+  interval = interval ? ms - prev : 1;
+  FFI_CALL_TOS_1(fp, interval);
+  prev = ms;
 }
 
 /* emulate PIT interrupt (IRQ 0) */
-static void *pit_thrd(void *) {
+static void *pit_thrd(argign void *arg) {
   sigaction(SIGALRM, &(struct sigaction){.sa_handler = irq0}, NULL);
   long tid;
 #ifdef __linux__
@@ -191,8 +198,8 @@ static void *pit_thrd(void *) {
   timer_create(CLOCK_MONOTONIC, &ev, &t);
   /* on real TempleOS, SYS_TIMER0_PERIOD is 1192Hz (~839μs/it) */
   struct itimerspec in = {
-      .it_value.tv_nsec = 1000000,
-      .it_interval.tv_nsec = 1000000,
+      .it_value.tv_nsec = 1e6,
+      .it_interval.tv_nsec = 1e6,
   };
   timer_settime(t, 0, &in, NULL);
   while (true)
