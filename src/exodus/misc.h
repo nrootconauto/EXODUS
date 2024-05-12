@@ -97,6 +97,12 @@ void *memdup(void *alloc(u64 _sz), void const *src, u64 sz);
     fflush(f);              \
   } while (0)
 
+/* $BG,RED$ */
+#define Bgred "\e[0;31m"
+/* $BG$ */
+#define Bgrst "\e[0m"
+#define ST_ERR_ST Bgred "CRITICAL" Bgrst
+
 #define Times2(a...) a a
 #define Times4(a...) Times2(a) Times2(a)
 #define Times8(a...) Times4(a) Times4(a)

@@ -28,6 +28,7 @@
 #elif defined(__FreeBSD__)
   #include <sys/types.h>
   #include <sys/umtx.h>
+  #include <sys/thr.h>
 #endif
 #include <inttypes.h>
 #include <pthread.h>
@@ -173,10 +174,18 @@ static void irq0(int) {
 /* emulate PIT interrupt (IRQ 0) */
 static void *pit_thrd(void *) {
   sigaction(SIGALRM, &(struct sigaction){.sa_handler = irq0}, NULL);
+  long tid;
+#ifdef __linux__
+  tid = gettid();
+#elif defined(__FreeBSD__)
+  thr_self(&tid);
+#else
+  #error unsupported
+#endif
   struct sigevent ev = {
       .sigev_notify = SIGEV_THREAD_ID,
       .sigev_signo = SIGALRM,
-      .sigev_notify_thread_id = gettid(),
+      .sigev_notify_thread_id = tid,
   };
   timer_t t;
   timer_create(CLOCK_MONOTONIC, &ev, &t);

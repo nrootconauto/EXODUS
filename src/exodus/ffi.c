@@ -102,8 +102,10 @@ static void genthunks(HolyFFI *list, i64 cnt) {
     *(u8 **)(prev + calloff) = cur->fp;
     if (cur->arity)
       *(u16 *)(prev + ret1off) = cur->arity * 8;
-    else
-      prev[ret1off - 1] = 0xc3;
+    else {
+      prev[ret1off - 1] = 0xC3;
+      *(u16 *)(prev + ret1off) = 0xCCCC;
+    }
     map_set(&symtab, cur->name, (CSymbol){.type = HTT_FUN, .val = prev});
   }
 }

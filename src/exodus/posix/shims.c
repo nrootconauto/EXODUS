@@ -62,7 +62,7 @@
 
 #include <exodus/ffi.h>
 #include <exodus/misc.h>
-#include <exodus/seth.h>
+#include <exodus/shims.h>
 #include <exodus/types.h>
 
 noret void terminate(int i) {
@@ -279,10 +279,7 @@ bool isvalidptr(void *p) {
  *   Tough luck, but I haven't seen anything that does that.
  *   If anything it's around 0x400000 (on Fedora)
  */
-enum {
-  DFTADDR = 0x10000, /* minimum MAP_FIXED possible alloc addr on both OS'es */
-  MAPSBUFSIZ = 0x8000,
-};
+#define DFTADDR 0x10000 /* minimum MAP_FIXED possible alloc addr on both OS'es */
 
 u64 get31(void) {
   u64 max = UINT32_MAX >> 1;
@@ -301,35 +298,31 @@ u64 get31(void) {
     ret = DFTADDR;
   min = ret;
   i64 readb;
-  char maps[MAPSBUFSIZ], *s = maps;
-  int mapsfd = open("/proc/self/maps", O_RDONLY);
-  if (veryunlikely(mapsfd == -1)) {
+  u64 start, end, prev = min;
+  FILE *fp = fopen("/proc/self/maps", "r");
+  if (!fp) {
     flushprint(stderr, "\e[0;31mCRITICAL\e[0m: /proc/self/maps not found\n");
     return DFTADDR;
   }
-  while ((readb = read(mapsfd, s, BUFSIZ)) > 0 && s - maps < MAPSBUFSIZ)
-    s += readb;
-  *s = 0;
-  close(mapsfd);
-  u64 start, end, prev = ret;
-  for (s = maps;; s++) {
-    sscanf(s, "%jx-%jx", &start, &end);
+  char *line = NULL;
+  while (getline(&line, &readb, fp) > 0) {
+    sscanf(line, "%jx-%jx", &start, &end);
     if (prev < max && max <= start) {
       ret = prev;
-      break;
+      goto found;
     }
     prev = end;
-    s = strchr(s, '\n');
-    /* always {prev,start} < max if mapping exists in <32bits
-     * if nothing exists in <32bits, just return lowest address possible */
-    if (!s)
-      return start > max ? min : start;
   }
+  /* always {prev,start} < max if mapping exists in <32bits
+   * if nothing exists in <32bits, just return lowest address possible */
+  ret = start >= max ? min : prev;
+found:
+  free(line);
+  fclose(fp);
   return ret;
 #elif defined(__FreeBSD__)
   struct procstat *ps = procstat_open_sysctl();
-  /* FreeBSD mandates cnt to be unsigned int */
-  u32 cnt;
+  unsigned cnt;
   struct kinfo_proc *kproc =
       procstat_getprocs(ps, KERN_PROC_PID, getpid(), &(u32){0});
   struct kinfo_vmentry *vments = procstat_getvmmap(ps, kproc, &cnt), *e;
@@ -346,16 +339,30 @@ u64 get31(void) {
 #endif
 }
 
+static void nofsgsbase(argign int sig) {
+  flushprint(stderr, ST_ERR_ST ": Your processor is older than Ivy Bridge\n");
+  terminate(1);
+}
+
 void preparetls(void) {
   /* we store pointers (not the struct itself)
    * to Fs on gs:0x28 and Gs on gs:0x50
    * blame Microsoft for this */
-#define Fsgs ((u8 *)malloc(0x30) - 0x28)
+#define Fsgs (p = ((u8 *)malloc(0x30) - 0x28))
+  void *p;
 #ifdef __linux__
-  syscall(SYS_arch_prctl, ARCH_SET_GS, (u64)Fsgs);
+  int ret = syscall(SYS_arch_prctl, ARCH_SET_GS, (u64)Fsgs);
 #elif defined(__FreeBSD__)
-  amd64_set_gsbase(Fsgs);
+  int ret = amd64_set_gsbase(Fsgs);
 #endif
+  if (!ret) // man 2 arch_prctl / sys/amd64/amd64/sys_machdep.c
+    return;
+  flushprint(
+      stderr, ST_ERR_ST
+      ": failed setting GS segment register base, retrying with WRGSBASE\n");
+  signal(SIGILL, nofsgsbase);
+  asm("wrgsbase %0" : : "r"(p));
+  signal(SIGILL, SIG_DFL);
 }
 
 void prepare(void) {
