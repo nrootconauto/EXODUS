@@ -32,6 +32,9 @@
 #include <inttypes.h>
 #include <pthread.h>
 #include <signal.h>
+#ifndef sigev_notify_thread_id // glibc doesn't define this
+  #define sigev_notify_thread_id _sigev_un._tid
+#endif
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -75,23 +78,27 @@ typedef struct {
 static CCore cores[MP_PROCESSORS_NUM];
 static _Thread_local CCore *self;
 
+#define masksignals(a, va...) masksignals_(a, (int[]){va, 0})
+static void masksignals_(int how, int *sigs) {
+  int i;
+  sigset_t set;
+  sigemptyset(&set);
+  while ((i = *sigs++))
+    sigaddset(&set, i);
+  pthread_sigmask(how, &set, NULL);
+}
+
 // CTRL+C equiv. in TempleOS
 static void ctrlaltc(argign int sig) {
   static CSymbol *sym;
-  sigset_t set;
-  sigemptyset(&set);
-  sigaddset(&set, SIGUSR1);
-  pthread_sigmask(SIG_UNBLOCK, &set, NULL);
+  masksignals(SIG_UNBLOCK, SIGUSR1);
   if (!sym)
     sym = map_get(&symtab, "Yield");
   FFI_CALL_TOS_0(sym->val);
 }
 
 static void div0(argign int sig) {
-  sigset_t set;
-  sigemptyset(&set);
-  sigaddset(&set, SIGFPE);
-  pthread_sigmask(SIG_UNBLOCK, &set, NULL);
+  masksignals(SIG_UNBLOCK, SIGFPE);
   HolyThrow("DivZero");
 }
 
@@ -153,20 +160,23 @@ void CreateCore(vec_void_t ptrs) {
   n++;
 }
 
-/* porting IRQ_TIMER was an option but that kept messing up the context
- * and made things infeasible */
-static void irq0(union sigval) {
+/* porting IRQ_TIMER and firing the signal to all Seth threads
+ * was an option, but that introduced way too much lag and
+ * HANDLE_SYSF_KEY_EVENT didn't like it */
+static void irq0(int) {
   static void *fp;
   if (veryunlikely(!fp))
     fp = map_get(&symtab, "IntCore0TimerHndlr")->val;
   FFI_CALL_TOS_0(fp);
 }
 
-/* emulate IRQ 0 (PIT interrupt) */
-void InitIRQ0(void) {
+/* emulate PIT interrupt (IRQ 0) */
+static void *pit_thrd(void *) {
+  sigaction(SIGALRM, &(struct sigaction){.sa_handler = irq0}, NULL);
   struct sigevent ev = {
-      .sigev_notify = SIGEV_THREAD,
-      .sigev_notify_function = irq0,
+      .sigev_notify = SIGEV_THREAD_ID,
+      .sigev_signo = SIGALRM,
+      .sigev_notify_thread_id = gettid(),
   };
   timer_t t;
   timer_create(CLOCK_MONOTONIC, &ev, &t);
@@ -176,6 +186,13 @@ void InitIRQ0(void) {
       .it_interval.tv_nsec = 1000000,
   };
   timer_settime(t, 0, &in, NULL);
+  while (true)
+    pause();
+  return NULL;
+}
+
+void InitIRQ0(void) {
+  pthread_create(&(pthread_t){0}, NULL, pit_thrd, NULL);
 }
 
 #ifdef __linux__

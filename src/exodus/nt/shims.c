@@ -104,7 +104,7 @@ static delstkframe *stkcur(delstk *v) {
 }
 
 /* basically std::filesystem::remove_all */
-/* SHFileOperation is too slow
+/* SHFileOperation (w/ FOF_NO_UI) is too slow
  *   when called directly for 10 layers of directories with 9 files each
  *     SHFileOperation: 5s
  *     this: 0.3s

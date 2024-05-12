@@ -29,7 +29,7 @@ a sign of failure.
 
 ### My build hangs!
 
-Provide a gdb/lldb backtrace after running it on gdb and building it with the CMake flag `BUILD\_HCRT=0` (command line argument is `-DBUILD_HCRT=0` after the cmake invocation part of the line above. If it throws a backtrace immediately, post the backtrace with `bt`. If it just hangs in gdb without any immediate diagnostics, press CTRL+C, and open an issue on the result of `p (char *)WhichFun($pc)`.
+Provide a gdb/lldb backtrace after running it on gdb and building it with the CMake flag `BUILD_HCRT=0` (command line argument is `-DBUILD_HCRT=0` after the cmake invocation part of the line above). If it throws a backtrace immediately, post the backtrace with `bt`. If it just hangs in gdb without any immediate diagnostics, press CTRL+C, and open an issue with the result of `p (char *)WhichFun($pc)`.
 
 ## Windows
 

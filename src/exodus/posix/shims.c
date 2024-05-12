@@ -62,7 +62,7 @@
 
 #include <exodus/ffi.h>
 #include <exodus/misc.h>
-#include <exodus/shims.h>
+#include <exodus/seth.h>
 #include <exodus/types.h>
 
 noret void terminate(int i) {
