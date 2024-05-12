@@ -55,8 +55,10 @@ void *NewVirtualChunk(u64 sz, bool exec) {
       __builtin_ia32_pause();
   if (veryunlikely(!init)) {
     pagsz = sysconf(_SC_PAGESIZE);
+#ifdef __linux__
     /* Refer to posix/shims.c */
     cur = ALIGN(get31(), pagsz);
+#endif
     init = true;
   }
   sz = ALIGN(sz, pagsz);
@@ -66,7 +68,11 @@ void *NewVirtualChunk(u64 sz, bool exec) {
       ret = NULL;
       goto ret;
     }
-    ret = MMAP(cur, sz, PROT | PROT_EXEC, FLAGS | MAP_FIXED);
+#ifdef __linux__
+    ret = MMAP(cur, sz, PROT | PROT_EXEC, FLAGS | MAP_FIXED_NOREPLACE);
+#else
+    ret = MMAP(NULL, sz, PROT | PROT_EXEC, FLAGS | MAP_32BIT);
+#endif
     if (veryunlikely(ret == MAP_FAILED)) {
       ret = NULL;
       goto ret;

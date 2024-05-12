@@ -13,4 +13,5 @@ void CreateCore(vec_void_t ptrs);
 void WakeCoreUp(u64 n);
 void SleepUs(u64 us);
 
+void InitIRQ0(void);
 void MPSetProfilerInt(void *fp, i64 idx, i64 freq);

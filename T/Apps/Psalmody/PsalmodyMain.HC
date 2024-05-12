@@ -642,7 +642,7 @@ mo_got_msg:
 		tmpn=psm.cur_note;
 		while (tmpn!=&psm.head) {
 		  if (tmpn->type!=PSMT_METER) {
-		    timeout_val=__GetTicksHP;
+		    timeout_val=cnts.jiffies;
 		    if (ms.pos_text.y-Fs->win_top<18)
 		      msg_code=ScanMsg(&arg1,&arg2,1<<MSG_KEY_DOWN|
 			    1<<MSG_MS_L_DOWN|1<<MSG_MS_R_UP|1<<MSG_CMD);
@@ -668,7 +668,7 @@ mo_got_msg:
 		    music.tempo=4.4*tempo_state.tempo/TEMPO_RANGE+0.5;
 		    music.stacatto_factor=
 			  0.88*tempo_state.stacatto/TEMPO_RANGE+0.12;
-		    d=JIFFYHP_FREQ*psm_durations[tmpn->duration]/music.tempo;
+		    d=JIFFY_FREQ*psm_durations[tmpn->duration]/music.tempo;
 		    if (Bt(&tmpn->flags,PSMf_TIE)) {
 		      timeout_val+=d;
 		      timeout_val2=timeout_val;

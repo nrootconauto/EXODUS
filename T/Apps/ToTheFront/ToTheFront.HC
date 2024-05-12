@@ -15,7 +15,7 @@ U0 TurnNew()
   moving_unit=NULL;
 
   SleepUntil(msg_off_timeout);
-  msg_off_timeout=__GetTicksHP+JIFFYHP_FREQ*2*animation_delay+1;
+  msg_off_timeout=cnts.jiffies+JIFFY_FREQ*2*animation_delay+1;
   Snd(74);
   StrPrint(msg_buf,"Turn %d",++turn);
   VRSetUp(0);
@@ -35,7 +35,7 @@ U0 PhaseNew()
   }
 
   SleepUntil(msg_off_timeout);
-  msg_off_timeout=__GetTicksHP+JIFFYHP_FREQ*2*animation_delay+1;
+  msg_off_timeout=cnts.jiffies+JIFFY_FREQ*2*animation_delay+1;
   Snd(74);
   switch (phase) {
     case PHASE_INDIRECT0:

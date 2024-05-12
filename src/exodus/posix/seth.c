@@ -100,12 +100,16 @@ static void profcb(int sig, siginfo_t *info, void *_ctx);
 static void *ThreadRoutine(void *arg) {
   VFsThrdInit();
   SetupDebugger();
-  struct sigaction sigfpe = {.sa_handler = div0},
-                   holysigint = {.sa_handler = ctrlaltc},
-                   holyprof = {.sa_sigaction = profcb};
-  sigaction(SIGFPE, &sigfpe, NULL);
-  sigaction(SIGUSR1, &holysigint, NULL);
-  sigaction(SIGPROF, &holyprof, NULL);
+  static struct sa {
+    int sig;
+    struct sigaction sa;
+  } ints[] = {
+      {SIGFPE,  {.sa_handler = div0}                            },
+      {SIGUSR1, {.sa_handler = ctrlaltc}                        },
+      {SIGPROF, {.sa_sigaction = profcb, .sa_flags = SA_SIGINFO}},
+  };
+  for (struct sa *s = ints, *end = ints + Arrlen(ints); s != end; s++)
+    sigaction(s->sig, &s->sa, NULL);
   self = arg;
   preparetls();
   /* IET_MAIN routines + kernel entry point <- Core 0.
@@ -149,10 +153,35 @@ void CreateCore(vec_void_t ptrs) {
   n++;
 }
 
+/* porting IRQ_TIMER was an option but that kept messing up the context
+ * and made things infeasible */
+static void irq0(union sigval) {
+  static void *fp;
+  if (veryunlikely(!fp))
+    fp = map_get(&symtab, "IntCore0TimerHndlr")->val;
+  FFI_CALL_TOS_0(fp);
+}
+
+/* emulate IRQ 0 (PIT interrupt) */
+void InitIRQ0(void) {
+  struct sigevent ev = {
+      .sigev_notify = SIGEV_THREAD,
+      .sigev_notify_function = irq0,
+  };
+  timer_t t;
+  timer_create(CLOCK_MONOTONIC, &ev, &t);
+  /* on real TempleOS, SYS_TIMER0_PERIOD is 1192Hz (~839μs/it) */
+  struct itimerspec in = {
+      .it_value.tv_nsec = 1000000,
+      .it_interval.tv_nsec = 1000000,
+  };
+  timer_settime(t, 0, &in, NULL);
+}
+
 #ifdef __linux__
-  #define Awake(l) syscall(SYS_futex, l, FUTEX_WAKE, UINT32_C(1), NULL, NULL, 0)
+  #define Awake(l) syscall(SYS_futex, l, FUTEX_WAKE, 1u, NULL, NULL, 0)
 #elif defined(__FreeBSD__)
-  #define Awake(l) _umtx_op(l, UMTX_OP_WAKE, UINT32_C(1), NULL, NULL)
+  #define Awake(l) _umtx_op(l, UMTX_OP_WAKE, 1u, NULL, NULL)
 #endif
 
 void WakeCoreUp(u64 core) {
@@ -198,9 +227,8 @@ static void profcb(argign int sig, argign siginfo_t *info, void *_ctx) {
   sigset_t set;
   sigemptyset(&set);
   sigaddset(&set, SIGPROF);
-  pthread_sigmask(SIG_UNBLOCK, &set, NULL);
-  if (!pthread_equal(pthread_self(), c->thread) ||
-      veryunlikely(!c->profiler_int))
+  if (veryunlikely(!c->profiler_int) ||
+      !pthread_equal(pthread_self(), c->thread))
     return;
   /* fake RBP because profcb is called from the kernel and
    * we need the context of the HolyC side (ctx) instead
@@ -210,6 +238,7 @@ static void profcb(argign int sig, argign siginfo_t *info, void *_ctx) {
       .it_value.tv_usec = c->profiler_freq,
       .it_interval.tv_usec = c->profiler_freq,
   };
+  pthread_sigmask(SIG_UNBLOCK, &set, NULL);
 }
 
 void MPSetProfilerInt(void *fp, i64 idx, i64 freq) {

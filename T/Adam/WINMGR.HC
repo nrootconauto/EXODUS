@@ -13,7 +13,7 @@ public U0 Refresh(I64 cnt=1,Bool force=FALSE)
     LBts(&sys_semas[SEMA_JUST_PUMP_MSGS],0);
   while (Bt(&sys_semas[SEMA_REFRESH_IN_PROGRESS],0)) {
     if (force && sys_winmgr_task)
-      sys_winmgr_task->wake_jiffy=__GetTicksHP;
+      sys_winmgr_task->wake_jiffy=cnts.jiffies;
     Yield;
   }
   if (cnt>1 && old_doc)
@@ -21,7 +21,7 @@ public U0 Refresh(I64 cnt=1,Bool force=FALSE)
   update_cnt=winmgr.updates+cnt;
   while (winmgr.updates<update_cnt) {
     if (force && sys_winmgr_task)
-      sys_winmgr_task->wake_jiffy=__GetTicksHP;
+      sys_winmgr_task->wake_jiffy=cnts.jiffies;
     Sleep(1);
   }
   if (old_doc)
@@ -31,7 +31,7 @@ public U0 Refresh(I64 cnt=1,Bool force=FALSE)
 I64 WinQueIPMsgs(Bool que)
 {
   static CD3I64 single_ms={0,0,0};
-  F64 time=__GetTicks;
+  F64 time=tS;
   I64 msg_code=0,arg1,arg2,single_arg1,single_arg2;
   CTask *task_focus=sys_focus_task;
 
@@ -187,12 +187,15 @@ U0 WinCalcIdles()
   I64 i,k,total_jiffies,total_jiffies_delta,idle_pt_hits[MP_PROCESSORS_NUM];
   CCPU *c;
   CWinMgrTimingGlbls *t=winmgr.t;
+  Bool bl;
   winmgr.ideal_refresh_tS=tS;
   if ((t->calc_idle_delta_time=
-	(calc_idle_time=tS)-t->last_calc_idle_time)>.5) {
-    total_jiffies=__GetTicksHP;
+	(calc_idle_time=tS)-t->last_calc_idle_time)>.25) {
+    bl=BreakLock;
+    total_jiffies=cnts.jiffies;
     for (i=0;i<mp_cnt;i++)
       idle_pt_hits[i]=cpu_structs[i].idle_pt_hits;
+    if (bl) BreakUnlock;
     total_jiffies_delta=total_jiffies-t->last_total_jiffies;
     for (i=0;i<mp_cnt;i++) {
       c=&cpu_structs[i];
@@ -258,7 +261,7 @@ I64 WinMgrSleep(Bool flush_msgs=FALSE)
     t=tS+WINMGR_PERIOD/8;
     while (winmgr.ideal_refresh_tS<t)
       winmgr.ideal_refresh_tS+=WINMGR_PERIOD;
-    timeout_val=__GetTicksHP+(winmgr.ideal_refresh_tS-tS)*JIFFYHP_FREQ;
+    timeout_val=cnts.jiffies+(winmgr.ideal_refresh_tS-tS)*JIFFY_FREQ;
     LBts(&sys_semas[SEMA_REFRESH_IN_PROGRESS],0);
     GrUpdateScrn;
     LBtr(&sys_semas[SEMA_REFRESH_IN_PROGRESS],0);

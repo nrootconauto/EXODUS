@@ -480,8 +480,7 @@ static I64 kb_mtx=0;
 
 static U0 KBCb(I64 s) {
   U8 *old_rip;
-  F64 time_out;
-  I64 old_idle_pt_hits;
+  I64 old_idle_pt_hits,time_out;
   while (LBts(&kb_mtx,0))
     PAUSE;
   SetFs(adam_task);
@@ -489,7 +488,7 @@ static U0 KBCb(I64 s) {
   kbd.scan_code=s;
   BEqu(&kbd.down_bitmap,s&0x7f,!(s&SCF_KEY_UP));
   FifoI64Ins(kbd.scan_code_fifo,s);
-  kbd.timestamp=__GetTicks;
+  kbd.timestamp=cnts.jiffies;
   I64 c=ScanCode2Char(s&0x7f);
   if (keydev.fp_ctrl_alt_cbs &&
       !(s&SCF_KEY_UP)        &&
@@ -513,15 +512,12 @@ static U0 KBCb(I64 s) {
       if (!Bt(&SYS_CTRL_ALT_FLAGS,CTRL_ALT_X)) {
         LBts(&SYS_CTRL_ALT_FLAGS,CTRL_ALT_X);
   await_yield:
-        time_out=__GetTicks;
-        while (time_out-__GetTicks<ToI64(0.05*1000)) {
+        time_out=cnts.jiffies;
+        while (time_out-cnts.jiffies<ToI64(0.05*1000))
           if (IsFrozen(&cpu_structs[0])) {
             InterruptCore(0);
             break;
-          } else
-            break;
-          __Sleep(2);
-        }
+          } else break;
       }
     }
   }

@@ -82,11 +82,12 @@ SetFs(adam_task);
 //Our entering thread doesnt have a cur_thrd,so spawn one
 Gs->seth_task=Spawn(&CoreAPSethTask,NULL,"Seth");
 U0 __InitCPUs() {
+  MPIntsInit;
   I64 idx;
   for (idx=Gs->num+1;idx<mp_cnt;++idx)
     __SpawnCore(&CoreAPSethTask);
   for (idx=Gs->num+1;idx<mp_cnt;++idx)
-    while (!Bt(&seth_tasks_ready,idx))
+    while (!Bt(&mp_cnt_lock,idx))
       PAUSE
 }
 __InitCPUs;

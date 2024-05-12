@@ -682,21 +682,18 @@ U0 ServeTask(CServer *srv) {
 U0 Serve(CServer *srv) {
   I64 core=-1;
   CTask *srv_task;
-  Seed(__GetTicksHP*UnixNow);
+  Seed(cnts.jiffies*UnixNow);
   if (mp_cnt>1)
     core=RandU64%(mp_cnt-1)+1;
-      // we dont want core 0 since it has
-      // a lot of things going on
+  srv_task=Spawn(&ServeTask,srv,"Server",core);
+  srv_task->task_end_cb=&DyadShutdown;
   if (!__IsCmdLine) {
     "Press a button to quit serving\n";
-    srv_task=Spawn(&ServeTask,srv,"Server",core);
     GetKey;
   } else {
     "Press enter to quit serving\n";
-    srv_task=Spawn(&ServeTask,srv,"Server",core);
     Free(__GetStr);
   }
   Kill(srv_task);
-  DyadShutdown; // shutdown after task died to avoid race cond
 }
 

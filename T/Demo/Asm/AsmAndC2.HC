@@ -24,10 +24,7 @@ _BEEPS2::
 	MOV	RBP,RSP
 	MOV	RCX,U64 SF_ARG1[RBP] //$LK,"SF_ARG1",A="FF:::/Kernel/KernelA.HH,SF_ARG1"$
 
-	PUSH	RCX
-	CALL	&__GetTicks
-	POP	RCX
-	PUSH	RAX
+	PUSH	U64 [&cnts.jiffies]
 
 @@05:	PUSH	RCX
 //U0 $LK,"Beep",A="MN:Beep"$(I8 ona=62,Bool busy=FALSE)
@@ -37,20 +34,17 @@ _BEEPS2::
 	POP	RCX
 	LOOP	@@05
 
-	PUSH	JIFFIES_MSG
-	CALL	&Print
-	ADD	RSP,8  //VARG functions dont POP arguments off the stack
+	PUSH	RSI
+	MOV	RSI,JIFFIES_MSG
+	CALL	PUT_STR
+	POP	RSI
 
-	CALL	&__GetTicks
-	POP	RBX //Has old Ticks in it
-	SUB	RBX,RAX
-	NEG	RBX
-	PUSH	16
-	PUSH	RBX
-	CALL	&PutHex
+	POP	RAX
+	SUB	RAX,U64 [&cnts.jiffies]
+	NEG	RAX
+	CALL	PUT_HEX
 	MOV	RAX,'\n'
-	PUSH	RAX
-	CALL	&PutChars
+	CALL	PUT_CHARS
 
 	POP	RBP
 	RET1	8

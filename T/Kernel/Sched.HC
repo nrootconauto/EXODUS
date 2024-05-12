@@ -50,9 +50,6 @@ U0 TaskFocusNext()
     task=task->next_task;
   } while (task!=_task);
 }
-I64 GetTicks() {
-  return __GetTicksHP;
-}
 
 asm {
 TASK_CONTEXT_SAVE::
@@ -164,13 +161,8 @@ _TASK_END_NOW::
 	CALL	SET_FS_BASE
 	JMP	I8 RESTORE_RSI_TASK
 _YIELD::
-	JMP	@@05
-@@4:
-	RET
-
-@@05:
 	CALL	TASK_CONTEXT_SAVE
-	MOV	RBX,@@4
+	MOV	EBX,U32 _RET
 	MOV	U64 CTask.rip[RSI],RBX
 	MOV	U64 CTask.rsp[RSI],RSP
 	MOV	RSI,U64 CTask.next_task[RSI]
@@ -187,7 +179,7 @@ RESTORE_RSI_TASK2:
 		1<<TASKf_AWAITING_MSG|1<<TASKf_SUSPENDED
 	JNZ	@@25
 
-	CALL	&GetTicks
+	MOV	RAX,U64 [&cnts.jiffies]
 	CMP	U64 CTask.wake_jiffy[RSI],RAX
 	JG	@@25	//Jmp if not ready, yet.
 
@@ -199,14 +191,15 @@ RESTORE_RSI_TASK2:
 	CALL	&GetGs
 	CMP	U64 CCPU.seth_task[RAX],RSI
 	JMP	@@20	//Jmp if not Seth
-	/*
-	BTR	U32 CCPU.cpu_flags[RAX],CPUf_RAN_A_TASK
+	
+	/*BTR	U32 CCPU.cpu_flags[RAX],CPUf_RAN_A_TASK
 	JC	@@20	//Jmp if had chance for IRQ already
 	MOV	RAX,U64 CCPU.idle_task[RAX]
 	MOV	RSP,U64 CTask.stk[RAX]
 	ADD	RSP,MEM_DFT_STK+CTaskStk.stk_base	//Rst to top
 	CALL	SET_FS_BASE
-	*/
+	STI
+	HLT*/
 RESTORE_SETH_TASK_IF_READY:
 	CALL	&GetGs
 	MOV	RSI,CCPU.seth_task[RAX]
@@ -292,7 +285,7 @@ Bool IsFrozen(CCPU *gs=NULL) {
   // 200+ milliseconds since last yield?
   // 200 milliseconds seemed like a reasonable number to
   // determine if a core is stuck in a non-yielding infinite loop
-  return (__GetTicks>=gs->last_yield+ToI64(.2*1000));
+  return (cnts.jiffies>=gs->last_yield+ToI64(.2*1000));
 }
 
 U0 Yield() {
@@ -300,7 +293,7 @@ U0 Yield() {
   PUSH RSI
   PUSH_C_REGS
   _Yield;
-  Gs->last_yield=cnts.jiffies=__GetTicks;
+  Gs->last_yield=cnts.jiffies;
   POP_C_REGS
   POP RSI
   POPFD

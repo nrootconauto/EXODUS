@@ -526,29 +526,25 @@ Bool Kill(CTask *task,Bool wait=TRUE,Bool just_break=FALSE)
   return FALSE;
 }
 
-//CAlloc wants a CTAsk for checking breaklock flags,so preallocate the CTask's
-CTask seth_tasks[MP_PROCESSORS_NUM];
-I64 seth_tasks_ready=0;
 U0 CoreAPSethTask()
 {
-  //Fs must be set for Gs allocates memory and wants an Fs
-  if(!Fs) {
+  static CTask seth_tasks[MP_PROCESSORS_NUM];
+  if (!Fs) {
     SetFs(&seth_tasks[__CoreNum]);
     TaskInit(Fs,0);
   }
   if (!Gs)
     SetGs(&cpu_structs[__CoreNum]);
-  //cpu_structs[__CoreNum]=Gs;
-  QueInit(&(Gs->next_dying));
+  QueInit(&Gs->next_dying);
   Gs->num=__CoreNum;
   Gs->seth_task=Fs;
-  if(!Fs->parent_task) {
+  if (!Fs->parent_task) {
     Fs->parent_task=adam_task;
     Fs->hash_table->next=adam_task->hash_table;
   }
-  CJobCtrl *ctrl=&(Fs->srv_ctrl);
-  LBts(&(Gs->ready),0);
-  LBts(&seth_tasks_ready,__CoreNum);
+  CJobCtrl *ctrl=&Fs->srv_ctrl;
+  LBts(&Gs->ready,0);
+  LBts(&mp_cnt_lock,__CoreNum);
   CTask *task,*task1=Fs;
   I64 us,t;
   while (TRUE) {
@@ -557,20 +553,21 @@ U0 CoreAPSethTask()
       do PAUSE
       while (LBts(&ctrl->flags,JOBCf_LOCKED));
     } while (ctrl->next_waiting!=ctrl && JobRunOne(GetRFlags,ctrl));
-//LBts(&(Fs->task_flags),TASKf_AWAITING_MSG);
+    //LBts(&Fs->task_flags,TASKf_AWAITING_MSG);
     LBtr(&ctrl->flags,JOBCf_LOCKED);
-    LBts(&(Fs->task_flags),TASKf_IDLE);
-    us=0.1*JIFFYHP_FREQ,t=__GetTicksHP;
-    for(task=Fs->next_task;task!=task1;task=task->next_task) {
-      if(Bt(&task->task_flags,TASKf_SUSPENDED)||Bt(&task->task_flags,TASKf_AWAITING_MSG))
+    LBts(&Fs->task_flags,TASKf_IDLE);
+    us=0.1*JIFFY_FREQ*1000,t=cnts.jiffies;
+    for (task=Fs->next_task;task!=task1;task=task->next_task) {
+      if (Bt(&task->task_flags,TASKf_SUSPENDED) ||
+          Bt(&task->task_flags,TASKf_AWAITING_MSG))
         goto next;
-      if(!Bt(&task->task_flags,TASKf_IDLE))
+      if (!Bt(&task->task_flags,TASKf_IDLE))
         us=0;
-      if(task->wake_jiffy-t<us)
+      if (task->wake_jiffy-t<us)
         us=task->wake_jiffy-t;
 next:
     }
-    if(us>0) {
+    if (us>0) {
       Gs->idle_pt_hits+=us;
       __SleepHP(us);
     }

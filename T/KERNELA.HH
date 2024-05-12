@@ -686,8 +686,7 @@ public class CCntsGlbls
   Bool	time_stamp_calibrated;
 };
 
-#define JIFFYHP_FREQ		1e6
-#define JIFFY_FREQ		1e3 // Hz
+#define JIFFY_FREQ		1000 // Hz
 #define CDATE_FREQ		49710 // Hz
 #define SYS_TIMER_FREQ		(18333*65536/1000) //Hz
 #define SYS_TIMER0_PERIOD	(65536*182/10/JIFFY_FREQ)
@@ -3953,6 +3952,7 @@ public _intern IC_PUSH U0 Push(I64 d); //Push value on stk.
 public _intern IC_SET_RAX U0 SetRAX(I64 d); //Set RAX register value.
 public _intern IC_SET_RBP U0 SetRBP(U8 *d); //Set RBP register value.
 public _intern IC_SET_RFLAGS U0 SetRFlags(I64 d); //Set RFlags register value.
+public _intern IC_SET_RSP U0 SetRSP(U8 *d); //Set RSP register value.
 #help_index "Bit"
 public _intern IC_BSF I64 Bsf(
 	I64 bit_field_val);//Scan fwd from lowest for 1st set. -1 if not found.
@@ -5205,7 +5205,6 @@ extern CDate Struct2Date(CDateStruct *_ds);
 extern I64 YearStartDate(I64 year);
 extern CDate Unix2CDate(I64 timestamp);
 extern I64 CDate2Unix(CDate dt);
-extern U0 KillAdam();
 extern U0 DeathWait(CTask **_task,Bool send_exit=FALSE);
 #define FND_REPLACE	0
 #define FND_SKIP	1
@@ -7528,6 +7527,7 @@ public import U0i __Sleep(I64i mS);
 import U8i *__CmdLineBootText();
 import U0i UnblockSignals();
 import U64i __GetTicksHP();
+import U0i MPIntsInit();
 #else
 extern U0 MPSetProfilerInt(U8*,U8*,I64);
 extern U0 _GrPaletteColorSet(I64i,I64i);
@@ -7600,6 +7600,7 @@ public extern Bool FBlkRead(CFile *f,U8 *buf,I64 blk=FFB_NEXT_BLK,I64 cnt=1);
 public extern Bool FBlkWrite(CFile *f,U8 *buf,I64 blk=FFB_NEXT_BLK,I64 cnt=1);
 public extern U0 FClose(CFile *f);
 public extern U8i *FOpen(U8i *filename,U8i *flags,I64i cnt=0,U8i *mem_task=0);
+extern U0i MPIntsInit();
 #endif
 #define DYAD_EVENT_LINE    #exe{StreamPrint("%d",_DyadGetCallbackMode("DYAD_EVENT_LINE"));}
 #define DYAD_EVENT_DATA    #exe{StreamPrint("%d",_DyadGetCallbackMode("DYAD_EVENT_DATA"));}

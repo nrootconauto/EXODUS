@@ -411,7 +411,7 @@ U0 IrcClientHandler(CDyadStream *s,I64 srv)
     client->ip = DyadGetAddress(s);
     client->limit = IRCD_LIMIT_MAX;
     client->msgs = FifoI64New(IRCD_TXFIFO_SIZE);
-    client->idle = __GetTicks;
+    client->idle = cnts.jiffies;
     client->nick=StrNew("....");
     client->username=StrNew("....");
     client->realname=StrNew("....");

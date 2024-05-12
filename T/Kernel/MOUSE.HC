@@ -67,7 +67,7 @@ U0 MsInit()
   ms.has_wheel=TRUE;
   ms.show=TRUE;
   ms.speed=0;
-  ms.timestamp=__GetTicks;
+  ms.timestamp=cnts.jiffies;
   ms.dbl_time=0.350;
   GridInit;
   MemSet(&ms_hard,0,sizeof(CMsHardStateGlbls));
@@ -136,7 +136,7 @@ U0 MsHardSetPost()
 }
 U0 MsHardSet(I64 x,I64 y,I64 z,I64 l,I64 r)
 {
-  ms_hard.timestamp=__GetTicks;
+  ms_hard.timestamp=cnts.jiffies;
   MsHardSetPre;
   ms_hard.prescale.x=x/ms_hard.scale.x/ms_grid.x_speed;
   ms_hard.prescale.y=y/ms_hard.scale.y/ms_grid.y_speed;

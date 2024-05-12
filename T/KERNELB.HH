@@ -20,7 +20,12 @@ public _extern _CALL_VA_ARGS I64 CallVaArgs(
 _extern _GET_FS CTask* GetFs();
 _extern _SET_FS U0 SetFs(CTask *);
 _extern _GET_GS CCPU *GetGs();
-_extern _SET_GS U0 SetGs(CCPU *);
+_extern _SET_GS U0 SetGs(CCPU *);
+public _extern _CPUID U0 CPUId(
+        U32 rax,CRAXRBCRCXRDX *res); //Do CPUID inst.
+
+_extern SYS_MP_CNT_LOCK I64 mp_cnt_lock;
+_extern SYS_SEMAS CSema sys_semas[SEMA_SEMAS_NUM];
 
 public _extern _ARG F64 Arg(F64 x,F64 y); //Polar coordinate angle.
 public _extern _CEIL F64 Ceil(F64 d); //Ceiling of F64.
@@ -200,3 +205,4 @@ _extern _TASK_CONTEXT_RESTORE U0 TaskContextRestore();
 _extern _YIELD U0 _Yield();
 _extern _LAST_FUN I64 LastFun(I64 argc,I64 *argv);
 #endif
+

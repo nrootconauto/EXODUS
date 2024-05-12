@@ -41,6 +41,15 @@ U0 TaskQueInsChild(CTask *task)
   task->next_sibling_task=pred;
   LBtr(&tq_lock,0);
 }
+
+U0 TaskDel(CTask *task)
+{//We delay freeing in case lingering ptr to reincarnated.
+  HeapCtrlDel(task->code_heap);
+  if (task->data_heap!=task->code_heap)
+    HeapCtrlDel(task->data_heap);
+  Free(task);
+}
+
 I64 TaskEnd()
 {//Called with irq's off.
   CTask *task=Fs,*tmpt,*tmpt1;
@@ -116,11 +125,11 @@ return task;
   LBtr(&task->srv_ctrl.flags,JOBCf_LOCKED);
   LBtr(&task->task_flags,TASKf_TASK_LOCK);
 
-  task->wake_jiffy=__GetTicksHP+DYING_JIFFIES;
-  while (LBts(&(Gs->cpu_flags),CPUf_DYING_TASK_QUE))
+  task->wake_jiffy=cnts.jiffies+DYING_JIFFIES;
+  while (LBts(&Gs->cpu_flags,CPUf_DYING_TASK_QUE))
     PAUSE
   QueIns(task,Gs->last_dying);
-  LBtr(&(Gs->cpu_flags),CPUf_DYING_TASK_QUE);
+  LBtr(&Gs->cpu_flags,CPUf_DYING_TASK_QUE);
   return tmpt;
 }
 
@@ -430,9 +439,12 @@ U0 TaskDerivedValsUpdate(CTask *task=NULL,Bool update_z_buf=TRUE)
     BreakUnlock;
   POPFD
 }
+
 U0 BirthWait(CTask **_task) {
-	while (!TaskValidate(*_task)) Sleep(10);
+  while (!TaskValidate(*_task))
+    Sleep(10);
 }
+
 U0 DeathWait(CTask **_task,Bool send_exit=FALSE)
 {//Wait for task death.
   if (send_exit && TaskValidate(*_task)) {
@@ -444,16 +456,33 @@ U0 DeathWait(CTask **_task,Bool send_exit=FALSE)
   }
   Yield;
 }
-U0 KillAdam() {
-  Kill(adam_task);
-}
+
+/*U0 TaskKillDying()
+{//Delay freeing to prevent asking for trouble with quick reincarnations.
+//What if the user is doing this: DoTreeCheckers.
+  CTaskDying *task,*task1;
+  if (Gs->kill_jiffy<cnts.jiffies) {//Avoid doing as many lock operations.
+    while (LBts(&Gs->cpu_flags,CPUf_DYING_TASK_QUE))
+      PAUSE
+    task=Gs->next_dying;
+    while (task!=&Gs->next_dying && task->wake_jiffy<cnts.jiffies) {
+      task1=task->next;
+      QueRem(task);
+      TaskDel(task);
+      task=task1;
+    }
+    LBtr(&Gs->cpu_flags,CPUf_DYING_TASK_QUE);
+    Gs->kill_jiffy=cnts.jiffies+DYING_JIFFIES;
+  }
+}*/
+
 U0 TaskKillDying() {
   while (LBts(&(Gs->cpu_flags),CPUf_DYING_TASK_QUE))
     PAUSE
   CTaskDying *task=Gs->next_dying,*task1;
   while (task!=&(Gs->next_dying)) {
     task1=task->next;
-    if(task->wake_jiffy<__GetTicksHP) { 
+    if (task->wake_jiffy<cnts.jiffies) { 
       QueRem(task);
       HeapCtrlDel(task(CTask*)->data_heap);
       HeapCtrlDel(task(CTask*)->code_heap);
@@ -461,5 +490,5 @@ U0 TaskKillDying() {
     }
     task=task1;
   }
-  LBtr(&(Gs->cpu_flags),CPUf_DYING_TASK_QUE);
+  LBtr(&Gs->cpu_flags,CPUf_DYING_TASK_QUE);
 }

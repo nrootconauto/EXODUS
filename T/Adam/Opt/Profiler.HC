@@ -28,7 +28,7 @@ U0 ProfTimerInt(U8 *cur_rip)
 	//i=cur_rip;
       if (pf_buf_in_ptr<PF_ARRAY_CNT) {
 	pf_array[pf_buf_in_ptr++]=i;
-	pf_jiffy_end=__GetTicks;
+	pf_jiffy_end=cnts.jiffies;
       }
     }
   POPFD;
@@ -57,7 +57,7 @@ after you have collected data.
     pf_buf_in_ptr=0;
     if (!pf_array)
       pf_array=AMAlloc(sizeof(I64)*PF_ARRAY_CNT);
-    pf_jiffy_end=pf_jiffy_start=__GetTicks;
+    pf_jiffy_end=pf_jiffy_start=cnts.jiffies;
     LBts(&pf_prof_active,0);
     MPSetProfilerInt(&ProfTimerInt,pf_cpu,10000);
   }

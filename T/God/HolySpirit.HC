@@ -2,7 +2,7 @@
 U8 *TimeStampCB(CDoc *,CDocEntry *,CTask *mem_task)
 {
   U8 *st=MAlloc(64,mem_task);
-  StrPrint(st,"%X",__GetTicksHP>>GOD_BAD_BITS);
+  StrPrint(st,"%X",GetTSC>>GOD_BAD_BITS);
   return st;
 }
 
@@ -36,7 +36,7 @@ I64 GodPick(U8 *msg=NULL)
 	"a random num from a timer.\n",msg);
   PopUpTimerOk(st,"\n\nThe $LK+PU,"Holy Spirit",A="FI:::/God/HSNotes.DD"$ can puppet you.\n\n");
   Free(st);
-  return __GetTicksHP>>GOD_BAD_BITS;
+  return KbdMsEvtTime>>GOD_BAD_BITS;
 }
 
 public U0 GodBitsIns(I64 num_bits,I64 n)

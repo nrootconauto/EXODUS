@@ -1,11 +1,11 @@
 F64 tS()
 {//Time since boot in seconds as a float.
-  return __GetTicksHP/JIFFYHP_FREQ;
+  return cnts.jiffies/ToF64(JIFFY_FREQ);
 }
 Bool Blink(F64 Hz=2.5)
 {//Return TRUE, then FALSE, then TRUE at given frequency.
   if (!Hz) return 0;
-  return ToI64(__GetTicks*2*Hz/1000.)&1;
+  return ToI64(cnts.jiffies*2*Hz/JIFFY_FREQ)&1;
 }
 
 U16 EndianU16(U16)
@@ -60,7 +60,26 @@ I64 BCnt(I64 i)
   SHR   RAX,0x38
 }
 
+#help_index "Time"
+
+U0 IntCore0TimerHndlr() {
+  lock cnts.jiffies++;
+  cnts.timer+=SYS_TIMER0_PERIOD+1;
+}
+
+public U0 SleepUntil(I64 wake_jiffy) {
+  Bool old_idle=LBts(&Fs->task_flags,TASKf_IDLE);
+  Fs->wake_jiffy=wake_jiffy;
+  Yield;
+  LBEqu(&Fs->task_flags,TASKf_IDLE,old_idle);
+}
+
+public U0 Sleep(I64 ms) {
+  SleepUntil(cnts.jiffies+ms);
+}
+
 #help_index ""
+
 F64 Ona2Freq(I8 ona)
 {//Ona to freq. Ona=60 is 440.0Hz.
   if (!ona)

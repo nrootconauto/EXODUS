@@ -225,7 +225,7 @@ U0 ACTask(I64)
   Fs->win_inhibit=WIG_NO_FOCUS_TASK_DFT;
   ac.cur_word=NULL;
   while (TRUE) {
-    if (scan_code&(SCF_CTRL|SCF_ALT)||__GetTicks>KbdMsEvtTime+500) {
+    if (scan_code&(SCF_CTRL|SCF_ALT) || cnts.jiffies>KbdMsEvtTime+500) {
       last_scan_code=scan_code;
       scan_code=kbd.scan_code;
     }

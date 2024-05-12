@@ -100,7 +100,10 @@ static void genthunks(HolyFFI *list, i64 cnt) {
     cur = list + i;
     blob = mempcpy2(prev = blob, __TOSTHUNK_START, thunksz);
     *(u8 **)(prev + calloff) = cur->fp;
-    *(u16 *)(prev + ret1off) = cur->arity * 8;
+    if (cur->arity)
+      *(u16 *)(prev + ret1off) = cur->arity * 8;
+    else
+      prev[ret1off - 1] = 0xc3;
     map_set(&symtab, cur->name, (CSymbol){.type = HTT_FUN, .val = prev});
   }
 }
@@ -435,6 +438,7 @@ void BootstrapLoader(void) {
       R("__CoreNum", CoreNum, 0),
       S(MPSetProfilerInt, 3),
       R("mp_cnt", mp_cnt, 0),
+      R("MPIntsInit", InitIRQ0, 0),
       R("__IsCmdLine", IsCmdLine, 0),
       S(__IsValidPtr, 1),
       S(__SpawnCore, 1),

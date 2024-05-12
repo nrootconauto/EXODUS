@@ -600,6 +600,9 @@ public extern CTask *SpawnQue(U0 (*fp_addr)(U8 *data),U8 *data=NULL,
 	CTask *parent=NULL, //NULL means adam
 	I64 stk_size=0,I64 flags=1<<JOBf_ADD_TO_QUE);
 
+#help_index "MultiCore;Processor"
+_extern SYS_MP_CNT_LOCK I64 mp_cnt_lock;
+_extern SYS_SEMAS CSema sys_semas[SEMA_SEMAS_NUM];
 
 #help_index "MultiCore;Job/Exe;Task/Job/Exe"
 public extern CJob *JobQue(I64 (*fp_addr)(U8 *data),U8 *data=NULL,
