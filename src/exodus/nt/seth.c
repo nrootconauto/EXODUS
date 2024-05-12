@@ -160,6 +160,28 @@ static u64 elapsedus(void) {
   return ticks;
 }
 
+static void irq0(u32 id, u32 msg, u64 userptr, u64 dw1, u64 dw2) {
+  (void)id;
+  (void)msg;
+  (void)userptr;
+  (void)dw1;
+  (void)dw2;
+  static void *fp;
+  if (veryunlikely(!fp))
+    fp = map_get(&symtab, "IntCore0TimerHndlr")->val;
+  FFI_CALL_TOS_0(fp);
+}
+
+void InitIRQ0(void) {
+  static bool init;
+  if (!inc)
+    incinit();
+  if (init)
+    return;
+  timeSetEvent(inc, inc, irq0, 0, TIME_PERIODIC);
+  init = true;
+}
+
 /* There's no SIGPROF on Windows, so we just jump to the profiler interrupt */
 static void profcb(u32 id, u32 msg, u64 userptr, u64 dw1, u64 dw2) {
   (void)id;
