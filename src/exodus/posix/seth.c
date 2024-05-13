@@ -27,14 +27,15 @@
   #include <sys/syscall.h>
 #elif defined(__FreeBSD__)
   #include <sys/types.h>
-  #include <sys/umtx.h>
   #include <sys/thr.h>
+  #include <sys/umtx.h>
 #endif
 #include <inttypes.h>
 #include <pthread.h>
 #include <signal.h>
-#ifndef sigev_notify_thread_id // glibc doesn't define this
-  #define sigev_notify_thread_id _sigev_un._tid
+#ifndef sigev_notify_thread_id // glibc doesn't define this in normal signal.h,
+                               // musl and FreeBSD do
+  #define sigev_notify_thread_id _sigev_un._tid // glibc asm-generic/siginfo.h
 #endif
 #include <stdbool.h>
 #include <stdio.h>
@@ -166,15 +167,14 @@ void CreateCore(vec_void_t ptrs) {
  * HANDLE_SYSF_KEY_EVENT didn't like it */
 static void irq0(argign int sig) {
   static void *fp;
-  static i64 interval, prev;
+  static i64 prev;
   struct timespec ts;
   i64 ms;
   if (veryunlikely(!fp))
     fp = map_get(&symtab, "IntCore0TimerHndlr")->val;
   clock_gettime(CLOCK_MONOTONIC, &ts);
   ms = ts.tv_sec * 1e3 + ts.tv_nsec / 1e6;
-  interval = interval ? ms - prev : 1;
-  FFI_CALL_TOS_1(fp, interval);
+  FFI_CALL_TOS_1(fp, prev ? ms - prev : 1);
   prev = ms;
 }
 

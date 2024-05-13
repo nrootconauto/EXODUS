@@ -49,7 +49,7 @@ typedef struct {
   SRWLOCK mtx;
   u64 awakeat;
   int core_num;
-  void *profiler_int;
+  u8 *profiler_int;
   u64 profiler_freq, next_prof_int;
   vec_void_t funcptrs;
 } CCore;
@@ -73,19 +73,37 @@ u64 CoreNum(void) {
   return self->core_num;
 }
 
+__attribute__((naked)) static void __tramp(void) {
+  asm("push %rbp\n"
+      "mov  %rsp,%rbp\n"
+      "pushf\n"
+      "push %rax\n" // PUSH_C_REGS
+      "push %rcx\n"
+      "push %rdx\n"
+      "push %rbx\n"
+      "call *0x10(%rbp)\n"
+      "pop  %rbx\n" // POP_C_REGS
+      "pop  %rdx\n"
+      "pop  %rcx\n"
+      "pop  %rax\n"
+      "popf\n"
+      "leave\n"
+      "ret  $0x8\n");
+}
+
 /* TempleOS does not yield contexts automatically
  * (everything is a coroutine) so we need a brute force solution */
 void InterruptCore(u64 core) {
+  static CSymbol *sym;
   CCore *c = cores + core;
   CONTEXT ctx = {.ContextFlags = CONTEXT_FULL};
   SuspendThread(c->thread);
   GetThreadContext(c->thread, &ctx);
-  ctx.Rsp -= 8;
-  ((u64 *)ctx.Rsp)[0] = ctx.Rip;
-  static CSymbol *sym;
-  if (!sym)
+  if (veryunlikely(!sym))
     sym = map_get(&symtab, "Yield");
-  ctx.Rip = (u64)sym->val;
+  *(u8 **)(ctx.Rsp -= 8) = sym->val;
+  *(u64 *)(ctx.Rsp -= 8) = ctx.Rip; /* return addr */
+  ctx.Rip = (u64)__tramp;
   SetThreadContext(c->thread, &ctx);
   ResumeThread(c->thread);
 }
@@ -185,6 +203,51 @@ void InitIRQ0(void) {
   init = true;
 }
 
+/* TODO: move this somewhere else */
+__attribute__((naked)) static void __tramp1(void) {
+  asm("push %rbp\n"
+      "mov  %rsp,%rbp\n"
+      "pushf\n"
+      "push %rax\n" // PUSH_REGS
+      "push %rcx\n"
+      "push %rdx\n"
+      "push %rbx\n"
+      "push %rdi\n"
+      "push %rsi\n"
+      "push %rbp\n"
+      "push %r8\n"
+      "push %r9\n"
+      "push %r10\n"
+      "push %r11\n"
+      "push %r12\n"
+      "push %r13\n"
+      "push %r14\n"
+      "push %r15\n"
+      "mov  0x18(%rbp),%rax\n"
+      "mov  0x10(%rbp),%rcx\n"
+      "mov  0x20(%rbp),%rbp\n" // fake RBP for Caller() to work
+      "push %rax\n"
+      "call *%rcx\n"
+      "pop  %r15\n" // POP_REGS
+      "pop  %r14\n"
+      "pop  %r13\n"
+      "pop  %r12\n"
+      "pop  %r11\n"
+      "pop  %r10\n"
+      "pop  %r9\n"
+      "pop  %r8\n"
+      "pop  %rbp\n"
+      "pop  %rsi\n"
+      "pop  %rdi\n"
+      "pop  %rbx\n"
+      "pop  %rdx\n"
+      "pop  %rcx\n"
+      "pop  %rax\n"
+      "popf\n"
+      "leave\n"
+      "ret  $0x18\n");
+}
+
 /* There's no SIGPROF on Windows, so we just jump to the profiler interrupt */
 static void profcb(u32 id, u32 msg, u64 userptr, u64 dw1, u64 dw2) {
   (void)id;
@@ -199,10 +262,11 @@ static void profcb(u32 id, u32 msg, u64 userptr, u64 dw1, u64 dw2) {
       CONTEXT ctx = {.ContextFlags = CONTEXT_FULL};
       SuspendThread(c->thread);
       GetThreadContext(c->thread, &ctx);
-      ctx.Rsp -= 16;
-      ((u64 *)ctx.Rsp)[1] = ctx.Rip; /* return addr */
-      ((u64 *)ctx.Rsp)[0] = ctx.Rip; /* arg */
-      ctx.Rip = (u64)c->profiler_int;
+      *(u64 *)(ctx.Rsp -= 8) = ctx.Rbp;         /* arg3 - original RBP */
+      *(u64 *)(ctx.Rsp -= 8) = ctx.Rip;         /* arg2 */
+      *(u8 **)(ctx.Rsp -= 8) = c->profiler_int; /* arg1 */
+      *(u64 *)(ctx.Rsp -= 8) = ctx.Rip;         /* trampoline return addr */
+      ctx.Rip = (u64)__tramp1;
       SetThreadContext(c->thread, &ctx);
       ResumeThread(c->thread);
       c->next_prof_int = c->profiler_freq / 1000. + ticks;

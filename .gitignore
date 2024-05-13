@@ -67,3 +67,5 @@ Module.symvers
 /exodus
 /HCRT.BIN
 *.swp
+*.orig
+*.rej

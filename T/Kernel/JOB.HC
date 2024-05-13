@@ -544,7 +544,6 @@ U0 CoreAPSethTask()
     Fs->hash_table->next=adam_task->hash_table;
   }
   CJobCtrl *ctrl=&Fs->srv_ctrl;
-  LBts(&Gs->ready,0);
   LBts(&mp_cnt_lock,__CoreNum);
   CTask *task,*task1=Fs;
   I64 mS,t;

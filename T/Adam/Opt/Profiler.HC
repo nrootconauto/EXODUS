@@ -10,8 +10,6 @@ I64 pf_prof_active=0;
 
 U0 ProfTimerInt(U8 *cur_rip)
 {//See $LK,"profiler_timer_irq",A="FF:::/Kernel/KInts.HC,profiler_timer_irq"$.
-  PUSH_REGS;
-  PUSHFD;
   I64 i,k;
   CTask *task=Fs;
   if (Bt(&pf_prof_active,0))
@@ -31,10 +29,6 @@ U0 ProfTimerInt(U8 *cur_rip)
 	pf_jiffy_end=cnts.jiffies;
       }
     }
-  POPFD;
-  POP_REGS; // Save temps
-  return;
-  try; catch; // Force noreg(Windows SetContext doesnt set tmp regs)
 }
 
 public U0 Prof(I64 depth=10,I64 cpu_num=0)
@@ -59,7 +53,7 @@ after you have collected data.
       pf_array=AMAlloc(sizeof(I64)*PF_ARRAY_CNT);
     pf_jiffy_end=pf_jiffy_start=cnts.jiffies;
     LBts(&pf_prof_active,0);
-    MPSetProfilerInt(&ProfTimerInt,pf_cpu,10000);
+    MPSetProfilerInt(&ProfTimerInt,pf_cpu,5000);
   }
 }
 
@@ -77,6 +71,10 @@ public U0 ProfRep(I64 filter_cnt=1,Bool leave_it=OFF)
   if (!pf_buf_in_ptr)
     "No Profiler Statistic\n";
   else {
+    if (leave_it) {
+      LBts(&pf_prof_active,0);
+    } else
+      MPSetProfilerInt(NULL,pf_cpu,0);
     if (!(total_time=pf_jiffy_end-pf_jiffy_start))
       total_time=1;
     QSortI64(pf_array,pf_buf_in_ptr,&ProfCompare);
@@ -106,10 +104,5 @@ public U0 ProfRep(I64 filter_cnt=1,Bool leave_it=OFF)
       "$$GREEN$$%6.2f%08X:%s\n$$FG$$",100*routine_total/total_time,
 	    routine_total,last_buf;
     "Total Time:%0.6fs\n",total_time/JIFFY_FREQ;
-    if (leave_it) {
-      //MPSetProfilerInt(&ProfTimerInt,pf_cpu,10000);
-      LBts(&pf_prof_active,0);
-    } else
-      MPSetProfilerInt(NULL,pf_cpu,0);
   }
 }

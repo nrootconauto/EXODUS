@@ -3484,7 +3484,6 @@ public class CCPU //The Gs segment reg points to current CCPU.
   CTSS	*tss;
   I64	start_stk[16];
   I64	last_yield;
-  I64   ready;
 };
 
 #define MEM_MIN_MEG		512 //512 Meg minimum.

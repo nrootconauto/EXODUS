@@ -224,7 +224,7 @@ HANDLE_SYSF_KEY_EVENT::
 	CMP	U64 CCPU.idle_task[RBX],RSI
 	JE	RESTORE_SETH_TASK_IF_READY
 
-    LEA	RAX,U64 [&SYS_CTRL_ALT_FLAGS]
+	LEA	RAX,U64 [&SYS_CTRL_ALT_FLAGS]
 	LOCK
 	BTR	U32 [RAX],CTRL_ALT_TAB
 	JNC	@@05
@@ -290,11 +290,9 @@ Bool IsFrozen(CCPU *gs=NULL) {
 
 U0 Yield() {
   PUSHFD
-  PUSH RSI
-  PUSH_C_REGS
+  PUSH	RSI
   _Yield;
-  Gs->last_yield=cnts.jiffies;
-  POP_C_REGS
-  POP RSI
+  Gs->last_yield=cnts.jiffies;  
+  POP	RSI
   POPFD
-}
+}
