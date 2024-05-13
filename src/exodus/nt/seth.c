@@ -57,6 +57,7 @@ typedef struct {
 static CCore cores[MP_PROCESSORS_NUM];
 static _Thread_local CCore *self;
 static u64 nproc;
+static u64 pf_prof_active;
 
 static void ThreadRoutine(void *arg) {
   self = arg;
@@ -256,21 +257,23 @@ static void profcb(u32 id, u32 msg, u64 userptr, u64 dw1, u64 dw2) {
   (void)dw1;
   (void)dw2;
   for (u64 i = 0; i < nproc; ++i) {
+    if (!Bt(&pf_prof_active, i))
+      continue;
     CCore *c = cores + i;
+    if (ticks < c->next_prof_int)
+      continue;
     AcquireSRWLockExclusive(&c->mtx);
-    if (c->profiler_int && ticks >= c->next_prof_int) {
-      CONTEXT ctx = {.ContextFlags = CONTEXT_FULL};
-      SuspendThread(c->thread);
-      GetThreadContext(c->thread, &ctx);
-      *(u64 *)(ctx.Rsp -= 8) = ctx.Rbp;         /* arg3 - original RBP */
-      *(u64 *)(ctx.Rsp -= 8) = ctx.Rip;         /* arg2 */
-      *(u8 **)(ctx.Rsp -= 8) = c->profiler_int; /* arg1 */
-      *(u64 *)(ctx.Rsp -= 8) = ctx.Rip;         /* trampoline return addr */
-      ctx.Rip = (u64)__tramp1;
-      SetThreadContext(c->thread, &ctx);
-      ResumeThread(c->thread);
-      c->next_prof_int = c->profiler_freq / 1000. + ticks;
-    }
+    CONTEXT ctx = {.ContextFlags = CONTEXT_FULL};
+    SuspendThread(c->thread);
+    GetThreadContext(c->thread, &ctx);
+    *(u64 *)(ctx.Rsp -= 8) = ctx.Rbp;         /* arg3 - original RBP */
+    *(u64 *)(ctx.Rsp -= 8) = ctx.Rip;         /* arg2 */
+    *(u8 **)(ctx.Rsp -= 8) = c->profiler_int; /* arg1 */
+    *(u64 *)(ctx.Rsp -= 8) = ctx.Rip;         /* trampoline return addr */
+    ctx.Rip = (u64)__tramp1;
+    SetThreadContext(c->thread, &ctx);
+    ResumeThread(c->thread);
+    c->next_prof_int = c->profiler_freq / 1e3 + ticks;
     ReleaseSRWLockExclusive(&c->mtx);
   }
 }
@@ -293,7 +296,10 @@ void MPSetProfilerInt(void *fp, i64 idx, i64 freq) {
   }
   CCore *c = cores + idx;
   AcquireSRWLockExclusive(&c->mtx);
-  c->profiler_freq = freq;
+  if ((c->profiler_freq = freq))
+    LBts(&pf_prof_active, idx);
+  else
+    LBtr(&pf_prof_active, idx);
   c->profiler_int = fp;
   c->next_prof_int = 0;
   ReleaseSRWLockExclusive(&c->mtx);

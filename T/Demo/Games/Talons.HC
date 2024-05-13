@@ -865,7 +865,7 @@ U0 Core0Talons()
   I64 i,xx,yy,elev,height,cx=Fs->pix_width>>1,cy=Fs->pix_height>>1;
   F64 min_strip_width,tt;
 
-  update_jiffy_limit=cnts.jiffies+JIFFY_FREQ/40;
+  update_jiffy_limit=cnts.jiffies+JIFFY_FREQ/40;
 
   xx=x/(MAP_SCALE*COORDINATE_SCALE);
   yy=y/(MAP_SCALE*COORDINATE_SCALE);

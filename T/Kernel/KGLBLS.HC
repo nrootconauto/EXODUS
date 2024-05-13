@@ -62,7 +62,7 @@ public _extern SYS_PROGRESS1_MAX I64 progress1_max; //Progress 1 max.
 public _extern SYS_PROGRESS1_T0 F64 progress1_t0; //Progress 1 start time.
 public _extern SYS_PROGRESS1_TF F64 progress1_tf; //Progress 1 end time.
 public _extern SYS_PROGRESS2 I64 progress2; //Current progress 2.
-public _extern SYS_PROGRESS2_DESC
+public _extern SYS_PROGRESS2_DESC
 	U8  progress2_desc[PROGRESS_DESC_LEN]; //Progress 2 desc.
 public _extern SYS_PROGRESS2_MAX I64 progress2_max; //Progress 2 max.
 public _extern SYS_PROGRESS2_T0 F64 progress2_t0; //Progress 2 start time.

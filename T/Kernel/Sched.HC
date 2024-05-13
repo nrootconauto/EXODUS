@@ -295,4 +295,4 @@ U0 Yield() {
   Gs->last_yield=cnts.jiffies;  
   POP	RSI
   POPFD
-}
+}

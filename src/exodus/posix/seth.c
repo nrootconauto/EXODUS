@@ -70,8 +70,7 @@ typedef struct {
   int core_num;
   /* U0 (*profiler_int)(U8 *rip) */
   void *profiler_int;
-  i64 profiler_freq;
-  struct itimerval profile_timer;
+  timer_t profile_timer;
   /* HolyC function pointers it needs to execute on launch
    * (especially important for Core 0) */
   vec_void_t funcptrs;
@@ -79,6 +78,7 @@ typedef struct {
 
 static CCore cores[MP_PROCESSORS_NUM];
 static _Thread_local CCore *self;
+static u64 pf_prof_active;
 
 #define masksignals(a, va...) masksignals_(a, (int[]){va, 0})
 static void masksignals_(int how, int *sigs) {
@@ -181,22 +181,22 @@ static void irq0(argign int sig) {
 /* emulate PIT interrupt (IRQ 0) */
 static void *pit_thrd(argign void *arg) {
   sigaction(SIGALRM, &(struct sigaction){.sa_handler = irq0}, NULL);
-  long tid;
-#ifdef __linux__
-  tid = gettid();
-#elif defined(__FreeBSD__)
-  thr_self(&tid);
-#else
-  #error unsupported
-#endif
   struct sigevent ev = {
       .sigev_notify = SIGEV_THREAD_ID,
       .sigev_signo = SIGALRM,
-      .sigev_notify_thread_id = tid,
+      .sigev_notify_thread_id = getthreadid(),
   };
   timer_t t;
   timer_create(CLOCK_MONOTONIC, &ev, &t);
   /* on real TempleOS, SYS_TIMER0_PERIOD is 1192Hz (~839μs/it) */
+  /* FreeBSD's tick resolution is abysmal
+   * (~10ms with inconsistencies from my observations)
+   * and it's probably only adjustable in sysctl or some other
+   * kernel config so we must adjust between the fired signal intervals
+   *
+   * "it’s probably best to assume a resolution of 10 ms."
+   *     ──Quoth FreeBSD Forums[1]
+   */
   struct itimerspec in = {
       .it_value.tv_nsec = 1e6,
       .it_interval.tv_nsec = 1e6,
@@ -208,7 +208,9 @@ static void *pit_thrd(argign void *arg) {
 }
 
 void InitIRQ0(void) {
-  pthread_create(&(pthread_t){0}, NULL, pit_thrd, NULL);
+  pthread_t t;
+  pthread_create(&t, NULL, pit_thrd, NULL);
+  pthread_setname_np(t, "PIT (IRQ 0)");
 }
 
 #ifdef __linux__
@@ -253,37 +255,38 @@ void SleepUs(u64 us) {
 #endif
 
 static void profcb(argign int sig, argign siginfo_t *info, void *_ctx) {
-  if (!self)
-    return;
   CCore *c = self;
   ucontext_t *ctx = _ctx;
-  sigset_t set;
-  sigemptyset(&set);
-  sigaddset(&set, SIGPROF);
-  if (veryunlikely(!c->profiler_int) ||
-      !pthread_equal(pthread_self(), c->thread))
-    return;
   /* fake RBP because profcb is called from the kernel and
    * we need the context of the HolyC side (ctx) instead
    * or ProfRep will print bogus */
   FFI_CALL_TOS_1_CUSTOM_BP(c->profiler_int, RegRbp, RegRip);
-  c->profile_timer = (struct itimerval){
-      .it_value.tv_usec = c->profiler_freq,
-      .it_interval.tv_usec = c->profiler_freq,
-  };
-  pthread_sigmask(SIG_UNBLOCK, &set, NULL);
 }
 
 void MPSetProfilerInt(void *fp, i64 idx, i64 freq) {
-  if (verylikely(fp)) {
-    CCore *c = cores + idx;
+  CCore *c = cores + idx;
+  if (fp) {
     c->profiler_int = fp;
-    c->profiler_freq = freq;
-    c->profile_timer = (struct itimerval){
-        .it_value.tv_usec = freq,
-        .it_interval.tv_usec = freq,
+    struct sigevent ev = {
+        .sigev_notify = SIGEV_THREAD_ID,
+        .sigev_signo = SIGPROF,
+        .sigev_notify_thread_id = getthreadid(),
     };
-    setitimer(ITIMER_PROF, &c->profile_timer, NULL);
-  } else
-    setitimer(ITIMER_PROF, &(struct itimerval){0}, NULL);
+    timer_create(CLOCK_MONOTONIC, &ev, &c->profile_timer);
+    struct itimerspec in = {
+        .it_value.tv_nsec = freq * 1e3,
+        .it_interval.tv_nsec = freq * 1e3,
+    };
+    timer_settime(c->profile_timer, 0, &in, NULL);
+    LBts(&pf_prof_active, idx);
+  } else if (LBtr(&pf_prof_active, idx)) {
+    timer_settime(c->profile_timer, 0, &(struct itimerspec){0}, NULL);
+    timer_delete(c->profile_timer);
+  }
 }
+
+/* CITATIONS:
+ * [1]:
+ * https://forums.freebsd.org/threads/buildworld-and-kernel-scheduler-questions.79073/page-2#post-498518
+ * (https://archive.is/N3KlX#selection-4059.100-4059.150)
+ */

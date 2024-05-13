@@ -5,7 +5,7 @@ F64 tS()
 Bool Blink(F64 Hz=2.5)
 {//Return TRUE, then FALSE, then TRUE at given frequency.
   if (!Hz) return 0;
-  return ToI64(cnts.jiffies*2*Hz/JIFFY_FREQ)&1;
+  return ToI64(cnts.jiffies*2*Hz/JIFFY_FREQ)&1;
 }
 
 U16 EndianU16(U16)

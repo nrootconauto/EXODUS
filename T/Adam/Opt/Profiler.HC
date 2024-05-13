@@ -74,7 +74,7 @@ public U0 ProfRep(I64 filter_cnt=1,Bool leave_it=OFF)
     if (leave_it) {
       LBts(&pf_prof_active,0);
     } else
-      MPSetProfilerInt(NULL,pf_cpu,0);
+      MPSetProfilerInt(NULL,pf_cpu,0);
     if (!(total_time=pf_jiffy_end-pf_jiffy_start))
       total_time=1;
     QSortI64(pf_array,pf_buf_in_ptr,&ProfCompare);

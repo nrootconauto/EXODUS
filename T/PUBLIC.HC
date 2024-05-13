@@ -601,7 +601,7 @@ public extern CTask *SpawnQue(U0 (*fp_addr)(U8 *data),U8 *data=NULL,
 	I64 stk_size=0,I64 flags=1<<JOBf_ADD_TO_QUE);
 
 #help_index "MultiCore;Processor"
-_extern SYS_MP_CNT_LOCK I64 mp_cnt_lock;
+_extern SYS_MP_CNT_LOCK I64 mp_cnt_lock;
 _extern SYS_SEMAS CSema sys_semas[SEMA_SEMAS_NUM];
 
 #help_index "MultiCore;Job/Exe;Task/Job/Exe"
@@ -1471,6 +1471,19 @@ public extern I64 Un(U8 *rip,I64 cnt=0x80,I64 seg_size=64);
 public extern I64 HashEntrySize(CHashSrcSym *tmph);
 public extern I64 HashEntrySize2(CHashSrcSym *tmph);
 public extern I64 HashTableSize2(CHashTable *table);
+
+#help_index "Profiler"
+
+public U0 Prof(I64 depth=10,I64 cpu_num=0);
+/*Start collecting profiler statistics.
+Profilers report where time is spent
+by sampling RIP during the $TX,"",D="DD_JIFFY_HZ"$
+timer interrupt.
+
+Do a $LK,"ProfRep",A="MN:ProfRep"$(), (profiler report)
+after you have collected data.
+*/
+public U0 ProfRep(I64 filter_cnt=1,Bool leave_it=OFF); //Profiler report. Call $LK,"Prof",A="MN:Prof"$() first and collect data.
 
 #help_index ""
 

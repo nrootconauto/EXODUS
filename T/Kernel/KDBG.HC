@@ -62,7 +62,7 @@ U8 *TaskCaller(CTask *task=NULL,I64 num=0,Bool saved_context=FALSE)
       if(!ChkOnStk(rbp,task))
         break;
       ptr=rbp+1;
-      //Here's the deal, I assume wine muddies the caller stack
+      //Here's the deal, I assume wine muddies the caller stack
       //to make it not show bogus, in FFI_CALL_TOS_0_BP, I zero the caller ptr
       if(!ptr) break;
       if (! --num)

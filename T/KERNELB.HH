@@ -20,7 +20,7 @@ public _extern _CALL_VA_ARGS I64 CallVaArgs(
 _extern _GET_FS CTask* GetFs();
 _extern _SET_FS U0 SetFs(CTask *);
 _extern _GET_GS CCPU *GetGs();
-_extern _SET_GS U0 SetGs(CCPU *);
+_extern _SET_GS U0 SetGs(CCPU *);
 public _extern _CPUID U0 CPUId(
         U32 rax,CRAXRBCRCXRDX *res); //Do CPUID inst.
 

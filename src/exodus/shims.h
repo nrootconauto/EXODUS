@@ -32,4 +32,5 @@ void prepare(void);
 u64 get31(void);
 /* set GS register base for Fs/Gs (on Windows we just use the TEB sneakily) */
 void preparetls(void);
+long getthreadid(void);
 #endif

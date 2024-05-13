@@ -192,7 +192,7 @@ U0 WinCalcIdles()
   if ((t->calc_idle_delta_time=
 	(calc_idle_time=tS)-t->last_calc_idle_time)>.25) {
     bl=BreakLock;
-    total_jiffies=cnts.jiffies;
+    total_jiffies=cnts.jiffies;
     for (i=0;i<mp_cnt;i++)
       idle_pt_hits[i]=cpu_structs[i].idle_pt_hits;
     if (bl) BreakUnlock;

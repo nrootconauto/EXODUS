@@ -339,6 +339,18 @@ found:
 #endif
 }
 
+long getthreadid(void) {
+  long ret; // pid_t is actually int in Linux but I didn't ask
+#ifdef __linux__
+  ret = syscall(SYS_gettid);
+#elif defined(__FreeBSD__)
+  thr_self(&ret);
+#else
+  #error unsupported
+#endif
+  return ret;
+}
+
 static void nofsgsbase(argign int sig) {
   flushprint(stderr, ST_ERR_ST ": Your processor is older than Ivy Bridge\n");
   terminate(1);
