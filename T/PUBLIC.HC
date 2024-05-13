@@ -1474,7 +1474,7 @@ public extern I64 HashTableSize2(CHashTable *table);
 
 #help_index "Profiler"
 
-public U0 Prof(I64 depth=10,I64 cpu_num=0);
+public extern U0 Prof(I64 depth=10,I64 cpu_num=0);
 /*Start collecting profiler statistics.
 Profilers report where time is spent
 by sampling RIP during the $TX,"",D="DD_JIFFY_HZ"$
@@ -1483,7 +1483,7 @@ timer interrupt.
 Do a $LK,"ProfRep",A="MN:ProfRep"$(), (profiler report)
 after you have collected data.
 */
-public U0 ProfRep(I64 filter_cnt=1,Bool leave_it=OFF); //Profiler report. Call $LK,"Prof",A="MN:Prof"$() first and collect data.
+public extern U0 ProfRep(I64 filter_cnt=1,Bool leave_it=OFF); //Profiler report. Call $LK,"Prof",A="MN:Prof"$() first and collect data.
 
 #help_index ""
 

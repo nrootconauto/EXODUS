@@ -27,7 +27,6 @@
   #include <sys/syscall.h>
 #elif defined(__FreeBSD__)
   #include <sys/types.h>
-  #include <sys/thr.h>
   #include <sys/umtx.h>
 #endif
 #include <inttypes.h>

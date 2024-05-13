@@ -38,6 +38,7 @@
   #include <sys/user.h>
   #include <libprocstat.h>
   #include <machine/sysarch.h>
+  #include <sys/thr.h>
 #endif
 
 #ifdef __linux__
@@ -279,7 +280,8 @@ bool isvalidptr(void *p) {
  *   Tough luck, but I haven't seen anything that does that.
  *   If anything it's around 0x400000 (on Fedora)
  */
-#define DFTADDR 0x10000 /* minimum MAP_FIXED possible alloc addr on both OS'es */
+#define DFTADDR \
+  0x10000 /* minimum MAP_FIXED possible alloc addr on both OS'es */
 
 u64 get31(void) {
   u64 max = UINT32_MAX >> 1;
