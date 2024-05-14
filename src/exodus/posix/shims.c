@@ -273,7 +273,7 @@ bool isvalidptr(void *p) {
  */
 #define DFTADDR      0x10000u // minimum MAP_FIXED possible alloc addr on both
 #define MAXADDR      ((u64)(UINT32_MAX >> 1))
-#define ALIGN(x, to) ((x + to - 1) & ~(to - 1))
+#define ALIGNADDR(x, to) ((x + to - 1) & ~(to - 1))
 
 u64 findregion(u64 sz) {
 #ifdef __linux__
@@ -289,9 +289,9 @@ u64 findregion(u64 sz) {
       mmap_min_addr = DFTADDR;
     pagsz = sysconf(_SC_PAGESIZE);
   }
-  sz = ALIGN(sz, pagsz);
+  sz = ALIGNADDR(sz, pagsz);
   i64 readb;
-  u64 start, end, prev = ALIGN(mmap_min_addr, pagsz);
+  u64 start, end, prev = ALIGNADDR(mmap_min_addr, pagsz);
   int fd = open("/proc/self/maps", O_RDONLY);
   char buf[BUFSIZ + 1], *cur = buf, *nl;
   if (veryunlikely(fd == -1)) {
@@ -313,7 +313,7 @@ u64 findregion(u64 sz) {
         return -1ul;
       return prev;
     }
-    prev = ALIGN(end, pagsz);
+    prev = ALIGNADDR(end, pagsz);
     cur = nl + 1;
   }
   return -1ul;
@@ -327,7 +327,6 @@ u64 findregion(u64 sz) {
     init = true;
   }
   unsigned cnt;
-  u64 ret;
   struct kinfo_vmentry *vments, *e;
   vments = procstat_getvmmap(ps, kproc, &cnt); // takes around 100μs
   u64 prev = DFTADDR, start, end;
