@@ -265,78 +265,79 @@ bool isvalidptr(void *p) {
   return -1 != msync((void *)ptr, pag, MS_ASYNC);
 }
 
-/* Gets minimum address that's safely allocatable without overwriting anything
+/* Gets minimum address that's allocatable without overwriting anything
  * premapped if such a thing exists.
- * Linux: read /proc/self/maps, use sysctl vm.mmap_min_addr to get minimum addr
- * FreeBSD: use libprocstat, there's no kernel lower limit to mmap, though
- *          MAP_FIXED with 0 gave me an error
- * (remarks: The FreeBSD way is bad for dumping data and getting a view, and
- *           the Linux way maybe has some speed tradeoff)
- * then with mmap_min_addr(Linux)/0x10000(FreeBSD) as the start pivot, we loop
- * thrugh the mapped entries and see the last entry - ie, previous end is below
- * max and current start is over max.
  *
- * What if there's something mapped just at the 31bit edge?
- *   Tough luck, but I haven't seen anything that does that.
- *   If anything it's around 0x400000 (on Fedora)
+ * With mmap_min_addr(Linux)/0x10000(FreeBSD) as the start pivot, we loop
+ * through the mapped entries and return the first we can find.
  */
-#define DFTADDR \
-  0x10000 /* minimum MAP_FIXED possible alloc addr on both OS'es */
+#define DFTADDR      0x10000u // minimum MAP_FIXED possible alloc addr on both
+#define MAXADDR      ((u64)(UINT32_MAX >> 1))
+#define ALIGN(x, to) ((x + to - 1) & ~(to - 1))
 
-u64 get31(void) {
-  u64 max = UINT32_MAX >> 1;
+u64 findregion(u64 sz) {
 #ifdef __linux__
-  int addrfd = open("/proc/sys/vm/mmap_min_addr", O_RDONLY);
-  u64 ret, min;
-  /* mmap pivot, also minimum address if we don't find any maps
-   * in the lower 32 bits
-   * mmap_min_addr is a number, 0x1f is more than enough */
-  char buf[0x20];
-  if (addrfd != -1) {
-    buf[read(addrfd, buf, 0x1f)] = 0;
-    sscanf(buf, "%ju", &ret);
-    close(addrfd);
-  } else
-    ret = DFTADDR;
-  min = ret;
-  i64 readb;
-  u64 start, end, prev = min;
-  FILE *fp = fopen("/proc/self/maps", "r");
-  if (!fp) {
-    flushprint(stderr, "\e[0;31mCRITICAL\e[0m: /proc/self/maps not found\n");
-    return DFTADDR;
+  static u64 mmap_min_addr, pagsz;
+  if (veryunlikely(!mmap_min_addr)) {
+    int fd = open("/proc/sys/vm/mmap_min_addr", O_RDONLY);
+    char buf[0x20];
+    if (fd != -1) {
+      buf[read(fd, buf, 0x1f)] = 0;
+      sscanf(buf, "%ju", &mmap_min_addr);
+      close(fd);
+    } else
+      mmap_min_addr = DFTADDR;
+    pagsz = sysconf(_SC_PAGESIZE);
   }
-  char *line = NULL;
-  while (getline(&line, &readb, fp) > 0) {
-    sscanf(line, "%jx-%jx", &start, &end);
-    if (prev < max && max <= start) {
-      ret = prev;
-      goto found;
+  sz = ALIGN(sz, pagsz);
+  i64 readb;
+  u64 start, end, prev = ALIGN(mmap_min_addr, pagsz);
+  int fd = open("/proc/self/maps", O_RDONLY);
+  char buf[BUFSIZ + 1], *cur = buf, *nl;
+  if (veryunlikely(fd == -1)) {
+    flushprint(stderr, ST_ERR_ST ": /proc/self/maps not found\n");
+    return -1ul;
+  }
+  while (cur < buf + BUFSIZ && //
+         (readb = read(fd, cur, BUFSIZ - (cur - buf))) > 0)
+    cur += readb;
+  *cur = 0;
+  close(fd);
+  cur = buf;
+  while ((nl = strchr(cur, '\n')) && nl < buf + BUFSIZ) {
+    *nl = 0;
+    puts(cur);
+    sscanf(cur, "%jx-%jx", &start, &end);
+    if (start - prev >= sz) {
+      if ((i64)(MAXADDR - prev) < 0)
+        return -1ul;
+      return prev;
     }
+    prev = ALIGN(end, pagsz);
+    cur = nl + 1;
+  }
+  return -1ul;
+#elif defined(__FreeBSD__)
+  static struct procstat *ps;
+  static struct kinfo_proc *kproc;
+  static bool init;
+  if (veryunlikely(!init)) {
+    ps = procstat_open_sysctl();
+    kproc = procstat_getprocs(ps, KERN_PROC_PID, getpid(), &(u32){0});
+    init = true;
+  }
+  unsigned cnt;
+  u64 ret;
+  struct kinfo_vmentry *vments, *e;
+  vments = procstat_getvmmap(ps, kproc, &cnt); // takes around 100μs
+  u64 prev = DFTADDR, start, end;
+  for (e = vments; e != vments + cnt; e++) {
+    start = e->kve_start, end = e->kve_end;
+    if (prev < MAXADDR && MAXADDR <= start && start - prev >= sz)
+      break;
     prev = end;
   }
-  /* always {prev,start} < max if mapping exists in <32bits
-   * if nothing exists in <32bits, just return lowest address possible */
-  ret = start >= max ? min : prev;
-found:
-  free(line);
-  fclose(fp);
-  return ret;
-#elif defined(__FreeBSD__)
-  struct procstat *ps = procstat_open_sysctl();
-  unsigned cnt;
-  struct kinfo_proc *kproc =
-      procstat_getprocs(ps, KERN_PROC_PID, getpid(), &(u32){0});
-  struct kinfo_vmentry *vments = procstat_getvmmap(ps, kproc, &cnt), *e;
-  u64 prev = DFTADDR;
-  for (e = vments; e != vments + cnt; e++) {
-    if (prev < max && max <= e->kve_start)
-      break;
-    prev = e->kve_end;
-  }
-  procstat_freeprocs(ps, kproc);
   procstat_freevmmap(ps, vments);
-  procstat_close(ps);
   return prev;
 #endif
 }

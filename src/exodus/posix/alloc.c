@@ -48,39 +48,30 @@
  * allocated pages but the initial pivot address seems to be enough. */
 void *NewVirtualChunk(u64 sz, bool exec) {
   static bool running;
-  static bool init;
-  static u64 pagsz, cur, max = UINT32_MAX >> 1;
+  static u64 pagsz;
   while (LBts(&running, 0))
     while (Bt(&running, 0))
       __builtin_ia32_pause();
-  if (veryunlikely(!init)) {
+  if (veryunlikely(!pagsz))
     pagsz = sysconf(_SC_PAGESIZE);
-#ifdef __linux__
-    /* Refer to posix/shims.c */
-    cur = ALIGN(get31(), pagsz);
-#endif
-    init = true;
-  }
   sz = ALIGN(sz, pagsz);
   u8 *ret;
   if (exec) {
-    if (veryunlikely(cur + sz > max)) {
-      ret = NULL;
-      goto ret;
-    }
-#ifdef __linux__
-    ret = MMAP(cur, sz, PROT | PROT_EXEC, FLAGS | MAP_FIXED_NOREPLACE);
-#else
     ret = MMAP(NULL, sz, PROT | PROT_EXEC, FLAGS | MAP_32BIT);
-#endif
     if (veryunlikely(ret == MAP_FAILED)) {
-      ret = NULL;
-      goto ret;
+      /* Refer to posix/shims.c */
+      u64 res = findregion(sz);
+      if (veryunlikely(res == -1ul)) {
+        ret = NULL;
+        goto ret;
+      }
+      ret = MMAP(res, sz, PROT | PROT_EXEC, FLAGS | MAP_FIXED);
+      if (ret == MAP_FAILED)
+        ret = NULL;
     }
-    cur = (u64)ret + sz;
   } else {
     ret = MMAP(NULL, sz, PROT, FLAGS);
-    if (veryunlikely(ret == MAP_FAILED))
+    if (ret == MAP_FAILED)
       ret = NULL;
   }
 ret:

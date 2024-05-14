@@ -29,7 +29,7 @@ bool isvalidptr(void *p);
 void prepare(void);
 #ifndef _WIN32
 /* Get safely allocatable region in lower 31 bits of memory */
-u64 get31(void);
+u64 findregion(u64 sz);
 /* set GS register base for Fs/Gs (on Windows we just use the TEB sneakily) */
 void preparetls(void);
 long getthreadid(void);
