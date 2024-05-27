@@ -45,8 +45,8 @@
 
 #include <vec/vec.h>
 
-#include <exodus/callconv.h>
 #include <exodus/dbg.h>
+#include <exodus/abi.h>
 #include <exodus/ffi.h>
 #include <exodus/loader.h>
 #include <exodus/main.h>
@@ -95,7 +95,7 @@ static void ctrlaltc(argign int sig) {
   masksignals(SIG_UNBLOCK, SIGUSR1);
   if (!sym)
     sym = map_get(&symtab, "Yield");
-  FFI_CALL_TOS_0(sym->val);
+  fficall(sym->val);
 }
 
 static void div0(argign int sig) {
@@ -128,7 +128,7 @@ static void *ThreadRoutine(void *arg) {
   void *fp;
   int iter;
   vec_foreach(&self->funcptrs, fp, iter) {
-    FFI_CALL_TOS_0_ZERO_BP(fp);
+    fficallnullbp(fp);
   }
   /* does not actually return */
   return NULL;
@@ -173,7 +173,15 @@ static void irq0(argign int sig) {
     fp = map_get(&symtab, "IntCore0TimerHndlr")->val;
   clock_gettime(CLOCK_MONOTONIC, &ts);
   ms = ts.tv_sec * 1e3 + ts.tv_nsec / 1e6;
-  FFI_CALL_TOS_1(fp, prev ? ms - prev : 1);
+  /* FreeBSD's tick resolution is abysmal
+   * (~10ms with inconsistencies from my observations)
+   * and it's probably only adjustable in sysctl or some other
+   * kernel config so we must adjust between the fired signal intervals
+   *
+   * "it’s probably best to assume a resolution of 10 ms."
+   *     ──Quoth FreeBSD Forums[1]
+   */
+  fficall(fp, prev ? ms - prev : 1);
   prev = ms;
 }
 
@@ -188,14 +196,6 @@ static void *pit_thrd(argign void *arg) {
   timer_t t;
   timer_create(CLOCK_MONOTONIC, &ev, &t);
   /* on real TempleOS, SYS_TIMER0_PERIOD is 1192Hz (~839μs/it) */
-  /* FreeBSD's tick resolution is abysmal
-   * (~10ms with inconsistencies from my observations)
-   * and it's probably only adjustable in sysctl or some other
-   * kernel config so we must adjust between the fired signal intervals
-   *
-   * "it’s probably best to assume a resolution of 10 ms."
-   *     ──Quoth FreeBSD Forums[1]
-   */
   struct itimerspec in = {
       .it_value.tv_nsec = 1e6,
       .it_interval.tv_nsec = 1e6,
@@ -244,11 +244,11 @@ void SleepUs(u64 us) {
 }
 
 #ifdef __linux__
-  #define REG(x) (u64) ctx->uc_mcontext.gregs[REG_##x]
+  #define REG(x) ctx->uc_mcontext.gregs[REG_##x]
   #define RegRip REG(RIP)
   #define RegRbp REG(RBP)
 #elif defined(__FreeBSD__)
-  #define REG(X) (u64) ctx->uc_mcontext.mc_##X
+  #define REG(X) ctx->uc_mcontext.mc_##X
   #define RegRip REG(rip)
   #define RegRbp REG(rbp)
 #endif
@@ -259,7 +259,7 @@ static void profcb(argign int sig, argign siginfo_t *info, void *_ctx) {
   /* fake RBP because profcb is called from the kernel and
    * we need the context of the HolyC side (ctx) instead
    * or ProfRep will print bogus */
-  FFI_CALL_TOS_1_CUSTOM_BP(c->profiler_int, RegRbp, RegRip);
+  fficallcustombp(RegRbp, c->profiler_int, RegRip);
 }
 
 void MPSetProfilerInt(void *fp, i64 idx, i64 freq) {

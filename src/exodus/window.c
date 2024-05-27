@@ -29,7 +29,7 @@
 
 #include <SDL.h>
 
-#include <exodus/callconv.h>
+#include <exodus/abi.h>
 #include <exodus/ffi.h>
 #include <exodus/main.h>
 #include <exodus/misc.h>
@@ -502,7 +502,7 @@ static bool kb_init = false;
 int SDLCALL KBCallback(argign void *arg, SDL_Event *e) {
   u64 sc;
   if (kb_cb && (-1 != ScanKey(&sc, e)))
-    FFI_CALL_TOS_1(kb_cb, sc);
+    fficall(kb_cb, sc);
   return 0;
 }
 
@@ -551,7 +551,7 @@ int SDLCALL MSCallback(argign void *arg, SDL_Event *e) {
       y2 = 480 - 1; // -1 because zero-indexed
     else
       y2 = (y - win.margin_y) * 480. / win.sz_y;
-    FFI_CALL_TOS_4(ms_cb, x2, y2, z, state);
+    fficall(ms_cb, x2, y2, z, state);
   }
   return 0;
 }

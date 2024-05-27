@@ -1,4 +1,5 @@
-/*-*- vi: set et ft=c ts=2 sts=2 sw=2 fenc=utf-8                        :vi -*-│
+/*-*- mode:unix-assembly; indent-tabs-mode:t; tab-width:8; coding:utf-8     -*-│
+│ vi: set noet ft=asm ts=8 sw=8 fenc=utf-8                                  :vi│
 ╞══════════════════════════════════════════════════════════════════════════════╡
 │ exodus: executable divine operating system in userspace                      │
 │                                                                              │
@@ -22,70 +23,93 @@
 │    misrepresented as being the original software.                            │
 │ 3. This notice may not be removed or altered from any source distribution.   │
 ╚─────────────────────────────────────────────────────────────────────────────*/
-#include <ucontext.h>
-
-#include <inttypes.h>
-#include <signal.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-
-#include <map/map.h>
-
 #include <exodus/abi.h>
-#include <exodus/backtrace.h>
-#include <exodus/dbg.h>
-#include <exodus/loader.h>
-#include <exodus/misc.h>
-#include <exodus/types.h>
 
-static void routine(int sig, argign siginfo_t *siginfo, void *_ctx) {
-  /* Block signals temporarily.
-   * Will be unblocked later by DebuggerLand */
-  sigset_t all;
-  sigfillset(&all);
-  sigprocmask(SIG_BLOCK, &all, NULL);
-  ucontext_t *ctx = _ctx;
-#ifdef __linux__
-  #define REG(x) (u64) ctx->uc_mcontext.gregs[REG_##x]
-  /* glibc: sysdeps/unix/sysv/linux/x86/sys/ucontext.h
-   * musl:  arch/x86_64/bits/signal.h */
-  u64 regs[] = {
-      REG(RAX), REG(RCX), REG(RDX),
-      REG(RBX), REG(RSP), REG(RBP),
-      REG(RSI), REG(RDI), REG(R8),
-      REG(R9),  REG(R10), REG(R11),
-      REG(R12), REG(R13), REG(R14),
-      REG(R15), REG(RIP), (u64)ctx->uc_mcontext.fpregs,
-      REG(EFL),
-  };
-#elif defined(__FreeBSD__)
-  #define REG(X) (u64) ctx->uc_mcontext.mc_##X
-  u64 regs[] = {
-      REG(rax),    REG(rcx), REG(rdx),
-      REG(rbx),    REG(rsp), REG(rbp),
-      REG(rsi),    REG(rdi), REG(r8),
-      REG(r9),     REG(r10), REG(r11),
-      REG(r12),    REG(r13), REG(r14),
-      REG(r15),    REG(rip), (u64)ctx->uc_mcontext.mc_fpstate,
-      REG(rflags),
-  };
-#endif
-  BackTrace(regs[5] /*RBP*/, regs[15] /*RIP*/);
-  static CSymbol *sym;
-  if (!sym)
-    sym = map_get(&symtab, "DebuggerLand");
-  fficall(sym->val, sig, regs);
-}
+// System V saved registers (a) := {rbx, r12 ~ r15}
+// TempleOS saved registers (b) := {rdi, rsi, r10 ~ r15}
+// (not counting stack registers)
+//
+// since we're calling HolyC from SysV, a - b = {rbx}
+// (if vice versa (a la ffi.c), b - a)
+// ∴ only push rbx
 
-void SetupDebugger(void) {
-  struct sigaction sa = {
-      .sa_sigaction = routine,
-      .sa_flags = SA_SIGINFO | SA_NODEFER,
-      /* NODEFER because we want to catch signals in the debugger too */
-  };
-  sigemptyset(&sa.sa_mask);
-  int const sigs[] = {SIGTRAP, SIGBUS, SIGSEGV, SIGPIPE, SIGILL};
-  for (u64 i = 0; i < Arrlen(sigs); i++)
-    sigaction(sigs[i], &sa, NULL);
-}
+.text.hot
+// i64 fficall(void *fp, i64 argc, i64 *argv);
+fficall:
+	push	%rbp
+	mov	%rsp,%rbp
+	push	%rbx
+	mov	%rdi,%rax
+	test	%esi,%esi
+	jz	1f
+	mov	%esi,%ecx
+	shl	$3,%ecx
+	sub	%rcx,%rsp
+	.balign	8
+0:	mov	-8(%rdx,%rsi,8),%rcx
+	mov	%rcx,-8(%rsp,%rsi,8)
+	sub	$1,%esi
+	jnz	0b
+	.balign	8
+1:	call	*%rax
+	pop	%rbx
+	pop	%rbp
+	ret
+	.endfn	fficall,globl
+
+// i64 fficallnullbp(void *fp, i64 argc, i64 *argv);
+// NULL base ptr/return addr to terminate stack trace
+// used to start up cores (Seth)
+fficallnullbp:
+	push	%rbp
+	push	%rbx
+	mov	%rdi,%rax
+	push	$0 // fake return addr ──┐ ← fake function call
+	push	$0 // fake rbp ──────────┴┬─ ← fake function prolog
+	mov	%rsp,%rbp //  ───────────┬┘
+	test	%esi,%esi //             │
+	jnz	1f //                    │
+0:	call	*%rax //                 │
+	add	$0x10,%rsp // ───────────┘ this block is one "function"
+	pop	%rbx
+	pop	%rbp
+	ret
+	.balign	8
+1:	mov	%esi,%ecx
+	shl	$3,%ecx
+	sub	%rcx,%rsp
+	.balign	8
+2:	mov	-8(%rdx,%rsi,8),%rcx
+	mov	%rcx,-8(%rsp,%rsi,8)
+	sub	$1,%esi
+	jnz	2b
+	jmp	0b
+	.endfn	fficallnullbp,globl
+
+// i64 fficallcustombp(void *rbp, void *fp, i64 argc, i64 *argv);
+// user-supplied RBP so ProfTimerInt can correctly determine where RIP is
+fficallcustombp:
+	push	%rbp
+	push	%rbx
+	mov	%rdi,%rbp // fake rbp
+	mov	%rsi,%rax
+	test	%edx,%edx
+	jz	1f
+	mov	%rcx,%rbx
+	mov	%edx,%ecx
+	shl	$3,%ecx
+	sub	%rcx,%rsp
+	mov	%rbx,%rcx
+	.balign	8
+0:	mov	-8(%rcx,%rdx,8),%rbx
+	mov	%rbx,-8(%rsp,%rdx,8)
+	sub	$1,%edx
+	jnz	0b
+	.balign	8
+1:	call	*%rax
+	pop	%rbx
+	pop	%rbp
+	ret
+	.endfn	fficallcustombp,globl
+
+.section .note.GNU-stack,"",@progbits

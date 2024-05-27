@@ -1,4 +1,5 @@
-/*-*- vi: set noet ft=asm ts=8 sw=8 fenc=utf-8                          :vi -*-│
+/*-*- mode:unix-assembly; indent-tabs-mode:t; tab-width:8; coding:utf-8     -*-│
+│ vi: set noet ft=asm ts=8 sw=8 fenc=utf-8                                  :vi│
 ╞══════════════════════════════════════════════════════════════════════════════╡
 │ exodus: executable divine operating system in userspace                      │
 │                                                                              │
@@ -21,54 +22,61 @@
 │ 2. Altered source versions must be plainly marked as such, and must not be   │
 │    misrepresented as being the original software.                            │
 │ 3. This notice may not be removed or altered from any source distribution.   │
-╚─────────────────────────────────────────────────────────────────────────────*/ 
-.global __TOSTHUNK_START
-.global __TOSTHUNK_END
+╚─────────────────────────────────────────────────────────────────────────────*/
+#include <exodus/abi.h>
 
-.data
+// read posix/abi.s for more detailed explanation
 
-__TOSTHUNK_START:
+// Win64 saved registers (a) := {rbx, rdi, rsi, r12 ~ r15}
+// TempleOS saved registers (b) := {rdi, rdi, rsi, r10 ~ r15}
+// ∴ regs to save := a - b = {rbx}
+
+// i64 fficall(void *fp, i64 argc, i64 *argv);
+fficall:
 	push	%rbp
 	mov	%rsp,%rbp
-/* both ABIs require alignment so we just cut down (this is okay since the stack grows down) */
-	and	$~0xF,%rsp
-	push	%r10
-	push	%r11
-#ifdef _WIN32
-	sub 	$0x20,%rsp /* 4 register homes required for win32[1] */
-	lea	0x10(%rbp),%rcx
-#else
-	push	%rsi
-	push	%rdi
-	lea	0x10(%rbp),%rdi
-#endif
-/* F3h is the REP prefix, a repeated sequence of it isn't valid code */
-	movabs  $0xF3f3F3f3F3f3F3f3,%rax
-	call	*%rax
-#ifdef _WIN32
-	add	$0x20,%rsp /* volatile regs don't need restore, so just add */
-#else
-	pop	%rdi
-	pop	%rsi
-#endif
-	pop	%r11
-	pop	%r10
-/* restoring %rsp is mandatory here because we cut %rsp down and the callee expects a preserved %rsp */
-	mov	%rbp,%rsp 
+	push	%rbx
+	mov	%rcx,%rax
+	test	%edx,%edx
+	jz	1f
+	mov	%edx,%ecx
+	shl	$3,%ecx
+	sub	%rcx,%rsp
+	.balign	8
+0:	mov	-8(%r8,%rdx,8),%rbx
+	mov	%rbx,-8(%rsp,%rdx,8)
+	sub	$1,%edx
+	jnz	0b
+	.balign	8
+1:	call	*%rax
+	pop	%rbx
 	pop	%rbp
-/* F4h is HLT, a ring0 opcode, so we can safely assume this is the only instance */
-	ret	$0xF4f4
-.align 8,0xCC
-__TOSTHUNK_END:
+	ret
+	.endfn	fficall,globl
 
-#ifndef _WIN32
-/* Stallman wants you to write this or else he makes your stack executable */
-.section .note.GNU-stack,"",@progbits
-#endif
-
-/* CITATIONS:
- * [1]
- * https://learn.microsoft.com/en-us/cpp/build/stack-usage?view=msvc-170#stack-allocation
- *     (https://archive.md/4HDA0#selection-2085.429-2085.1196)
- */
-
+// i64 fficallnullbp(void *fp, i64 argc, i64 *argv);
+fficallnullbp:
+	push	%rbp
+	push	%rbx
+	mov	%rcx,%rax
+	push	$0 // fake return addr ──┐ ← fake function call
+	push	$0 // fake rbp ──────────┴┬─ ← fake function prolog
+	mov	%rsp,%rbp //  ───────────┬┘
+	test	%edx,%edx //             │
+	jnz	1f //                    │
+0:	call	*%rax //                 │
+	add	$0x10,%rsp // ───────────┘ this block is one "function"
+	pop	%rbx
+	pop	%rbp
+	ret
+	.balign	8
+1:	mov	%edx,%ecx
+	shl	$3,%ecx
+	sub	%rcx,%rsp
+	.balign	8
+2:	mov	-8(%r8,%rdx,8),%rbx
+	mov	%rbx,-8(%rsp,%rdx,8)
+	sub	$1,%edx
+	jnz	2b
+	jmp	0b
+	.endfn	fficallnullbp,globl

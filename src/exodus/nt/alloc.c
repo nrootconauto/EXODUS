@@ -47,7 +47,7 @@
 void *NewVirtualChunk(u64 sz, bool exec) {
   static bool running;
   static bool init;
-  static u64 ag, cur = 0x10000, max = UINT32_MAX >> 1;
+  static u64 ag, cur = 0x10000, max = (1ull << 31) - 1;
   static DWORD vflags = MEM_RESERVE | MEM_COMMIT;
   void *ret;
   while (LBts(&running, 0))

@@ -35,7 +35,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#include <exodus/callconv.h>
+#include <exodus/abi.h>
 #include <exodus/dbg.h>
 #include <exodus/loader.h>
 #include <exodus/main.h>
@@ -66,7 +66,7 @@ static void ThreadRoutine(void *arg) {
   void *fp;
   int iter;
   vec_foreach(&self->funcptrs, fp, iter) {
-    FFI_CALL_TOS_0_ZERO_BP(fp);
+    fficallnullbp(fp);
   }
 }
 
@@ -191,7 +191,7 @@ static void irq0(u32 id, u32 msg, u64 userptr, u64 dw1, u64 dw2) {
   static void *fp;
   if (veryunlikely(!fp))
     fp = map_get(&symtab, "IntCore0TimerHndlr")->val;
-  FFI_CALL_TOS_1(fp, inc);
+  fficall(fp, inc);
 }
 
 void InitIRQ0(void) {

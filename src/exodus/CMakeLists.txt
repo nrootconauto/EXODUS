@@ -10,7 +10,8 @@ set(SRC_FILES
   tosprint.c
   vfs.c
   backtrace.c
-  misc.c)
+  misc.c
+  x86.c)
 
 if (CMAKE_SYSTEM_NAME STREQUAL "Linux" OR
     CMAKE_SYSTEM_NAME STREQUAL "FreeBSD")
@@ -27,13 +28,17 @@ list(APPEND SRC_FILES
   "${OS_DIR}/seth.c"
   "${OS_DIR}/shims.c")
 
+set(ASM_FILES "${OS_DIR}/abi.s")
+
+set_property(SOURCE ${ASM_FILES}
+  APPEND PROPERTY
+  COMPILE_OPTIONS "-x" "assembler-with-cpp")
+
 set_source_files_properties(${SRC_FILES}
   PROPERTIES
     LANGUAGE C
     COMPILE_FLAGS "-Werror=implicit-function-declaration")
 
-add_executable(${PROJECT_NAME} ${SRC_FILES})
+add_executable(${PROJECT_NAME} ${SRC_FILES} ${ASM_FILES})
 
 target_include_directories(${PROJECT_NAME} PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}")
-
-add_subdirectory(asm)

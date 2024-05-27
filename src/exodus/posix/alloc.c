@@ -58,27 +58,29 @@ void *NewVirtualChunk(u64 sz, bool exec) {
   u8 *ret;
   if (exec) {
     ret = MMAP(NULL, sz, PROT | PROT_EXEC, FLAGS | MAP_32BIT);
-    if (veryunlikely(ret == MAP_FAILED)) {
-      /* Refer to posix/shims.c */
-      u64 res = findregion(sz);
-      if (veryunlikely(res == -1ul)) {
-        ret = NULL;
-        goto ret;
-      }
-      ret = MMAP(res, sz, PROT | PROT_EXEC, FLAGS | MAP_FIXED);
-      if (ret == MAP_FAILED)
-        ret = NULL;
+    if (verylikely(ret != MAP_FAILED))
+      goto fin;
+    /* Refer to posix/shims.c */
+    u64 res = findregion(sz);
+    if (veryunlikely(res == -1ul)) {
+      ret = NULL;
+      goto fin;
     }
+    ret = MMAP(res, sz, PROT | PROT_EXEC, FLAGS | MAP_FIXED);
+    if (ret == MAP_FAILED)
+      ret = NULL;
   } else {
     ret = MMAP(NULL, sz, PROT, FLAGS);
     if (ret == MAP_FAILED)
       ret = NULL;
   }
-ret:
+fin:
   LBtr(&running, 0);
   return ret;
 }
 
 void FreeVirtualChunk(void *ptr, u64 sz) {
+  // printf("Freed memory map of %ju page%s at %20p\n", ALIGN(sz, 0x1000ul) >>
+  // 12, ALIGN(sz,0x1000ul)>>12==1?"":"s", ptr);
   munmap(ptr, sz);
 }

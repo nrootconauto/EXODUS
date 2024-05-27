@@ -27,10 +27,13 @@ void unblocksigs(void);
 bool seekfd(int fd, i64 off);
 bool isvalidptr(void *p);
 void prepare(void);
-#ifndef _WIN32
+#ifdef _WIN32
+  #define iswindows() true
+#else
 /* Get safely allocatable region in lower 31 bits of memory */
 u64 findregion(u64 sz);
 /* set GS register base for Fs/Gs (on Windows we just use the TEB sneakily) */
 void preparetls(void);
 long getthreadid(void);
+  #define iswindows() false
 #endif

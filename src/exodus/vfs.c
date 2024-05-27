@@ -42,8 +42,8 @@ static char *VFsFNameAbs(char const *path) {
   cur = stpcpy2(ret, mount_points[thrd_drv - 'A']);
   *cur++ = '/';
   cur = stpcpy2(prev = cur, thrd_pwd + 1);
-  if (likely(cur != prev))
-    *cur++ = '/';
+  *cur++ = '/';
+  cur -= cur - 1 == prev;
   strcpy(cur, path);
   return strdup(ret);
 }
@@ -69,10 +69,7 @@ void VFsSetPwd(char const *pwd) {
 
 bool VFsDirMk(char const *to) {
   char cleanup(_dtor) *p = VFsFNameAbs(to);
-  if (fexists(p)) {
-    return isdir(p);
-  } else
-    return dirmk(p);
+  return fexists(p) ? isdir(p) : dirmk(p);
 }
 
 bool VFsDel(char const *p) {
@@ -133,8 +130,7 @@ u8 *VFsFRead(char const *name, u64 *lenp) {
     return NULL;
   }
   data[sz] = 0;
-  if (lenp)
-    *lenp = sz;
+  *lenp = sz;
   return data;
 }
 

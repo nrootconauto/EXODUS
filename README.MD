@@ -104,7 +104,7 @@ RedSeaISO("Something.ISO.C","Community");//archive folder into an ISO
 MountFile("Something.ISO.C");//defaults to M
 Cd("M:/");
 *0=0;//Raise the debugger
-DbgHelp;//help on how to debug
+Help;//Prints debugging help in debugger, pops up help index when normal
 Shutdown;
 ```
 

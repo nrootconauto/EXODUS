@@ -28,13 +28,13 @@
 #include <errhandlingapi.h>
 
 #include <exodus/backtrace.h>
-#include <exodus/callconv.h>
+#include <exodus/abi.h>
 #include <exodus/dbg.h>
 #include <exodus/ffi.h>
 #include <exodus/loader.h>
 #include <exodus/types.h>
 
-static LONG WINAPI VEHandler(struct _EXCEPTION_POINTERS *info) {
+static LONG WINAPI VEHandler(EXCEPTION_POINTERS *info) {
   u64 sig;
 #define E(code) EXCEPTION_##code
   switch (info->ExceptionRecord->ExceptionCode) {
@@ -77,11 +77,11 @@ static LONG WINAPI VEHandler(struct _EXCEPTION_POINTERS *info) {
   static CSymbol *sym;
   if (!sym)
     sym = map_get(&symtab, "DebuggerLandWin");
-  FFI_CALL_TOS_2(sym->val, sig, regs);
+  fficall(sym->val, sig, regs);
   return E(CONTINUE_EXECUTION);
 }
 
-static LONG WINAPI Div0Handler(struct _EXCEPTION_POINTERS *info) {
+static LONG WINAPI Div0Handler(EXCEPTION_POINTERS *info) {
   switch (info->ExceptionRecord->ExceptionCode) {
   case E(FLT_DIVIDE_BY_ZERO):
   case E(INT_DIVIDE_BY_ZERO):

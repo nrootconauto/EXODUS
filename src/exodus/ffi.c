@@ -22,6 +22,7 @@
 │    misrepresented as being the original software.                            │
 │ 3. This notice may not be removed or altered from any source distribution.   │
 ╚─────────────────────────────────────────────────────────────────────────────*/
+#include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
@@ -29,9 +30,8 @@
 #include <dyad/dyad.h>
 #include <isocline.h>
 
+#include <exodus/abi.h>
 #include <exodus/alloc.h>
-#include <exodus/asm/tosthunk.h>
-#include <exodus/callconv.h>
 #include <exodus/loader.h>
 #include <exodus/main.h>
 #include <exodus/misc.h>
@@ -42,20 +42,21 @@
 #include <exodus/types.h>
 #include <exodus/vfs.h>
 #include <exodus/window.h>
+#include <exodus/x86.h>
 
 /* HolyC -> C FFI */
 void HolyFree(void *ptr) {
   static CSymbol *sym;
   if (!sym)
     sym = map_get(&symtab, "_FREE");
-  FFI_CALL_TOS_1(sym->val, ptr);
+  fficall(sym->val, ptr);
 }
 
 void *HolyMAlloc(u64 sz) {
   static CSymbol *sym;
   if (!sym)
     sym = map_get(&symtab, "_MALLOC");
-  return (void *)FFI_CALL_TOS_2(sym->val, sz, NULL);
+  return (void *)fficall(sym->val, sz, NULL);
 }
 
 void *HolyCAlloc(u64 sz) {
@@ -72,40 +73,67 @@ noret void HolyThrow(char const *s) {
   __builtin_memcpy(&i, s, Min(strlen(s), 8ul));
   if (!sym)
     sym = map_get(&symtab, "throw");
-  FFI_CALL_TOS_1(sym->val, i);
+  fficall(sym->val, i);
   Unreachable();
 }
 
-/* FFI thunk generation */
 typedef struct {
   char const *name;
-  void *fp;
-  u16 arity; // <= 0xffFF/8
+  i64 fp;
+  u16 arity;
 } HolyFFI;
 
+static i64 genthunk(u8 *to, HolyFFI *cur) {
+  i64 off = 0;
+  Addcode(to, off, x86pushreg, RBP);
+  Addcode(to, off, x86movregreg, RBP, RSP);
+  /* SysV and NT require stack alignment */
+  Addcode(to, off, x86andimm, RSP, ~0xF);
+  Addcode(to, off, x86pushreg, R10);
+  Addcode(to, off, x86pushreg, R11);
+  if (iswindows()) {
+    // register home space[1](something like red zone?)
+    // volatile so just sub
+    Addcode(to, off, x86subimm, RSP, 0x20);
+    Addcode(to, off, x86lea, RCX, -1, -1, RBP, 0x10);
+  } else {
+    Addcode(to, off, x86pushreg, RSI);
+    Addcode(to, off, x86pushreg, RDI);
+    Addcode(to, off, x86lea, RDI, -1, -1, RBP, 0x10);
+  }
+  Addcode(to, off, x86movimm, RAX, cur->fp);
+  Addcode(to, off, x86callreg, RAX);
+  if (iswindows()) {
+    // restore stack
+    Addcode(to, off, x86addimm, RSP, 0x20);
+  } else {
+    Addcode(to, off, x86popreg, RDI);
+    Addcode(to, off, x86popreg, RSI);
+  }
+  Addcode(to, off, x86popreg, R11);
+  Addcode(to, off, x86popreg, R10);
+  // restore RSP, we cut down at the top
+  // so just popping rbp will mess up the stack
+  Addcode(to, off, x86leave, 0);
+  Addcode(to, off, x86ret, cur->arity * 8);
+  // align size to 16
+  // (x86 processors like aligned instructions)
+  off = (off + 0xF) & ~0xF;
+  return off;
+}
+
 static void genthunks(HolyFFI *list, i64 cnt) {
-  i64 thunksz = __TOSTHUNK_END - __TOSTHUNK_START; /* asm/c2holyc.s */
-  u8 *blob = NewVirtualChunk(thunksz * cnt, true), *prev;
-  /* We get the offset of the placeholder values so we can fill
-   * each of them in for the FFI functions
-   *
-   * Refer to asm/c2holyc.s for the hexadecimals */
-#define ImmOff(var, mark)                                                    \
-  u8 *var##addr = memmem2(__TOSTHUNK_START, thunksz, mark, sizeof mark - 1); \
-  i64 var##off = var##addr - __TOSTHUNK_START
-  ImmOff(call, Times8("\xF3"));
-  ImmOff(ret1, Times2("\xF4"));
-  HolyFFI *cur;
-  for (i64 i = 0; i < cnt; i++) {
-    cur = list + i;
-    blob = mempcpy2(prev = blob, __TOSTHUNK_START, thunksz);
-    *(u8 **)(prev + calloff) = cur->fp;
-    if (cur->arity)
-      *(u16 *)(prev + ret1off) = cur->arity * 8;
-    else {
-      prev[ret1off - 1] = 0xC3;
-      *(u16 *)(prev + ret1off) = 0xCCCC;
-    }
+  i64 sz = genthunk(NULL, &(HolyFFI){
+                              .fp = INT64_MAX,
+                              .arity = INT16_MAX,
+                          });
+  u8 *blob = NewVirtualChunk(sz * cnt, true), *prev;
+  if (veryunlikely(!blob)) {
+    flushprint(stderr, "Can't allocate space for FFI function pointers\n");
+    terminate(1);
+  }
+  for (HolyFFI *cur = list; cur != list + cnt; cur++) {
+    blob += genthunk(prev = blob, cur);
     map_set(&symtab, cur->name, (CSymbol){.type = HTT_FUN, .val = prev});
   }
 }
@@ -164,15 +192,15 @@ static i64 STK__DyadGetCallbackMode(char **stk) {
 }
 
 static void readcallback(dyad_Event *e) {
-  FFI_CALL_TOS_4(e->udata, e->stream, e->data, e->size, e->udata2);
+  fficall(e->udata, e->stream, e->data, e->size, e->udata2);
 }
 
 static void closecallback(dyad_Event *e) {
-  FFI_CALL_TOS_2(e->udata, e->stream, e->udata2);
+  fficall(e->udata, e->stream, e->udata2);
 }
 
 static void listencallback(dyad_Event *e) {
-  FFI_CALL_TOS_2(e->udata, e->remote, e->udata2);
+  fficall(e->udata, e->remote, e->udata2);
 }
 
 static void STK_DyadSetReadCallback(void **stk) {
@@ -228,8 +256,8 @@ static void STK___BootstrapForeachSymbol(void **stk) {
   CSymbol *v;
   while ((k = map_next(&symtab, &it))) {
     v = map_iter_val(&symtab, &it);
-    FFI_CALL_TOS_3(stk[0], k, v->val,
-                   v->type == HTT_EXPORT_SYS_SYM ? HTT_FUN : v->type);
+    fficall(stk[0], k, v->val,
+            v->type == HTT_EXPORT_SYS_SYM ? HTT_FUN : v->type);
   }
 }
 
@@ -432,9 +460,9 @@ static void STK_MPSetProfilerInt(i64 *stk) {
 }
 
 void BootstrapLoader(void) {
-#define R(h, c, a) {.name = h, .fp = c, .arity = a}
+#define R(h, c, a) {.name = (h), .fp = (i64)(c), .arity = (a)}
 #define S(h, a) \
-  { .name = #h, .fp = STK_##h, .arity = a }
+  { .name = (#h), .fp = (i64)(STK_##h), .arity = (a) }
   HolyFFI ffis[] = {
       R("__CmdLineBootText", CmdLineBootText, 0),
       R("__CoreNum", CoreNum, 0),
@@ -513,3 +541,9 @@ void BootstrapLoader(void) {
   };
   genthunks(ffis, Arrlen(ffis));
 }
+
+/* CITATIONS:
+ * [1]
+ * https://learn.microsoft.com/en-us/cpp/build/stack-usage?view=msvc-170#stack-allocation
+ *     (https://archive.md/4HDA0#selection-2085.429-2085.1196)
+ */

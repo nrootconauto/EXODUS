@@ -71,11 +71,9 @@ U8 *VirtFileRead(CDrv *dv,U8 *cur_dir,U8 *filename,I64 *_size,I64 *_attr)
       DrvLock(dv);
       if (VirtFileFind(dv,cur_dir,filename,&de,FUF_JUST_FILES)) {
 	blk_cnt=(de.size+BLK_SIZE-1)>>BLK_SIZE_BITS;
-	buf=MAlloc(blk_cnt<<BLK_SIZE_BITS+1);
         VFsSetDrv(dv->drv_let);
 	VFsSetPwd(cur_dir);
 	buf=VFsFRead(de.name,&de.size);
-	buf[de.size]=0; //Terminate
 	*_size=de.size;
 	*_attr=FileAttr(de.name,de.attr);
       }
