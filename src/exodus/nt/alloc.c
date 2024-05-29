@@ -59,7 +59,7 @@ void *NewVirtualChunk(u64 sz, bool exec) {
     ag = si.dwAllocationGranularity;
     HANDLE proc = GetCurrentProcess();
     PROCESS_MITIGATION_ASLR_POLICY aslr;
-    /* If DEP is disabled, don't let RW pages pile on RWX pages to save space */
+    /* If DEP is disabled, don't let RW pages pile on RWX pages to avoid OOM */
     GetProcessMitigationPolicy(proc, ProcessASLRPolicy, &aslr, sizeof aslr);
     if (!aslr.EnableBottomUpRandomization)
       vflags |= MEM_TOP_DOWN;

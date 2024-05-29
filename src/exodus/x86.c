@@ -39,10 +39,10 @@
     *(u32 *)to = (a) & 0xFFffFFff; \
     to += 4;                       \
   } while (0)
-#define AddU64(to, a) \
-  do {                \
-    *(u64 *)to = (a); \
-    to += 8;          \
+#define AddU64(to, a)      \
+  do {                     \
+    *(u64 *)to = (u64)(a); \
+    to += 8;               \
   } while (0)
 
 /* The maximum length of an Intel 64 and IA-32 instruction remains 15 bytes.
@@ -82,23 +82,23 @@
  * o: offset
  *
  * -1 for ignored value
- * exempli grata, SIB_BEGIN(a, RCX, -1, -1, R13, 0x10)
- *                for `rcx,qword ptr[r13+0x10]`
+ * exempli gratia, SIB_BEGIN(a, RCX, -1, -1, R13, 0x10)
+ *                 for `rcx,qword ptr[r13+0x10]`
  */
-#define SIB_BEGIN(_64, r, s, i, b, o)                    \
-  do {                                                   \
-    i64 R = (r), S = (s), I = (i), B = (b), _B, O = (o); \
-    /* S must be an exponent of 2, else ignore */        \
-    S = (S & (S - 1)) ? -1 : __builtin_ctzll(S);         \
-    if (B == RIP) {                                      \
-      if (_64 || EXTENDED_REGS(R, I, B))                 \
-        *to++ = rexprefix(_64, R, 0, 0);                 \
-    } else {                                             \
-      if ((I != -1 || B == R12) && S == -1)              \
-        I = RSP;                                         \
-      if (_64 || EXTENDED_REGS(R, I, B)) {               \
-        *to++ = rexprefix(_64, R, I, B);                 \
-      }                                                  \
+#define SIB_BEGIN(_64, r, s, i, b, o)                            \
+  do {                                                           \
+    i64 R = (r), S = (s), I = (i), B = (b), _B, O = (o);         \
+    /* S must be an exponent of 2, else ignore */                \
+    S = !S || (S & (S - 1)) ? -1 : __builtin_ctzll(S);           \
+    if (B == RIP) {                                              \
+      if (_64 || EXTENDED_REGS(R, I, B))                         \
+        *to++ = rexprefix(_64, R, 0, 0);                         \
+    } else {                                                     \
+      if ((I != -1 || B == R12) && S == -1 /* RIZ, see below */) \
+        I = 0x4;                                                 \
+      if (_64 || EXTENDED_REGS(R, I, B)) {                       \
+        *to++ = rexprefix(_64, R, I, B);                         \
+      }                                                          \
     }
 
 // R12 -> RSP|0x8, R13 -> RBP|0x8, so we reg&0x7(0b111) to check
@@ -132,7 +132,7 @@
     if (S == -1) {                                                             \
       /* most likely user mistake, probably wanted -1 on I but we still        \
        * support it using RIZ (special-purpose zero-only register) */          \
-      S = 0, I = 0x4;                                                          \
+      S = 0; /* I = 0x4 was already set above in SIB_BEGIN */                  \
     }                                                                          \
     if ((_B = B) == -1) {                                                      \
       B = 0x5; /* MODRM.mod -> 0b00, SIB.base = 0b101 - no base, disp32 */     \
@@ -167,15 +167,6 @@ static u8 modrmregreg(i64 dst, i64 src) {
        | ((dst & 0x7) << 0); // MODRM.rm
 }
 
-i64 x86movregreg(u8 *to, i64 dst, i64 src) {
-  X86_PROLOG();
-  // REX.W + 89 /r
-  *to++ = rexprefix(true, src, 0, dst);
-  *to++ = 0x89;
-  *to++ = modrmregreg(dst, src);
-  X86_EPILOG();
-}
-
 i64 x86ret(u8 *to, u16 arity) {
   X86_PROLOG();
   if (!arity)
@@ -194,12 +185,24 @@ i64 x86leave(u8 *to, argign i64 dummy) {
   X86_EPILOG();
 }
 
+i64 x86pushf(u8 *to, argign i64 dummy) {
+  X86_PROLOG();
+  *to++ = 0x9c;
+  X86_EPILOG();
+}
+
 i64 x86pushreg(u8 *to, i64 reg) {
   X86_PROLOG();
   // 50+ rd
   if (reg >= R8)
     *to++ = rexprefix(false, 0, 0, reg);
   *to++ = 0x50 + (reg & 0x7);
+  X86_EPILOG();
+}
+
+i64 x86popf(u8 *to, argign i64 dummy) {
+  X86_PROLOG();
+  *to++ = 0x9d;
   X86_EPILOG();
 }
 
@@ -280,6 +283,15 @@ i64 x86addimm(u8 *to, i64 dst, i64 imm) {
   X86_EPILOG();
 }
 
+i64 x86movregreg(u8 *to, i64 dst, i64 src) {
+  X86_PROLOG();
+  // REX.W + 89 /r
+  *to++ = rexprefix(true, src, 0, dst);
+  *to++ = 0x89;
+  *to++ = modrmregreg(dst, src);
+  X86_EPILOG();
+}
+
 i64 x86movimm(u8 *to, i64 dst, i64 imm) {
   X86_PROLOG();
   // we only implement instructions that modify the whole 64 bits
@@ -303,6 +315,15 @@ i64 x86movimm(u8 *to, i64 dst, i64 imm) {
     *to++ = 0xb8 + (dst & 0x7);
     AddU64(to, imm);
   }
+  X86_EPILOG();
+}
+
+i64 x86movsib2reg(u8 *to, i64 dst, i64 s, i64 i, i64 b, i64 off) {
+  X86_PROLOG();
+  // REX.W + 8B /r
+  SIB_BEGIN(true, dst, s, i, b, off);
+  *to++ = 0x8b;
+  SIB_END();
   X86_EPILOG();
 }
 
@@ -346,7 +367,7 @@ i64 x86andimm(u8 *to, i64 dst, i64 imm) {
   X86_EPILOG();
 }
 
-#ifdef EX_AMD64_TESTS
+#ifdef EX_TEST_CODEGEN
   #include <stdio.h>
 
 void terminate(int) {}
@@ -368,10 +389,13 @@ int main(void) {
   Addcode(buf, off, x86movimm, RAX, 0x7FFFffff);
   Addcode(buf, off, x86movimm, R15, 0x7FFFffff);
   Addcode(buf, off, x86callsib, -1, -1, R13, 0);
+  Addcode(buf, off, x86callsib, 0, RAX, R12, 0); // offset with RIZ
   Addcode(buf, off, x86callsib, -1, RAX, R13, 0); // offset with RIZ
   Addcode(buf, off, x86callsib, 8, R13, -1, 0);
   Addcode(buf, off, x86callsib, 8, R13, RBP, 0x7FFFffff);
   Addcode(buf, off, x86callsib, 8, R12, RSP, 0);
+  Addcode(buf, off, x86movsib2reg, RBP, 8, R12, RBP, 0x18);
+  Addcode(buf, off, x86movsib2reg, R12, 8, R12, R12, 0x18);
   Addcode(buf, off, x86subimm, RSP, 0x20);
   Addcode(buf, off, x86addimm, RSP, 0x20);
   Addcode(buf, off, x86addimm, R15, 0x20);
@@ -389,7 +413,7 @@ int main(void) {
   Addcode(buf, off, x86pushimm, -0x7F);
   for (int i = 0; i < off; i++)
     if (buf[i] >= 0x10)
-      printf("0x%hhx ", buf[i]);
+      printf("%#hhx ", buf[i]);
     else {
       char s[16];
       sprintf(s, "0x0%hhx ", buf[i]); // clean hex print

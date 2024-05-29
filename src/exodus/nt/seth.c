@@ -25,6 +25,7 @@
 #include <windows.h>
 #include <winnt.h>
 #include <libloaderapi.h>
+#include <memoryapi.h>
 #include <process.h>
 #include <processthreadsapi.h>
 #include <synchapi.h>
@@ -43,6 +44,7 @@
 #include <exodus/seth.h>
 #include <exodus/shims.h>
 #include <exodus/vfs.h>
+#include <exodus/x86.h>
 
 typedef struct {
   HANDLE thread, event;
@@ -74,37 +76,50 @@ u64 CoreNum(void) {
   return self->core_num;
 }
 
-__attribute__((naked)) static void __tramp(void) {
-  asm("push %rbp\n"
-      "mov  %rsp,%rbp\n"
-      "pushf\n"
-      "push %rax\n" // PUSH_C_REGS
-      "push %rcx\n"
-      "push %rdx\n"
-      "push %rbx\n"
-      "call *0x10(%rbp)\n"
-      "pop  %rbx\n" // POP_C_REGS
-      "pop  %rdx\n"
-      "pop  %rcx\n"
-      "pop  %rax\n"
-      "popf\n"
-      "leave\n"
-      "ret  $0x8\n");
+static void *yieldtrampinit(void) {
+  u8 *tramp, *orig;
+  orig = tramp = VirtualAlloc(NULL, 0x1000, // allocs by page
+                              MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
+  if (!tramp) {
+    flushprint(stderr, "VirtualAlloc failed\n");
+    terminate(1);
+  }
+  tramp += x86pushreg(tramp, RBP);
+  tramp += x86movregreg(tramp, RBP, RSP);
+  tramp += x86pushf(tramp, 0);
+  for (i64 r = RAX; r <= R15; r++)
+    if (r != RSP)
+      tramp += x86pushreg(tramp, r);
+  tramp += x86callsib(tramp, -1, -1, RBP, SF_ARG1);
+  for (i64 r = R15; r >= RAX; r--)
+    if (r != RSP)
+      tramp += x86popreg(tramp, r);
+  tramp += x86popf(tramp, 0);
+  tramp += x86leave(tramp, 0);
+  tramp += x86ret(tramp, 0x8);
+  if (!VirtualProtect(orig, 0x1000, PAGE_EXECUTE, &(DWORD){0})) {
+    flushprint(stderr, "VirtualProtect failed\n");
+    terminate(1);
+  }
+  return orig;
 }
 
 /* TempleOS does not yield contexts automatically
  * (everything is a coroutine) so we need a brute force solution */
 void InterruptCore(u64 core) {
   static CSymbol *sym;
+  static u8 *tramp;
   CCore *c = cores + core;
-  CONTEXT ctx = {.ContextFlags = CONTEXT_FULL};
+  CONTEXT ctx = {.ContextFlags = CONTEXT_ALL};
   SuspendThread(c->thread);
   GetThreadContext(c->thread, &ctx);
   if (veryunlikely(!sym))
     sym = map_get(&symtab, "Yield");
-  *(u8 **)(ctx.Rsp -= 8) = sym->val;
-  *(u64 *)(ctx.Rsp -= 8) = ctx.Rip; /* return addr */
-  ctx.Rip = (u64)__tramp;
+  if (veryunlikely(!tramp))
+    tramp = yieldtrampinit();
+  *(u8 **)(ctx.Rsp -= 8) = sym->val; /* arg1 - fun ptr */
+  *(u64 *)(ctx.Rsp -= 8) = ctx.Rip;  /* return addr */
+  ctx.Rip = (u64)tramp;
   SetThreadContext(c->thread, &ctx);
   ResumeThread(c->thread);
 }
@@ -204,49 +219,37 @@ void InitIRQ0(void) {
   init = true;
 }
 
-/* TODO: move this somewhere else */
-__attribute__((naked)) static void __tramp1(void) {
-  asm("push %rbp\n"
-      "mov  %rsp,%rbp\n"
-      "pushf\n"
-      "push %rax\n" // PUSH_REGS
-      "push %rcx\n"
-      "push %rdx\n"
-      "push %rbx\n"
-      "push %rdi\n"
-      "push %rsi\n"
-      "push %rbp\n"
-      "push %r8\n"
-      "push %r9\n"
-      "push %r10\n"
-      "push %r11\n"
-      "push %r12\n"
-      "push %r13\n"
-      "push %r14\n"
-      "push %r15\n"
-      "mov  0x18(%rbp),%rax\n"
-      "mov  0x10(%rbp),%rcx\n"
-      "mov  0x20(%rbp),%rbp\n" // fake RBP for Caller() to work
-      "push %rax\n"
-      "call *%rcx\n"
-      "pop  %r15\n" // POP_REGS
-      "pop  %r14\n"
-      "pop  %r13\n"
-      "pop  %r12\n"
-      "pop  %r11\n"
-      "pop  %r10\n"
-      "pop  %r9\n"
-      "pop  %r8\n"
-      "pop  %rbp\n"
-      "pop  %rsi\n"
-      "pop  %rdi\n"
-      "pop  %rbx\n"
-      "pop  %rdx\n"
-      "pop  %rcx\n"
-      "pop  %rax\n"
-      "popf\n"
-      "leave\n"
-      "ret  $0x18\n");
+static void *proftrampinit(void) {
+  u8 *tramp, *orig;
+  orig = tramp = VirtualAlloc(NULL, 0x1000, // allocs by page
+                              MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
+  if (!tramp) {
+    flushprint(stderr, "VirtualAlloc failed\n");
+    terminate(1);
+  }
+  tramp += x86pushreg(tramp, RBP);
+  tramp += x86movregreg(tramp, RBP, RSP);
+  tramp += x86pushf(tramp, 0);
+  for (i64 r = RAX; r <= R15; r++)
+    if (r != RSP)
+      tramp += x86pushreg(tramp, r);
+  tramp += x86movsib2reg(tramp, RCX, -1, -1, RBP, SF_ARG1); // ─────┐
+  tramp += x86movsib2reg(tramp, RAX, -1, -1, RBP, SF_ARG2); // ───┐ │
+  // fake RBP for Caller() to work               pass argument  ──┤ │
+  tramp += x86movsib2reg(tramp, RBP, -1, -1, RBP, SF_ARG3); //    │ ├─ call fun
+  tramp += x86pushreg(tramp, RAX); // ────────────────────────────┘ │
+  tramp += x86callreg(tramp, RCX); // ──────────────────────────────┘
+  for (i64 r = R15; r >= RAX; r--)
+    if (r != RSP)
+      tramp += x86popreg(tramp, r);
+  tramp += x86popf(tramp, 0);
+  tramp += x86leave(tramp, 0);
+  tramp += x86ret(tramp, 0x18);
+  if (!VirtualProtect(orig, 0x1000, PAGE_EXECUTE, &(DWORD){0})) {
+    flushprint(stderr, "VirtualProtect failed\n");
+    terminate(1);
+  }
+  return orig;
 }
 
 /* There's no SIGPROF on Windows, so we just jump to the profiler interrupt */
@@ -256,6 +259,7 @@ static void profcb(u32 id, u32 msg, u64 userptr, u64 dw1, u64 dw2) {
   (void)userptr;
   (void)dw1;
   (void)dw2;
+  static void *tramp;
   for (u64 i = 0; i < nproc; ++i) {
     if (!Bt(&pf_prof_active, i))
       continue;
@@ -263,14 +267,16 @@ static void profcb(u32 id, u32 msg, u64 userptr, u64 dw1, u64 dw2) {
     if (ticks < c->next_prof_int)
       continue;
     AcquireSRWLockExclusive(&c->mtx);
-    CONTEXT ctx = {.ContextFlags = CONTEXT_FULL};
+    CONTEXT ctx = {.ContextFlags = CONTEXT_ALL};
     SuspendThread(c->thread);
     GetThreadContext(c->thread, &ctx);
+    if (veryunlikely(!tramp))
+      tramp = proftrampinit();
     *(u64 *)(ctx.Rsp -= 8) = ctx.Rbp;         /* arg3 - original RBP */
-    *(u64 *)(ctx.Rsp -= 8) = ctx.Rip;         /* arg2 */
-    *(u8 **)(ctx.Rsp -= 8) = c->profiler_int; /* arg1 */
+    *(u64 *)(ctx.Rsp -= 8) = ctx.Rip;         /* arg2 - RIP */
+    *(u8 **)(ctx.Rsp -= 8) = c->profiler_int; /* arg1 - fun ptr */
     *(u64 *)(ctx.Rsp -= 8) = ctx.Rip;         /* trampoline return addr */
-    ctx.Rip = (u64)__tramp1;
+    ctx.Rip = (u64)tramp;
     SetThreadContext(c->thread, &ctx);
     ResumeThread(c->thread);
     c->next_prof_int = c->profiler_freq / 1e3 + ticks;

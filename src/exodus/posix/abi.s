@@ -45,11 +45,12 @@ fficall:
 	mov	%esi,%ecx
 	shl	$3,%ecx
 	sub	%rcx,%rsp
-	.balign	8
-0:	mov	-8(%rdx,%rsi,8),%rcx
-	mov	%rcx,-8(%rsp,%rsi,8)
 	sub	$1,%esi
-	jnz	0b
+	.balign	8
+0:	mov	(%rdx,%rsi,8),%rcx
+	mov	%rcx,(%rsp,%rsi,8)
+	sub	$1,%esi
+	jnb	0b
 	.balign	8
 1:	call	*%rax
 	pop	%rbx
@@ -65,8 +66,8 @@ fficallnullbp:
 	push	%rbx
 	mov	%rdi,%rax
 	push	$0 // fake return addr ──┐ ← fake function call
-	push	$0 // fake rbp ──────────┴┬─ ← fake function prolog
-	mov	%rsp,%rbp //  ───────────┬┘
+	push	$0 // fake rbp ──────────┼────┬─ fake function prolog
+	mov	%rsp,%rbp //  ───────────┼────┘
 	test	%esi,%esi //             │
 	jnz	1f //                    │
 0:	call	*%rax //                 │
@@ -78,11 +79,12 @@ fficallnullbp:
 1:	mov	%esi,%ecx
 	shl	$3,%ecx
 	sub	%rcx,%rsp
-	.balign	8
-2:	mov	-8(%rdx,%rsi,8),%rcx
-	mov	%rcx,-8(%rsp,%rsi,8)
 	sub	$1,%esi
-	jnz	2b
+	.balign	8
+2:	mov	(%rdx,%rsi,8),%rcx
+	mov	%rcx,(%rsp,%rsi,8)
+	sub	$1,%esi
+	jnb	2b
 	jmp	0b
 	.endfn	fficallnullbp,globl
 
@@ -95,16 +97,15 @@ fficallcustombp:
 	mov	%rsi,%rax
 	test	%edx,%edx
 	jz	1f
-	mov	%rcx,%rbx
-	mov	%edx,%ecx
-	shl	$3,%ecx
-	sub	%rcx,%rsp
-	mov	%rbx,%rcx
-	.balign	8
-0:	mov	-8(%rcx,%rdx,8),%rbx
-	mov	%rbx,-8(%rsp,%rdx,8)
+	mov	%edx,%ebx
+	shl	$3,%ebx
+	sub	%rbx,%rsp
 	sub	$1,%edx
-	jnz	0b
+	.balign	8
+0:	mov	(%rcx,%rdx,8),%rbx
+	mov	%rbx,(%rsp,%rdx,8)
+	sub	$1,%edx
+	jnb	0b
 	.balign	8
 1:	call	*%rax
 	pop	%rbx

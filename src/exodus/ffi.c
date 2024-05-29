@@ -89,17 +89,22 @@ static i64 genthunk(u8 *to, HolyFFI *cur) {
   Addcode(to, off, x86movregreg, RBP, RSP);
   /* SysV and NT require stack alignment */
   Addcode(to, off, x86andimm, RSP, ~0xF);
+  /* System V saved registers (a) := {rbx, r12 ~ r15}
+   * Win64 saved registers    (a) := {rbx, rdi, rsi, r12 ~ r15}
+   * TempleOS saved registers (b) := {rdi, rsi, r10 ~ r15}
+   * regs to save := b - a
+   */
   Addcode(to, off, x86pushreg, R10);
   Addcode(to, off, x86pushreg, R11);
   if (iswindows()) {
     // register home space[1](something like red zone?)
     // volatile so just sub
     Addcode(to, off, x86subimm, RSP, 0x20);
-    Addcode(to, off, x86lea, RCX, -1, -1, RBP, 0x10);
+    Addcode(to, off, x86lea, RCX, -1, -1, RBP, SF_ARG1);
   } else {
     Addcode(to, off, x86pushreg, RSI);
     Addcode(to, off, x86pushreg, RDI);
-    Addcode(to, off, x86lea, RDI, -1, -1, RBP, 0x10);
+    Addcode(to, off, x86lea, RDI, -1, -1, RBP, SF_ARG1);
   }
   Addcode(to, off, x86movimm, RAX, cur->fp);
   Addcode(to, off, x86callreg, RAX);

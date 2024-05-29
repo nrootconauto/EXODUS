@@ -34,6 +34,16 @@ extern const u32 char_bmp_hex_numeric[16], char_bmp_alpha[16],
 
 /* TOS DEFINES */
 #define MP_PROCESSORS_NUM UINT64_C(128)
+enum {
+  SF_ARG1 = 0x10,
+#define SF_ARG1	SF_ARG1
+  SF_ARG2 = 0x18,
+#define SF_ARG2	SF_ARG2
+  SF_ARG3 = 0x20,
+#define SF_ARG3	SF_ARG3
+  SF_ARG4 = 0x28,
+#define SF_ARG4	SF_ARG4
+};
 /* $BG,RED$ */
 #define Bgred "\e[0;31m"
 /* $BG$ */
@@ -101,7 +111,3 @@ void *memdup(void *alloc(u64 _sz), void const *src, u64 sz);
     fprintf(f, a);          \
     fflush(f);              \
   } while (0)
-
-#define Times2(a...) a a
-#define Times4(a...) Times2(a) Times2(a)
-#define Times8(a...) Times4(a) Times4(a)

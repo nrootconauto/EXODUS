@@ -41,17 +41,8 @@
 #define FLAGS                       MAP_PRIVATE | MAP_ANON
 #define MMAP(hint, sz, prot, flags) mmap((void *)(hint), sz, prot, flags, -1, 0)
 
-/* Sort of a bump allocator that resumes from the previous mapping (for R|W|X).
- * We get the unmapped region in the lower 2 gigs
- * (after the mapped binary/brk heap in some systems) and just keep bumping
- * and mapping from there. MAP_FIXED doesn't seem to care about already
- * allocated pages but the initial pivot address seems to be enough. */
 void *NewVirtualChunk(u64 sz, bool exec) {
-  static bool running;
   static u64 pagsz;
-  while (LBts(&running, 0))
-    while (Bt(&running, 0))
-      __builtin_ia32_pause();
   if (veryunlikely(!pagsz))
     pagsz = sysconf(_SC_PAGESIZE);
   sz = ALIGN(sz, pagsz);
@@ -59,28 +50,19 @@ void *NewVirtualChunk(u64 sz, bool exec) {
   if (exec) {
     ret = MMAP(NULL, sz, PROT | PROT_EXEC, FLAGS | MAP_32BIT);
     if (verylikely(ret != MAP_FAILED))
-      goto fin;
+      return ret;
     /* Refer to posix/shims.c */
     u64 res = findregion(sz);
-    if (veryunlikely(res == -1ul)) {
-      ret = NULL;
-      goto fin;
-    }
+    if (veryunlikely(res == -1ul))
+      return NULL;
     ret = MMAP(res, sz, PROT | PROT_EXEC, FLAGS | MAP_FIXED);
-    if (ret == MAP_FAILED)
-      ret = NULL;
-  } else {
+  } else
     ret = MMAP(NULL, sz, PROT, FLAGS);
-    if (ret == MAP_FAILED)
-      ret = NULL;
-  }
-fin:
-  LBtr(&running, 0);
+  if (ret == MAP_FAILED)
+    return NULL;
   return ret;
 }
 
 void FreeVirtualChunk(void *ptr, u64 sz) {
-  // printf("Freed memory map of %ju page%s at %20p\n", ALIGN(sz, 0x1000ul) >>
-  // 12, ALIGN(sz,0x1000ul)>>12==1?"":"s", ptr);
   munmap(ptr, sz);
 }
