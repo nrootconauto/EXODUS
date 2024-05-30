@@ -1,4 +1,4 @@
-// mode:unix-assembly; indent-tabs-mode:t; tab-width:8; coding:utf-8
+// -*- mode:unix-assembly; indent-tabs-mode:t; tab-width:8; coding:utf-8 -*-
 // vi: set noet ft=asm ts=8 sw=8 fenc=utf-8 :vi
 //
 // Copyright 2024 1fishe2fishe

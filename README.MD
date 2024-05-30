@@ -76,12 +76,13 @@ serial interface.
 ![Networking with serial](img/serialnetworking.png)
 
 # Changes from stock TempleOS
+- CTRL+ALT+P to toggle the palette to/from dark mode
 - The Windows key functionality has been replaced with the Alt key
 - Context switching is slower than a VM or native hardware because it runs in Ring 3, but it does not degrade general performance
 - Ring-0 opcodes (HLT, etc) and routines (InU8, etc) are not available (you can assemble the opcodes but they'll raise a fault)
 - Fs and Gs are pointers to CTask/CCPU instead of the whole structures at gs:0x28 and gs:0x50 respectively [(blame microsoft)](https://en.wikipedia.org/wiki/Win32_Thread_Information_Block#Contents_of_the_TIB_on_Windows)
 
-A bit of trivia on Fs and Gs, gs:0 is not touched by 64 bit Windows but it's written to (not sure about read) on Wine, which doesn\'t guarantee consistency of gs:0. TEBs are allocated 0x2000 apart and sizeof(TEB) is 0x1838 so I could probably use 0x1900 or something but that seemed too hacky. Eventually I had to resort storing Fs at gs:0x28 and Gs at gs:0x50 (NtCurrentTeb()-\>ActiveRpcHandle (it isn't used anywhere)).
+A bit of trivia on Fs and Gs, gs:0 is not touched by 64 bit Windows but it\'s written to (not sure about read) on Wine, which doesn\'t guarantee consistency of gs:0. TEBs are allocated 0x2000 apart and sizeof(TEB) is 0x1838 so I could probably use 0x1900 or something but that seemed too hacky. Eventually I had to resort storing Fs at gs:0x28 and Gs at gs:0x50 (NtCurrentTeb()-\>ActiveRpcHandle (it isn't used anywhere)).
 
 # Contributing
 [Refer to this document.](./CONTRIBUTING.md)
