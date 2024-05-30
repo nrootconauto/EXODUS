@@ -1,27 +1,9 @@
-/*-*- vi: set et ft=c ts=2 sts=2 sw=2 fenc=utf-8                        :vi -*-│
-╞══════════════════════════════════════════════════════════════════════════════╡
-│ exodus: executable divine operating system in userspace                      │
-│                                                                              │
-│ Copyright 2024 1fishe2fishe                                                  │
-│                                                                              │
-│ See end of file for citations.                                               │
-│                                                                              │
-│ This software is provided 'as-is', without any express or implied            │
-│ warranty. In no event will the authors be held liable for any damages        │
-│ arising from the use of this software.                                       │
-│                                                                              │
-│ Permission is granted to anyone to use this software for any purpose,        │
-│ including commercial applications, and to alter it and redistribute it       │
-│ freely, subject to the following restrictions:                               │
-│                                                                              │
-│ 1. The origin of this software must not be misrepresented; you must not      │
-│    claim that you wrote the original software. If you use this software      │
-│    in a product, an acknowledgment in the product documentation would be     │
-│    appreciated but is not required.                                          │
-│ 2. Altered source versions must be plainly marked as such, and must not be   │
-│    misrepresented as being the original software.                            │
-│ 3. This notice may not be removed or altered from any source distribution.   │
-╚─────────────────────────────────────────────────────────────────────────────*/
+// mode:c;indent-tabs-mode:nil;c-basic-offset:2;tab-width:8;coding:utf-8
+// vi: set et ft=c ts=2 sts=2 sw=2 fenc=utf-8 :vi
+//
+// Copyright 2024 1fishe2fishe
+// Refer to the LICENSE file for license info.
+// Any citation links are provided at the end of the file.
 #include <stdbool.h>
 
 #include <exodus/misc.h>
@@ -162,7 +144,7 @@ static u8 rexprefix(bool w, i64 reg, i64 idx, i64 base) {
 }
 
 static u8 modrmregreg(i64 dst, i64 src) {
-  return (0x3 << 6)          // MODRM.mod register-direct addressing
+  return (0b000000011 << 6)          // MODRM.mod register-direct addressing
        | ((src & 0x7) << 3)  // MODRM.reg
        | ((dst & 0x7) << 0); // MODRM.rm
 }

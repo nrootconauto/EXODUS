@@ -1,27 +1,9 @@
-/*-*- vi: set et ft=c ts=2 sts=2 sw=2 fenc=utf-8                        :vi -*-│
-╞══════════════════════════════════════════════════════════════════════════════╡
-│ exodus: executable divine operating system in userspace                      │
-│                                                                              │
-│ Copyright 2024 1fishe2fishe                                                  │
-│                                                                              │
-│ See end of file for citations.                                               │
-│                                                                              │
-│ This software is provided 'as-is', without any express or implied            │
-│ warranty. In no event will the authors be held liable for any damages        │
-│ arising from the use of this software.                                       │
-│                                                                              │
-│ Permission is granted to anyone to use this software for any purpose,        │
-│ including commercial applications, and to alter it and redistribute it       │
-│ freely, subject to the following restrictions:                               │
-│                                                                              │
-│ 1. The origin of this software must not be misrepresented; you must not      │
-│    claim that you wrote the original software. If you use this software      │
-│    in a product, an acknowledgment in the product documentation would be     │
-│    appreciated but is not required.                                          │
-│ 2. Altered source versions must be plainly marked as such, and must not be   │
-│    misrepresented as being the original software.                            │
-│ 3. This notice may not be removed or altered from any source distribution.   │
-╚─────────────────────────────────────────────────────────────────────────────*/
+// mode:c;indent-tabs-mode:nil;c-basic-offset:2;tab-width:8;coding:utf-8
+// vi: set et ft=c ts=2 sts=2 sw=2 fenc=utf-8 :vi
+//
+// Copyright 2024 1fishe2fishe
+// Refer to the LICENSE file for license info.
+// Any citation links are provided at the end of the file.
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -44,13 +26,13 @@ static void SysSymImportsResolve(u8 *st_ptr);
 static void LoadPass1(u8 *src, u8 *module_base);
 static vec_void_t LoadPass2(u8 *src, u8 *module_base);
 
-typedef struct {
+typedef struct __attribute__((packed, may_alias)) {
   u16 jmp;
   u8 module_align_bits, reserved;
   u8 bin_signature[4];
   i64 org, patch_table_offset, file_size;
   u8 data[];
-} __attribute__((packed, may_alias)) CBinFile;
+} CBinFile;
 
 vec_void_t LoadHCRT(char const *name) {
   i64 sz;
@@ -76,13 +58,6 @@ vec_void_t LoadHCRT(char const *name) {
   return LoadPass2(patchtable, code);
 }
 
-#define ReadNum(x, T)                          \
-  ({                                           \
-    T __val;                                   \
-    __builtin_memcpy(&__val, x, sizeof __val); \
-    __val;                                     \
-  })
-
 static void LoadOneImport(u8 **_src, u8 *module_base) {
   u8 *src = *_src, *ptr = NULL;
   u64 i = 0;
@@ -90,10 +65,10 @@ static void LoadOneImport(u8 **_src, u8 *module_base) {
   u8 etype;
   CSymbol *sym;
   while ((etype = *src++)) {
-    ptr = module_base + ReadNum(src, u32);
+    ptr = module_base + *(u32 *)src;
     src += 4;
     u8 *st_ptr = src;
-    src += strlen(st_ptr) + 1;
+    src += strlen((char *)st_ptr) + 1;
     // first occurance of a string means
     // repeat this until another name is found
     if (!*st_ptr)
@@ -103,12 +78,12 @@ static void LoadOneImport(u8 **_src, u8 *module_base) {
       return;
     } else {
       first = false;
-      if ((sym = map_get(&symtab, st_ptr))) {
+      if ((sym = map_get(&symtab, (char *)st_ptr))) {
         if (sym->type != HTT_IMPORT_SYS_SYM)
           i = (u64)sym->val;
       } else {
-        flushprint(stderr, "Unresolved reference %s\n", st_ptr);
-        map_set(&symtab, st_ptr,
+        flushprint(stderr, "Unresolved reference %s\n", (char *)st_ptr);
+        map_set(&symtab, (char *)st_ptr,
                 (CSymbol){
                     .type = HTT_IMPORT_SYS_SYM,
                     .module_base = module_base,
@@ -155,7 +130,7 @@ static void LoadOneImport(u8 **_src, u8 *module_base) {
 }
 
 static void SysSymImportsResolve(u8 *st_ptr) {
-  CSymbol *sym = map_get(&symtab, st_ptr);
+  CSymbol *sym = map_get(&symtab, (char *)st_ptr);
   if (!sym)
     return;
   if (sym->type != HTT_IMPORT_SYS_SYM)
@@ -168,15 +143,15 @@ static void LoadPass1(u8 *src, u8 *module_base) {
   u8 *ptr, *st_ptr;
   u8 etype;
   while ((etype = *src++)) {
-    u64 i = ReadNum(src, u32);
+    u64 i = *(u32 *)src;
     src += 4;
     st_ptr = src;
-    src += strlen(st_ptr) + 1;
+    src += strlen((char *)st_ptr) + 1;
     switch (etype) {
     case IET_REL32_EXPORT ... IET_IMM64_EXPORT:
       if (etype != IET_IMM32_EXPORT && etype != IET_IMM64_EXPORT)
         i += (u64)module_base;
-      map_set(&symtab, st_ptr,
+      map_set(&symtab, (char *)st_ptr,
               (CSymbol){
                   .type = HTT_EXPORT_SYS_SYM,
                   .val = (void *)i,
@@ -189,8 +164,8 @@ static void LoadPass1(u8 *src, u8 *module_base) {
       break;
     case IET_ABS_ADDR:
       for (u64 j = 0; j < i; j++, src += sizeof(u32)) {
-        ptr = module_base + ReadNum(src, u32);
-        __builtin_memcpy(ptr, &(u32){ReadNum(ptr, u32) + (u64)module_base}, 4);
+        ptr = module_base + *(u32 *)src;
+        *(u32 *)ptr = *(u32 *)ptr + (u64)module_base;
       }
       break;
     }
@@ -202,9 +177,9 @@ static vec_void_t LoadPass2(u8 *src, u8 *module_base) {
   vec_init(&ret);
   u8 etype;
   while ((etype = *src++)) {
-    u32 i = ReadNum(src, u32);
+    u32 i = *(u32 *)src;
     src += 4;
-    src += strlen(src) + 1;
+    src += strlen((char *)src) + 1;
     switch (etype) {
     case IET_MAIN: {
       vec_push(&ret, module_base + i);

@@ -1,10 +1,9 @@
 #pragma once
-/* this is my own lean and mean copy of stuff in ntdll.dll and you will die
- * if you use it in your own project or with msvc */
 
-typedef VOID(NTAPI *PIO_APC_ROUTINE)(IN PVOID ApcContext,
-                                     IN PIO_STATUS_BLOCK IoStatusBlock,
-                                     IN ULONG Reserved);
+typedef VOID NTAPI IO_APC_ROUTINE(IN PVOID ApcContext,
+                                  IN PIO_STATUS_BLOCK IoStatusBlock,
+                                  IN ULONG Reserved);
+typedef IO_APC_ROUTINE *PIO_APC_ROUTINE;
 
 NTSYSCALLAPI
 NTSTATUS

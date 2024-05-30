@@ -77,7 +77,6 @@ target_compile_options(${PROJECT_NAME}
     -Wall
     -Wextra
     -Werror=shadow
-    -Wno-pointer-sign
     -fno-math-errno
     -fno-trapping-math
     -fno-exceptions
@@ -87,7 +86,6 @@ target_compile_options(${PROJECT_NAME}
     -fno-asynchronous-unwind-tables
     -fcf-protection=none
     -fwrapv
-    -fno-strict-aliasing
     -mno-shstk
     -mno-red-zone)
 

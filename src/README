@@ -1,0 +1,22 @@
+exodus/
+│
+├── nt/ or posix/
+│   ├─ abi.s: FFI calls for calling HolyC from C
+│   ├─ seth.c: multithreading
+│   ├─ dbg.c: launches debugger on various errors (zero division, page fault, etc)
+│   ├─ alloc.c: MemPagAlloc(), hooked to HolyC
+│   └─ shims.c: OS-specific routines: filesystem etc, may be split in future
+│
+├── ffi.c: C routines called within HolyC, generates hooks
+├── main.c: main()
+├── backtrace.c: walks HolyC symbol table and prints backtrace on faults
+├── loader.c: parses HolyC kernel and loads into memory
+├── misc.c: helper routines, eg: Bit Test
+├── vfs.c: virtual filesystem routines, hooked to HolyC
+├── window.c: SDL window, mouse/keyboard etc
+├── x86.c: x86_64 machine code generation, for thunks/trampolines(on NT)
+├── tosprint.c: printf() hooked to HolyC, used for debugging
+├── sound.c: BIOS PC speaker emulation, hooked to HolyC
+└── (honorary mention) abi.h: C preprocessor black magic that turns variadic
+                              arguments into argc-argv pairs (fficall() et al)
+                              q.v.: {nt,posix}/abi.s
