@@ -60,7 +60,7 @@ noret void HolyThrow(char const *s) {
 
 typedef struct {
   char const *name;
-  i64 fp;
+  void *fp;
   u16 arity;
 } HolyFFI;
 
@@ -81,13 +81,12 @@ static i64 genthunk(u8 *to, HolyFFI *cur) {
     // register home space[1](something like red zone?)
     // volatile so just sub
     Addcode(to, off, x86subimm, RSP, 0x20);
-    Addcode(to, off, x86lea, RCX, -1, -1, RBP, SF_ARG1);
   } else {
     Addcode(to, off, x86pushreg, RSI);
     Addcode(to, off, x86pushreg, RDI);
-    Addcode(to, off, x86lea, RDI, -1, -1, RBP, SF_ARG1);
   }
-  Addcode(to, off, x86movimm, RAX, cur->fp);
+  Addcode(to, off, x86lea, iswindows() ? RCX : RDI, -1, -1, RBP, SF_ARG1);
+  Addcode(to, off, x86movimm, RAX, (i64)cur->fp);
   Addcode(to, off, x86callreg, RAX);
   if (iswindows()) {
     // restore stack
@@ -110,7 +109,7 @@ static i64 genthunk(u8 *to, HolyFFI *cur) {
 
 static void genthunks(HolyFFI *list, i64 cnt) {
   i64 sz = genthunk(NULL, &(HolyFFI){
-                              .fp = INT64_MAX,
+                              .fp = (void *)INT64_MAX,
                               .arity = INT16_MAX,
                           });
   u8 *blob = NewVirtualChunk(sz * cnt, true), *prev;
@@ -446,9 +445,9 @@ static void STK_MPSetProfilerInt(i64 *stk) {
 }
 
 void BootstrapLoader(void) {
-#define R(h, c, a) {.name = (h), .fp = (i64)(c), .arity = (a)}
+#define R(h, c, a) {.name = h, .fp = c, .arity = a}
 #define S(h, a) \
-  { .name = (#h), .fp = (i64)(STK_##h), .arity = (a) }
+  { .name = #h, .fp = STK_##h, .arity = a }
   HolyFFI ffis[] = {
       R("__CmdLineBootText", CmdLineBootText, 0),
       R("__CoreNum", CoreNum, 0),

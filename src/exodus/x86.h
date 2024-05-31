@@ -14,7 +14,7 @@ enum /* clang-format off */ {
   RIP
 } /* clang-format on */;
 
-i64 x86ret(u8 *to, u16 arity);
+i64 x86ret(u8 *to, u16 imm);
 i64 x86leave(u8 *to, argign i64 dummy);
 i64 x86pushf(u8 *to, argign i64 dummy);
 i64 x86pushreg(u8 *to, i64 reg);
@@ -27,6 +27,7 @@ i64 x86addimm(u8 *to, i64 dst, i64 imm);
 i64 x86movregreg(u8 *to, i64 dst, i64 src);
 i64 x86movimm(u8 *to, i64 dst, i64 imm);
 i64 x86movsib2reg(u8 *to, i64 dst, i64 s, i64 i, i64 b, i64 off);
+i64 x86jmpreg(u8 *to, i64 reg);
 i64 x86callreg(u8 *to, i64 reg);
 i64 x86callsib(u8 *to, i64 s, i64 i, i64 b, i64 off);
 i64 x86andimm(u8 *to, i64 dst, i64 imm);

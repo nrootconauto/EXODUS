@@ -36,13 +36,13 @@ extern const u32 char_bmp_hex_numeric[16], char_bmp_alpha[16],
 #define MP_PROCESSORS_NUM UINT64_C(128)
 enum {
   SF_ARG1 = 0x10,
-#define SF_ARG1	SF_ARG1
+#define SF_ARG1 SF_ARG1
   SF_ARG2 = 0x18,
-#define SF_ARG2	SF_ARG2
+#define SF_ARG2 SF_ARG2
   SF_ARG3 = 0x20,
-#define SF_ARG3	SF_ARG3
+#define SF_ARG3 SF_ARG3
   SF_ARG4 = 0x28,
-#define SF_ARG4	SF_ARG4
+#define SF_ARG4 SF_ARG4
 };
 /* $BG,RED$ */
 #define Bgred "\e[0;31m"
@@ -77,6 +77,9 @@ void _dtor(void *_p);
     XRes > YRes ? XRes : YRes; \
   })
 
+// requirement: popcnt(to) == 1
+#define ALIGNNUM(x, to) ((x + to - 1) & ~(to - 1))
+
 #define Arrlen(a) (sizeof a / sizeof a[0])
 
 #ifndef NDEBUG
@@ -106,6 +109,8 @@ char *stpcpy2(char *restrict dst, char const *src);
 void *memmem2(void *haystk, u64 haystklen, void *needle, u64 needlelen);
 void *mempcpy2(void *restrict dst, void const *src, u64 sz);
 void *memdup(void *alloc(u64 _sz), void const *src, u64 sz);
+
+// CLI I/O might interfere with output, happens frequently with NT
 #define flushprint(f, a...) \
   do {                      \
     fprintf(f, a);          \

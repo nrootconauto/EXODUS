@@ -148,14 +148,14 @@ static u8 modrmregreg(i64 dst, i64 src) {
        | ((dst & 0x7) << 0); // MODRM.rm
 }
 
-i64 x86ret(u8 *to, u16 arity) {
+i64 x86ret(u8 *to, u16 imm) {
   X86_PROLOG();
-  if (!arity)
+  if (!imm)
     *to++ = 0xc3;
   else {
     *to++ = 0xc2;
-    *to++ = (arity & 0x00FF) >> 0;
-    *to++ = (arity & 0xFF00) >> 8;
+    *to++ = (imm & 0x00FF) >> 0;
+    *to++ = (imm & 0xFF00) >> 8;
   }
   X86_EPILOG();
 }
@@ -308,6 +308,16 @@ i64 x86movsib2reg(u8 *to, i64 dst, i64 s, i64 i, i64 b, i64 off) {
   X86_EPILOG();
 }
 
+i64 x86jmpreg(u8 *to, i64 reg) {
+  X86_PROLOG();
+  // FF /4
+  if (reg >= R8)
+    *to++ = rexprefix(false, 4, 0, reg);
+  *to++ = 0xff;
+  *to++ = modrmregreg(reg, 4);
+  X86_EPILOG();
+}
+
 i64 x86callreg(u8 *to, i64 reg) {
   X86_PROLOG();
   // FF /2
@@ -384,6 +394,8 @@ int main(void) {
   Addcode(buf, off, x86addimm, R15, -0x20);
   Addcode(buf, off, x86addimm, R15, 0x7FFFffff);
   Addcode(buf, off, x86callreg, R15);
+  Addcode(buf, off, x86jmpreg, R15);
+  Addcode(buf, off, x86jmpreg, RCX);
   Addcode(buf, off, x86popreg, R15);
   Addcode(buf, off, x86popreg, R10);
   Addcode(buf, off, x86popreg, RDI);

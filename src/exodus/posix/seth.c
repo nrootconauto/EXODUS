@@ -26,8 +26,8 @@
 
 #include <vec/vec.h>
 
-#include <exodus/dbg.h>
 #include <exodus/abi.h>
+#include <exodus/dbg.h>
 #include <exodus/ffi.h>
 #include <exodus/loader.h>
 #include <exodus/main.h>
@@ -48,6 +48,7 @@ typedef struct {
    */
   _Atomic(u32) is_sleeping;
   int core_num;
+  long tid;
   /* U0 (*profiler_int)(U8 *rip) */
   void *profiler_int;
   timer_t profile_timer;
@@ -60,8 +61,8 @@ static CCore cores[MP_PROCESSORS_NUM];
 static _Thread_local CCore *self;
 static u64 pf_prof_active;
 
-#define masksignals(a, va...) masksignals_(a, (int[]){va, 0})
-static void masksignals_(int how, int *sigs) {
+#define masksignals(a, va...) masksignals(a, (int[]){va, 0})
+static void (masksignals)(int how, int *sigs) {
   int i;
   sigset_t set;
   sigemptyset(&set);
@@ -93,14 +94,22 @@ static void *ThreadRoutine(void *arg) {
     int sig;
     struct sigaction sa;
   } ints[] = {
-      {SIGFPE,  {.sa_handler = div0}                            },
-      {SIGUSR1, {.sa_handler = ctrlaltc}                        },
-      {SIGPROF, {.sa_sigaction = profcb, .sa_flags = SA_SIGINFO}},
+      {SIGFPE,  {.sa_handler = div0, .sa_flags = SA_ONSTACK}                 },
+      {SIGUSR1, {.sa_handler = ctrlaltc, .sa_flags = SA_ONSTACK}             },
+      {SIGPROF, {.sa_sigaction = profcb, .sa_flags = SA_SIGINFO | SA_ONSTACK}},
   };
-  for (struct sa *s = ints, *end = ints + Arrlen(ints); s != end; s++)
+  for (struct sa *s = ints; s != ints + Arrlen(ints); s++)
     sigaction(s->sig, &s->sa, NULL);
   self = arg;
   preparetls();
+  // don't mess up HolyC memory, especially in TASK_CONTEXT_SAVE/RESTORE
+  // where RSP is LEA'd to the task context save area
+  stack_t ss = {
+      .ss_sp = malloc(SIGSTKSZ),
+      .ss_size = SIGSTKSZ,
+  };
+  sigaltstack(&ss, NULL);
+  self->tid = getthreadid();
   /* IET_MAIN routines + kernel entry point <- Core 0.
    * CoreAPSethTask() <- else
    *   ZERO_BP so the return addr&rbp is 0 and
@@ -250,7 +259,7 @@ void MPSetProfilerInt(void *fp, i64 idx, i64 freq) {
     struct sigevent ev = {
         .sigev_notify = SIGEV_THREAD_ID,
         .sigev_signo = SIGPROF,
-        .sigev_notify_thread_id = getthreadid(),
+        .sigev_notify_thread_id = c->tid,
     };
     timer_create(CLOCK_MONOTONIC, &ev, &c->profile_timer);
     struct itimerspec in = {

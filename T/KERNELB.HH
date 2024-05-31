@@ -150,7 +150,7 @@ _extern _FREE U0 Free(U8 *addr); //Free $LK,"MAlloc",A="MN:MAlloc"$()ed memory c
 _extern _MSIZE I64 MSize(U8 *src); //Size of heap object.
 _extern _MSIZE2 I64 MSize2(U8 *src); //Internal size of heap object.
 _extern _MHEAP_CTRL CHeapCtrl *MHeapCtrl(U8 *src); //$LK,"CHeapCtrl",A="MN:CHeapCtrl"$ of object.
-//_extern _MALLOC U8 *MAlloc(I64 size,CTask *mem_task=NULL); //Alloc memory chunk.
+_extern _MALLOC U8 *MAlloc(I64 size,CTask *mem_task=NULL); //Alloc memory chunk.
 
 public _extern SYS_PROGRESS1 I64 progress1; //Current progress 1.
 public _extern SYS_PROGRESS1_DESC
@@ -186,7 +186,6 @@ public _extern _TEXT_LEN_ATTR_STR Bool TextLenAttrStr(CTask *task,I64 x,I64 y,
 I64 len,U32 *_attr); //Plot attr str with len.	30fps in Fs->draw_it() callback.
 public _extern _TEXT_LEN_ATTR Bool TextLenAttr(CTask *task,I64 x,I64 y,I64 len,
 I64 attr); //Plot attrs with len.  30fps in Fs->draw_it() callback.
-_extern _MALLOC U8 *MAlloc(I64 size,CTask *mem_task=NULL); //Alloc memory chunk.
 _extern _GR_ROP_EQU_U8_NO_CLIPPING U0 GrRopEquU8NoClipping(I64 ch,
 	U8 *dst,I64 width_internal);
 _extern _IS_PIX_COVERED0 Bool IsPixCovered0(
@@ -201,7 +200,7 @@ _extern _SAVE_EXCEPT_REGS U0 SaveExceptRegs(CExcept *t);
 _extern _TASK_CONTEXT_RESTORE U0 TaskContextRestore();
 _extern _TASK_END_NOW U0 TaskEndNow();
 _extern _LAST_FUN I64 LastFun(I64 argc,I64 *argv);
-_extern _TASK_CONTEXT_RESTORE U0 TaskContextRestore();
+_extern _TASK_CONTEXT_RESTORE U0 TaskContextRestore();
 _extern _YIELD U0 _Yield();
 _extern _LAST_FUN I64 LastFun(I64 argc,I64 *argv);
 #endif

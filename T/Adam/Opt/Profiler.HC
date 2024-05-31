@@ -8,22 +8,15 @@ I64 pf_cpu=0;
 I64 pf_buf_in_ptr=0,pf_depth;
 I64 pf_prof_active=0;
 
-U0 ProfTimerInt(U8 *cur_rip)
+U0 ProfTimerInt(U8 *rip)
 {//See $LK,"profiler_timer_irq",A="FF:::/Kernel/KInts.HC,profiler_timer_irq"$.
   I64 i,k;
-  CTask *task=Fs;
   if (Bt(&pf_prof_active,0))
     for (k=0;k<=pf_depth;k++) {
-      if (task==Gs->idle_task)
-	i=NULL;
-      else if (k)
-        i=Caller(k);
+      if (k)
+        i=Caller(k);
       else
-        i=cur_rip;
-      //else if (k)
-	//i=Caller(k+1);
-      //else
-	//i=cur_rip;
+        i=rip;
       if (pf_buf_in_ptr<PF_ARRAY_CNT) {
 	pf_array[pf_buf_in_ptr++]=i;
 	pf_jiffy_end=cnts.jiffies;

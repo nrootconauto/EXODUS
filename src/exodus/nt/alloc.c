@@ -19,8 +19,6 @@
 #include <exodus/misc.h>
 #include <exodus/types.h>
 
-// popcnt(to) == 1
-#define ALIGN(x, to) ((x + to - 1) & ~(to - 1))
 #define MEM          MEM_RESERVE | MEM_COMMIT
 #define ALLOC(addr, sz, pagflags) \
   VirtualAlloc((void *)addr, sz, vflags, pagflags)
@@ -67,7 +65,7 @@ void *NewVirtualChunk(u64 sz, bool exec) {
        * but mbi.BaseAddress is aligned to page boundary.
        * may overlap, align
        */
-      u64 addr = ALIGN((u64)mbi.BaseAddress, ag);
+      u64 addr = ALIGNNUM((u64)mbi.BaseAddress, ag);
       if (mbi.State & MEM_FREE && sz <= region - addr) {
         ret = ALLOC(addr, sz, PAGE_EXECUTE_READWRITE);
         cur = (u64)ret + sz;

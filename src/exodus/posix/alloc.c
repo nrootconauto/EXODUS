@@ -17,7 +17,6 @@
 #include <exodus/types.h>
 
 // popcnt(to) == 1
-#define ALIGN(x, to)                ((x + to - 1) & ~(to - 1))
 #define PROT                        PROT_READ | PROT_WRITE
 #define FLAGS                       MAP_PRIVATE | MAP_ANON
 #define MMAP(hint, sz, prot, flags) mmap((void *)(hint), sz, prot, flags, -1, 0)
@@ -26,7 +25,7 @@ void *NewVirtualChunk(u64 sz, bool exec) {
   static u64 pagsz;
   if (veryunlikely(!pagsz))
     pagsz = sysconf(_SC_PAGESIZE);
-  sz = ALIGN(sz, pagsz);
+  sz = ALIGNNUM(sz, pagsz);
   u8 *ret;
   if (exec) {
     ret = MMAP(NULL, sz, PROT | PROT_EXEC, FLAGS | MAP_32BIT);
