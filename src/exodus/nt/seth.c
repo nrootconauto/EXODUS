@@ -5,6 +5,7 @@
 // Any citation links are provided at the end of the file.
 #include <windows.h>
 #include <winnt.h>
+#include <winternl.h>
 #include <libloaderapi.h>
 #include <memoryapi.h>
 #include <process.h>
@@ -13,25 +14,37 @@
 #include <timeapi.h>
 
 #include <inttypes.h>
+#include <stdatomic.h>
 #include <stdbool.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <string.h>
 
 #include <exodus/abi.h>
+#include <exodus/alloc.h>
 #include <exodus/dbg.h>
 #include <exodus/loader.h>
 #include <exodus/main.h>
 #include <exodus/misc.h>
+#include <exodus/nt/ntdll.h>
 #include <exodus/seth.h>
 #include <exodus/shims.h>
 #include <exodus/vfs.h>
 #include <exodus/x86.h>
 
+enum { // sigaltstack isn't a thing on NT, look at profcb
+  SIGSTKSZ = 0x2000,
+#define SIGSTKSZ SIGSTKSZ
+};
+
 typedef struct {
+  CONTEXT ctx;
   HANDLE thread, event;
   SRWLOCK mtx;
+  u8 *altstack;
   u64 awakeat;
   int core_num;
+  _Atomic(int) prof_event;
   u8 *profiler_int;
   u64 profiler_freq, next_prof_int;
   vec_void_t funcptrs;
@@ -41,8 +54,9 @@ static CCore cores[MP_PROCESSORS_NUM];
 static _Thread_local CCore *self;
 static u64 nproc;
 static u64 pf_prof_active;
+static MMRESULT pf_prof_timer;
 
-static void ThreadRoutine(void *arg) {
+static DWORD __stdcall Seth(void *arg) {
   self = arg;
   VFsThrdInit();
   SetupDebugger();
@@ -51,56 +65,26 @@ static void ThreadRoutine(void *arg) {
   vec_foreach(&self->funcptrs, fp, iter) {
     fficallnullbp(fp);
   }
+  return 0;
 }
 
 u64 CoreNum(void) {
   return self->core_num;
 }
 
-static void *yieldtrampinit(void) {
-  u8 *tramp, *orig;
-  orig = tramp = VirtualAlloc(NULL, 0x1000, // allocs by page
-                              MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
-  if (!tramp) {
-    flushprint(stderr, "VirtualAlloc failed\n");
-    terminate(1);
-  }
-  tramp += x86pushreg(tramp, RBP);
-  tramp += x86movregreg(tramp, RBP, RSP);
-  tramp += x86pushf(tramp, 0);
-  for (i64 r = RAX; r <= R15; r++)
-    if (r != RSP)
-      tramp += x86pushreg(tramp, r);
-  tramp += x86callsib(tramp, -1, -1, RBP, SF_ARG1);
-  for (i64 r = R15; r >= RAX; r--)
-    if (r != RSP)
-      tramp += x86popreg(tramp, r);
-  tramp += x86popf(tramp, 0);
-  tramp += x86leave(tramp, 0);
-  tramp += x86ret(tramp, 0x8);
-  if (!VirtualProtect(orig, 0x1000, PAGE_EXECUTE, &(DWORD){0})) {
-    flushprint(stderr, "VirtualProtect failed\n");
-    terminate(1);
-  }
-  return orig;
-}
-
 /* TempleOS does not yield contexts automatically
  * (everything is a coroutine) so we need a brute force solution */
 void InterruptCore(u64 core) {
   static CSymbol *sym;
-  static u8 *tramp;
   CCore *c = cores + core;
-  CONTEXT ctx = {.ContextFlags = CONTEXT_ALL};
+  CONTEXT ctx = {.ContextFlags = CONTEXT_FULL};
   SuspendThread(c->thread);
   GetThreadContext(c->thread, &ctx);
   if (veryunlikely(!sym))
     sym = map_get(&symtab, "Yield");
-  if (veryunlikely(!tramp))
-    tramp = yieldtrampinit();
-  *(u8 **)(ctx.Rsp -= 8) = sym->val; /* arg1 - fun ptr */
-  *(u64 *)(ctx.Rsp -= 8) = ctx.Rip;  /* return addr */
-  ctx.Rip = (u64)tramp;
+  ctx.Rsp = (u64)c->altstack + SIGSTKSZ;
+  *(u64 *)(ctx.Rsp -= 8) = ctx.Rip; /* return addr */
+  ctx.Rip = (u64)sym->val;
   SetThreadContext(c->thread, &ctx);
   ResumeThread(c->thread);
 }
@@ -111,23 +95,23 @@ void CreateCore(vec_void_t ptrs) {
       .funcptrs = ptrs,
       .core_num = nproc,
       .event = CreateEvent(NULL, FALSE, FALSE, NULL),
+      .thread = CreateThread(NULL, 0x10000, Seth, c, CREATE_SUSPENDED, NULL),
+      // Windows doesn't like malloced memory for stacks
+      .altstack = VirtualAlloc(NULL, SIGSTKSZ, MEM_RESERVE | MEM_COMMIT,
+                               PAGE_READWRITE),
   };
   InitializeSRWLock(&c->mtx);
-  c->thread = (HANDLE)_beginthread(ThreadRoutine, 0, c);
   SetThreadPriority(c->thread, THREAD_PRIORITY_HIGHEST);
+  ResumeThread(c->thread);
   nproc++;
-  /* Win32 cannot thread names unless it's MSVC[1]
-   * or Clang due to Microsoft adding Clang-cl to their toolchain.
-   * There IS a way to do this on GCC, but it's stupid[2].
-   * Not to mention taskmgr doesn't show thread names as far as I'm aware. */
 }
 
 void WakeCoreUp(u64 core) {
   CCore *c = cores + core;
   /* the timeSetEvent callback will automatiacally
-   * wake things up so just wait for the event. */
+   * wake things up so just wait for the event */
   AcquireSRWLockExclusive(&c->mtx);
-  SetEvent(c->event);
+  NtSetEvent(c->event, NULL);
   c->awakeat = 0;
   ReleaseSRWLockExclusive(&c->mtx);
 }
@@ -138,6 +122,9 @@ static void incinit(void) {
   static bool init;
   if (verylikely(init))
     return;
+  // timeSetEvent internally calls timeBeginPeriod which calls this
+  // but do this just to be sure (1e4 is 1ms for this routine)
+  ZwSetTimerResolution(10000, true, &(ULONG){0});
   TIMECAPS tc = {0};
   timeGetDevCaps(&tc, sizeof tc);
   inc = tc.wPeriodMin;
@@ -146,8 +133,8 @@ static void incinit(void) {
 
 static u64 ticks;
 
-/* We need this for accurate μs ticks, and just passing millisecnds to
- * WaitForSingleObject in SleepUs is inaccurate enough to mess with input. */
+/* We need this for accurate millisecond ticks, and just passing millisecnds to
+ * WaitForSingleObject in SleepUs is inaccurate enough to mess with input */
 static void tickscb(u32 id, u32 msg, u64 userptr, u64 dw1, u64 dw2) {
   (void)id;
   (void)msg;
@@ -157,20 +144,19 @@ static void tickscb(u32 id, u32 msg, u64 userptr, u64 dw1, u64 dw2) {
   ticks += inc;
   for (u64 i = 0; i < nproc; ++i) {
     CCore *c = cores + i;
-    AcquireSRWLockExclusive(&c->mtx);
     u64 wake = c->awakeat;
     if (ticks >= wake && wake > 0) {
-      SetEvent(c->event);
+      AcquireSRWLockExclusive(&c->mtx);
+      NtSetEvent(c->event, NULL);
       c->awakeat = 0;
+      ReleaseSRWLockExclusive(&c->mtx);
     }
-    ReleaseSRWLockExclusive(&c->mtx);
   }
 }
 
 static u64 elapsedus(void) {
+  incinit();
   static bool init;
-  if (veryunlikely(!inc))
-    incinit();
   if (veryunlikely(!init)) {
     timeSetEvent(inc, inc, tickscb, 0, TIME_PERIODIC);
     init = true;
@@ -192,45 +178,19 @@ static void irq0(u32 id, u32 msg, u64 userptr, u64 dw1, u64 dw2) {
 
 void InitIRQ0(void) {
   static bool init;
-  if (!inc)
-    incinit();
+  incinit();
   if (init)
     return;
   timeSetEvent(inc, inc, irq0, 0, TIME_PERIODIC);
   init = true;
 }
 
-static void *proftrampinit(void) {
-  u8 *tramp, *orig;
-  orig = tramp = VirtualAlloc(NULL, 0x1000, // allocs by page
-                              MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
-  if (!tramp) {
-    flushprint(stderr, "VirtualAlloc failed\n");
-    terminate(1);
-  }
-  tramp += x86pushreg(tramp, RBP);
-  tramp += x86movregreg(tramp, RBP, RSP);
-  tramp += x86pushf(tramp, 0);
-  for (i64 r = RAX; r <= R15; r++)
-    if (r != RSP)
-      tramp += x86pushreg(tramp, r);
-  tramp += x86movsib2reg(tramp, RCX, -1, -1, RBP, SF_ARG1); // ─────┐
-  tramp += x86movsib2reg(tramp, RAX, -1, -1, RBP, SF_ARG2); // ───┐ │
-  // fake RBP for Caller() to work               pass argument  ──┤ │
-  tramp += x86movsib2reg(tramp, RBP, -1, -1, RBP, SF_ARG3); //    │ ├─ call fun
-  tramp += x86pushreg(tramp, RAX); // ────────────────────────────┘ │
-  tramp += x86callreg(tramp, RCX); // ──────────────────────────────┘
-  for (i64 r = R15; r >= RAX; r--)
-    if (r != RSP)
-      tramp += x86popreg(tramp, r);
-  tramp += x86popf(tramp, 0);
-  tramp += x86leave(tramp, 0);
-  tramp += x86ret(tramp, 0x18);
-  if (!VirtualProtect(orig, 0x1000, PAGE_EXECUTE, &(DWORD){0})) {
-    flushprint(stderr, "VirtualProtect failed\n");
-    terminate(1);
-  }
-  return orig;
+_Noreturn static void proftramp(void) {
+  CCore *c = self;
+  fficallcustombp(c->ctx.Rbp, c->profiler_int, c->ctx.Rip);
+  atomic_store_explicit(&c->prof_event, 0, memory_order_release);
+  while (true)
+    __builtin_ia32_pause();
 }
 
 /* There's no SIGPROF on Windows, so we just jump to the profiler interrupt */
@@ -240,25 +200,30 @@ static void profcb(u32 id, u32 msg, u64 userptr, u64 dw1, u64 dw2) {
   (void)userptr;
   (void)dw1;
   (void)dw2;
-  static void *tramp;
   for (u64 i = 0; i < nproc; ++i) {
     if (!Bt(&pf_prof_active, i))
       continue;
     CCore *c = cores + i;
-    if (ticks < c->next_prof_int)
+    if (ticks < c->next_prof_int || !c->profiler_int)
       continue;
+    CONTEXT ctx = {.ContextFlags = CONTEXT_FULL};
     AcquireSRWLockExclusive(&c->mtx);
-    CONTEXT ctx = {.ContextFlags = CONTEXT_ALL};
     SuspendThread(c->thread);
     GetThreadContext(c->thread, &ctx);
-    if (veryunlikely(!tramp))
-      tramp = proftrampinit();
-    *(u64 *)(ctx.Rsp -= 8) = ctx.Rbp;         /* arg3 - original RBP */
-    *(u64 *)(ctx.Rsp -= 8) = ctx.Rip;         /* arg2 - RIP */
-    *(u8 **)(ctx.Rsp -= 8) = c->profiler_int; /* arg1 - fun ptr */
-    *(u64 *)(ctx.Rsp -= 8) = ctx.Rip;         /* trampoline return addr */
-    ctx.Rip = (u64)tramp;
+    if (ctx.Rip > INT32_MAX) // crude check for HolyC
+      goto rel;
+    c->ctx = ctx;
+    ctx.Rsp = (u64)c->altstack + SIGSTKSZ; // sigaltstack()
+    *(u64 *)(ctx.Rsp -= 8) = ctx.Rip; // return addr
+    ctx.Rip = (u64)proftramp;
     SetThreadContext(c->thread, &ctx);
+    c->prof_event = 1;
+    ResumeThread(c->thread);
+    while (atomic_load_explicit(&c->prof_event, memory_order_acquire))
+      __builtin_ia32_pause();
+    SuspendThread(c->thread);
+    SetThreadContext(c->thread, &c->ctx);
+  rel:
     ResumeThread(c->thread);
     c->next_prof_int = c->profiler_freq / 1e3 + ticks;
     ReleaseSRWLockExclusive(&c->mtx);
@@ -269,32 +234,48 @@ void SleepUs(u64 us) {
   CCore *c = self;
   u64 curticks = elapsedus();
   AcquireSRWLockExclusive(&c->mtx);
-  c->awakeat = curticks + us / 1000;
+  c->awakeat = curticks + us / 1e3;
   ReleaseSRWLockExclusive(&c->mtx);
-  WaitForSingleObject(c->event, us / 1000); /* failsafe for tickscb() */
+  WaitForSingleObject(c->event, us / 1e3); // failsafe for tickscb()
 }
 
 void MPSetProfilerInt(void *fp, i64 idx, i64 freq) {
-  static bool init;
-  if (veryunlikely(!init)) {
-    incinit();
-    timeSetEvent(inc, inc, profcb, 0, TIME_PERIODIC);
-    init = true;
-  }
+  incinit();
   CCore *c = cores + idx;
-  AcquireSRWLockExclusive(&c->mtx);
-  if ((c->profiler_freq = freq))
+  if (fp) {
+    // Did you think suspending threads and setting contexts
+    // in other threads from userspace could be bug-free?
+    flushprint(stderr,
+               ST_WARN_ST ": Profiler on Windows is very "
+                          "unstable compared to Linux/FreeBSD, may crash\n");
+    AcquireSRWLockExclusive(&c->mtx);
+    c->profiler_freq = freq;
+    c->profiler_int = fp;
+    c->next_prof_int = 0;
+    if (!pf_prof_timer) {
+      // TIME_KILL_SYNCHRONOUS only delays the return of timeKillEvent
+      pf_prof_timer = timeSetEvent(inc, inc, profcb, 0, TIME_PERIODIC);
+      if (!pf_prof_timer) {
+        flushprint(stderr, "timeSetEvent failed\n");
+        terminate(1);
+      }
+    }
     LBts(&pf_prof_active, idx);
-  else
-    LBtr(&pf_prof_active, idx);
-  c->profiler_int = fp;
-  c->next_prof_int = 0;
-  ReleaseSRWLockExclusive(&c->mtx);
+    ReleaseSRWLockExclusive(&c->mtx);
+  } else if (LBtr(&pf_prof_active, idx)) {
+    timeKillEvent(pf_prof_timer);
+    pf_prof_timer = 0;
+  }
 }
 
-/* CITATIONS:
- * [1] https://ofekshilon.com/2009/04/10/naming-threads/
- *     (https://archive.li/MIMDo)
- * [2] http://www.programmingunlimited.net/siteexec/content.cgi?page=mingw-seh
- *     (https://archive.is/s6Lnb)
+/* NOTES:
+ * bool iswine = GetProcAddress(GetModuleHandle("ntdll.dll"),
+ *                              "wine_get_version");
+ * Originally needed because I was doing
+ *   NtWaitForKeyedEvent(NULL, &c->prof_event, FALSE, NULL);
+ * in proftramp and
+ *   NtReleaseKeyedEvent(NULL, &c->prof_event, FALSE, NULL);
+ * in profcb and Wine has issues with them (even if you replace them
+ * with "standard" CreateEvent/WaitForSingleObject) but they're now
+ * replaced with spinlocks (NtDelayExecution instead of pause will segfault)
  */

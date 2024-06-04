@@ -16,7 +16,6 @@
 #include <exodus/shims.h>
 #include <exodus/types.h>
 
-// popcnt(to) == 1
 #define PROT                        PROT_READ | PROT_WRITE
 #define FLAGS                       MAP_PRIVATE | MAP_ANON
 #define MMAP(hint, sz, prot, flags) mmap((void *)(hint), sz, prot, flags, -1, 0)

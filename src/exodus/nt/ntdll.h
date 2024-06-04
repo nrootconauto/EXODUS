@@ -53,3 +53,17 @@ NTSYSCALLAPI
 NTSTATUS
 NTAPI
 NtSetEvent(_In_ HANDLE EventHandle, _Out_opt_ PLONG PreviousState);
+
+// use a negative integer because this thing does absolute deadlines for positive
+NTSYSCALLAPI
+NTSTATUS
+NTAPI
+NtDelayExecution(IN BOOLEAN Alertable, IN PLARGE_INTEGER DelayInterval);
+
+// 100ns/unit, Wine: 1e4 min, NT: 5e3 min
+// 'set' param: one of the hilarities of NT API, just make a GetTimerResolution
+NTSYSCALLAPI
+NTSTATUS
+NTAPI
+ZwSetTimerResolution(IN ULONG req, IN BOOLEAN set,
+                     OUT PULONG real);

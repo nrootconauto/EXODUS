@@ -101,9 +101,8 @@ static i64 genthunk(u8 *to, HolyFFI *cur) {
   // so just popping rbp will mess up the stack
   Addcode(to, off, x86leave, 0);
   Addcode(to, off, x86ret, cur->arity * 8);
-  // align size to 16
-  // (x86 processors like aligned instructions)
-  off = (off + 0xF) & ~0xF;
+  // x86 processors like aligned instructions
+  off = ALIGNNUM(off, 16);
   return off;
 }
 

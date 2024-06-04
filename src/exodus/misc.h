@@ -49,6 +49,7 @@ enum {
 /* $BG$ */
 #define Bgrst     "\e[0m"
 #define ST_ERR_ST Bgred "CRITICAL" Bgrst
+#define ST_WARN_ST Bgred "WARNING" Bgrst
 
 /* ATTRIBS */
 #define argign     __attribute__((unused))

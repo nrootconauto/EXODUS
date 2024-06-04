@@ -63,3 +63,27 @@ fficallnullbp:
 	jnb	2b
 	jmp	0b
 	.endfn	fficallnullbp,globl
+
+// i64 fficallcustombp(void *rbp, void *fp, i64 argc, i64 *argv)
+fficallcustombp:
+	push	%rbp
+	push	%rbx
+	mov	%rcx,%rbp // fake rbp
+	mov	%rdx,%rax
+	test	%r8,%r8
+	jz	1f
+	mov	%r8,%rbx
+	shl	$3,%ebx
+	sub	%rbx,%rsp
+	sub	$1,%r8
+	.balign	8
+0:	mov	(%r9,%r8,8),%rbx
+	mov	%rbx,(%rsp,%r8,8)
+	sub	$1,%r8
+	jnb	0b
+	.balign	8
+1:	call	*%rax
+	pop	%rbx
+	pop	%rbp
+	ret
+	.endfn	fficallcustombp,globl

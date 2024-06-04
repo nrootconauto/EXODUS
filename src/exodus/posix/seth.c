@@ -246,6 +246,8 @@ void SleepUs(u64 us) {
 static void profcb(argign int sig, argign siginfo_t *info, void *_ctx) {
   CCore *c = self;
   ucontext_t *ctx = _ctx;
+  if (RegRip > INT32_MAX) // crude check for HolyC
+    return;
   /* fake RBP because profcb is called from the kernel and
    * we need the context of the HolyC side (ctx) instead
    * or ProfRep will print bogus */

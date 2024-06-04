@@ -113,7 +113,7 @@
     if (S == -1) {                                                             \
       /* most likely user mistake, probably wanted -1 on I but we still        \
        * support it using RIZ (special-purpose zero-only register) */          \
-      S = 0; /* I = 0x4 was already set above in SIB_BEGIN */                  \
+      S = 0, I = 0x4;                                                          \
     }                                                                          \
     if ((_B = B) == -1) {                                                      \
       B = 0x5; /* MODRM.mod -> 0b00, SIB.base = 0b101 - no base, disp32 */     \
@@ -143,7 +143,7 @@ static u8 rexprefix(bool w, i64 reg, i64 idx, i64 base) {
 }
 
 static u8 modrmregreg(i64 dst, i64 src) {
-  return (0b000000011 << 6)          // MODRM.mod register-direct addressing
+  return (0b000000011 << 6)  // MODRM.mod register-direct addressing
        | ((src & 0x7) << 3)  // MODRM.reg
        | ((dst & 0x7) << 0); // MODRM.rm
 }
@@ -318,6 +318,15 @@ i64 x86jmpreg(u8 *to, i64 reg) {
   X86_EPILOG();
 }
 
+i64 x86jmpsib(u8 *to, i64 s, i64 i, i64 b, i64 off) {
+  X86_PROLOG();
+  // FF /4
+  SIB_BEGIN(0, 4, s, i, b, off);
+  *to++ = 0xff;
+  SIB_END();
+  X86_EPILOG();
+}
+
 i64 x86callreg(u8 *to, i64 reg) {
   X86_PROLOG();
   // FF /2
@@ -380,13 +389,14 @@ int main(void) {
   Addcode(buf, off, x86movimm, RAX, 0x7FFFffff);
   Addcode(buf, off, x86movimm, R15, 0x7FFFffff);
   Addcode(buf, off, x86callsib, -1, -1, R13, 0);
-  Addcode(buf, off, x86callsib, 0, RAX, R12, 0); // offset with RIZ
+  Addcode(buf, off, x86callsib, 0, RAX, R12, 0);  // offset with RIZ
   Addcode(buf, off, x86callsib, -1, RAX, R13, 0); // offset with RIZ
   Addcode(buf, off, x86callsib, 8, R13, -1, 0);
   Addcode(buf, off, x86callsib, 8, R13, RBP, 0x7FFFffff);
   Addcode(buf, off, x86callsib, 8, R12, RSP, 0);
   Addcode(buf, off, x86movsib2reg, RBP, 8, R12, RBP, 0x18);
   Addcode(buf, off, x86movsib2reg, R12, 8, R12, R12, 0x18);
+  Addcode(buf, off, x86movsib2reg, RSP, -1, -1, RSP, 0x18);
   Addcode(buf, off, x86subimm, RSP, 0x20);
   Addcode(buf, off, x86addimm, RSP, 0x20);
   Addcode(buf, off, x86addimm, R15, 0x20);
