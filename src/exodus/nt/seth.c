@@ -43,8 +43,7 @@ typedef struct {
   SRWLOCK mtx;
   u8 *altstack;
   u64 awakeat;
-  int core_num;
-  _Atomic(int) prof_event;
+  i64 core_num;
   u8 *profiler_int;
   u64 profiler_freq, next_prof_int;
   vec_void_t funcptrs;
@@ -185,12 +184,11 @@ void InitIRQ0(void) {
   init = true;
 }
 
-_Noreturn static void proftramp(void) {
+noret static void proftramp(void) {
   CCore *c = self;
   fficallcustombp(c->ctx.Rbp, c->profiler_int, c->ctx.Rip);
-  atomic_store_explicit(&c->prof_event, 0, memory_order_release);
-  while (true)
-    __builtin_ia32_pause();
+  NtContinue(&c->ctx, FALSE);
+  __builtin_trap(); // shouldn't ever execute
 }
 
 /* There's no SIGPROF on Windows, so we just jump to the profiler interrupt */
@@ -217,12 +215,6 @@ static void profcb(u32 id, u32 msg, u64 userptr, u64 dw1, u64 dw2) {
     *(u64 *)(ctx.Rsp -= 8) = ctx.Rip; // return addr
     ctx.Rip = (u64)proftramp;
     SetThreadContext(c->thread, &ctx);
-    c->prof_event = 1;
-    ResumeThread(c->thread);
-    while (atomic_load_explicit(&c->prof_event, memory_order_acquire))
-      __builtin_ia32_pause();
-    SuspendThread(c->thread);
-    SetThreadContext(c->thread, &c->ctx);
   rel:
     ResumeThread(c->thread);
     c->next_prof_int = c->profiler_freq / 1e3 + ticks;
@@ -243,11 +235,6 @@ void MPSetProfilerInt(void *fp, i64 idx, i64 freq) {
   incinit();
   CCore *c = cores + idx;
   if (fp) {
-    // Did you think suspending threads and setting contexts
-    // in other threads from userspace could be bug-free?
-    flushprint(stderr,
-               ST_WARN_ST ": Profiler on Windows is very "
-                          "unstable compared to Linux/FreeBSD, may crash\n");
     AcquireSRWLockExclusive(&c->mtx);
     c->profiler_freq = freq;
     c->profiler_int = fp;
@@ -267,15 +254,3 @@ void MPSetProfilerInt(void *fp, i64 idx, i64 freq) {
     pf_prof_timer = 0;
   }
 }
-
-/* NOTES:
- * bool iswine = GetProcAddress(GetModuleHandle("ntdll.dll"),
- *                              "wine_get_version");
- * Originally needed because I was doing
- *   NtWaitForKeyedEvent(NULL, &c->prof_event, FALSE, NULL);
- * in proftramp and
- *   NtReleaseKeyedEvent(NULL, &c->prof_event, FALSE, NULL);
- * in profcb and Wine has issues with them (even if you replace them
- * with "standard" CreateEvent/WaitForSingleObject) but they're now
- * replaced with spinlocks (NtDelayExecution instead of pause will segfault)
- */

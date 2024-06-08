@@ -54,6 +54,12 @@ NTSTATUS
 NTAPI
 NtSetEvent(_In_ HANDLE EventHandle, _Out_opt_ PLONG PreviousState);
 
+// something like setcontext(), can also use RtlRestoreContext
+NTSYSCALLAPI
+NTSTATUS
+NTAPI
+NtContinue(IN PCONTEXT ContextRecord, IN BOOLEAN TestAlert);
+
 // use a negative integer because this thing does absolute deadlines for positive
 NTSYSCALLAPI
 NTSTATUS

@@ -13,10 +13,7 @@ U0 ProfTimerInt(U8 *rip)
   I64 i,k;
   if (Bt(&pf_prof_active,0))
     for (k=0;k<=pf_depth;k++) {
-      if (k)
-        i=Caller(k);
-      else
-        i=rip;
+      if (!(i=Caller(k+1))) i=rip;
       if (pf_buf_in_ptr<PF_ARRAY_CNT) {
 	pf_array[pf_buf_in_ptr++]=i;
 	pf_jiffy_end=cnts.jiffies;
@@ -24,7 +21,7 @@ U0 ProfTimerInt(U8 *rip)
     }
 }
 
-public U0 Prof(I64 depth=10,I64 cpu_num=0)
+public U0 Prof(I64 depth=10,I64 cpu_num=0)
 {/*Start collecting profiler statistics.
 Profilers report where time is spent
 by sampling RIP during the $TX,"",D="DD_JIFFY_HZ"$
