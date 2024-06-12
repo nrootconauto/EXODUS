@@ -202,6 +202,20 @@ bool seekfd(int fd, i64 off) {
   return -1 != lseek(fd, off, SEEK_SET);
 }
 
+i64 getticksus(void) {
+  static i64 start;
+  static bool init;
+  if (veryunlikely(!init)) {
+    struct timespec ts;
+    clock_gettime(CLOCK_MONOTONIC, &ts);
+    start = ts.tv_nsec / 1e3 + ts.tv_sec * 1e6;
+    init = true;
+  }
+  struct timespec cur;
+  clock_gettime(CLOCK_MONOTONIC, &cur);
+  return cur.tv_nsec / 1e3 + cur.tv_sec * 1e6 - start;
+}
+
 u64 mp_cnt(void) {
   static u64 cnt;
   if (!cnt) {

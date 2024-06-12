@@ -74,8 +74,8 @@ public U0 SleepUntil(I64 wake_jiffy) {
   LBEqu(&Fs->task_flags,TASKf_IDLE,old_idle);
 }
 
-public U0 Sleep(I64 ms) {
-  SleepUntil(cnts.jiffies+ms);
+public U0 Sleep(I64 mS) {
+  SleepUntil(cnts.jiffies+mS);
 }
 
 #help_index ""

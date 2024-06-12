@@ -2,7 +2,7 @@ extern U0 GrInit2();
 F64	*pow10_I64,
 	sys_os_version=5.030;
 CTextGlbls	text;
-CCntsGlbls	cnts={1,0,2676302000,2676302,2676302000,0,0,0,FALSE};
+CCntsGlbls	cnts={1,0,2676302000,2676302,2676302000,14e6,14e3,HPET,FALSE};
 CDbgGlbls dbg;
 CDoc *sys_clip_doc;
 U8  *(*fp_getstr2)(I64 flags=0);

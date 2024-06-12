@@ -257,6 +257,22 @@ bool seekfd(int fd, i64 off) {
   return -1 != _lseeki64(fd, off, SEEK_SET);
 }
 
+i64 getticksus(void) {
+  static i64 start, freq;
+  static bool init;
+  if (veryunlikely(!init)) {
+    LARGE_INTEGER lfreq, lstart;
+    QueryPerformanceFrequency(&lfreq);
+    freq = lfreq.QuadPart;
+    QueryPerformanceCounter(&lstart);
+    start = lstart.QuadPart;
+    init = true;
+  }
+  LARGE_INTEGER lticks;
+  QueryPerformanceCounter(&lticks);
+  return (lticks.QuadPart - start) * 1e6 / freq;
+}
+
 noret static BOOL __stdcall ctrlchndlr(DWORD dw) {
   (void)dw;
   terminate(ERROR_CONTROL_C_EXIT);

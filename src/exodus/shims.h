@@ -26,6 +26,7 @@ void unblocksigs(void);
 bool seekfd(int fd, i64 off);
 bool isvalidptr(void *p);
 void prepare(void);
+i64 getticksus(void);
 #ifdef _WIN32
   #define iswindows() true
 #else

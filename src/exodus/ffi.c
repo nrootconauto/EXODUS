@@ -426,6 +426,10 @@ static u64 STK_GetVolume(argign u64 *stk) {
   return u.i;
 }
 
+static i64 STK_HPET(argign u64 *stk) {
+  return getticksus() * 14; // 14MHz
+}
+
 static void STK_Exit(int *stk) {
   terminate(stk[0]);
 }
@@ -626,6 +630,7 @@ void BootstrapLoader(void) {
       S(VFsFClose, 1),
       S(VFsFSeek, 2),
       S(VFsSetDrv, 1),
+      S(HPET, 0),
       R("VFsGetDrv", VFsGetDrv, 0),
       S(SetVolume, 1),
       S(GetVolume, 0),

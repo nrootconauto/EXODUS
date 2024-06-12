@@ -7544,6 +7544,7 @@ import F64 Round(F64 d); //Round F64 to whole number.
 import F64 Trunc(F64 d); //Truncate F64.
 import F64 Exp(F64 d); //Exponential function.
 import F64 Floor(F64 d); //Floor of F64.
+import I64 HPET();
 #else
 extern U0 MPSetProfilerInt(U8*,U8*,I64);
 extern U0 _GrPaletteColorSet(I64i,I64i);
@@ -7650,6 +7651,7 @@ public extern F64 Round(F64 d); //Round F64 to whole number.
 public extern F64 Trunc(F64 d); //Truncate F64.
 public extern F64 Exp(F64 d); //Exponential function.
 public extern F64 Floor(F64 d); //Floor of F64.
+public extern I64 HPET();
 #endif
 #define DYAD_EVENT_LINE    #exe{StreamPrint("%d",_DyadGetCallbackMode("DYAD_EVENT_LINE"));}
 #define DYAD_EVENT_DATA    #exe{StreamPrint("%d",_DyadGetCallbackMode("DYAD_EVENT_DATA"));}
