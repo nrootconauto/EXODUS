@@ -14,7 +14,6 @@ bool isdir(char const *path);
 /* not const because fts has the wrong interface */
 void deleteall(char *path);
 char **listdir(char const *path);
-i64 getticksus(void);
 /* VFsFTrunc will be called AFTER the fd is closed, do not worry */
 bool truncfile(char const *path, i64 sz);
 u64 unixtime(char const *path);

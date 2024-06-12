@@ -14,7 +14,6 @@
 #include <timeapi.h>
 
 #include <inttypes.h>
-#include <stdatomic.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -153,7 +152,7 @@ static void tickscb(u32 id, u32 msg, u64 userptr, u64 dw1, u64 dw2) {
   }
 }
 
-static u64 elapsedus(void) {
+static u64 elapsedms(void) {
   incinit();
   static bool init;
   if (veryunlikely(!init)) {
@@ -224,7 +223,7 @@ static void profcb(u32 id, u32 msg, u64 userptr, u64 dw1, u64 dw2) {
 
 void SleepUs(u64 us) {
   CCore *c = self;
-  u64 curticks = elapsedus();
+  u64 curticks = elapsedms();
   AcquireSRWLockExclusive(&c->mtx);
   c->awakeat = curticks + us / 1e3;
   ReleaseSRWLockExclusive(&c->mtx);

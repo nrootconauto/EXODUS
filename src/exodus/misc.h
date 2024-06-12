@@ -47,14 +47,15 @@ enum {
 /* $BG,RED$ */
 #define Bgred "\e[0;31m"
 /* $BG$ */
-#define Bgrst     "\e[0m"
-#define ST_ERR_ST Bgred "CRITICAL" Bgrst
+#define Bgrst      "\e[0m"
+#define ST_ERR_ST  Bgred "CRITICAL" Bgrst
 #define ST_WARN_ST Bgred "WARNING" Bgrst
 
 /* ATTRIBS */
-#define argign     __attribute__((unused))
-#define noret      __attribute__((noreturn))
-#define cleanup(x) __attribute__((cleanup(x)))
+#define argign      __attribute__((unused))
+#define noret       _Noreturn
+#define cleanup(x)  __attribute__((cleanup(x)))
+#define forceinline __attribute__((always_inline)) inline
 void _dtor(void *_p);
 
 /* BRANCH CTRL */

@@ -3,6 +3,7 @@
 // Copyright 2024 1fishe2fishe
 // Refer to the LICENSE file for license info.
 // Any citation links are provided at the end of the file.
+#include <math.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
@@ -124,10 +125,10 @@ static void genthunks(HolyFFI *list, i64 cnt) {
 
 /* C -> HolyC FFI */
 static void STK_DyadInit(argign void *args) {
-  static int init;
+  static bool init;
   if (init)
     return;
-  init = 1;
+  init = true;
   dyad_init();
   dyad_setUpdateTimeout(0.);
 }
@@ -271,16 +272,6 @@ static void STK_TOSPrint(i64 *stk) {
 
 static void STK_DrawWindowUpdate(u8 **stk) {
   DrawWindowUpdate(stk[0]);
-}
-
-// μs
-static i64 STK___GetTicksHP(argign void *args) {
-  return getticksus();
-}
-
-// ms
-static i64 STK___GetTicks(argign void *args) {
-  return getticksus() / 1000;
 }
 
 static void STK_SetKBCallback(void **stk) {
@@ -439,6 +430,107 @@ static void STK_Exit(int *stk) {
   terminate(stk[0]);
 }
 
+static u8 *STK_MemCpy(i64 *stk) {
+  return memcpy((void *)stk[0], (void *)stk[1], stk[2]);
+}
+
+static u8 *STK_MemSet(i64 *stk) {
+  return memset((void *)stk[0], stk[1] & 0xFF, stk[2]);
+}
+
+static i64 STK_MemCmp(i64 *stk) {
+  return memcmp((void *)stk[0], (void *)stk[1], stk[2]);
+}
+
+static i64 *STK_MemSetI64(i64 *restrict stk) {
+  i64 i, *to = (i64 *)stk[0];
+  for (i = 0; i < stk[2]; i++)
+    to[i] = stk[1];
+  return to;
+}
+
+static u32 *STK_MemSetU32(i64 *restrict stk) {
+  u32 *to = (u32 *)stk[0];
+  for (i64 i = 0; i < stk[2]; i++)
+    to[i] = stk[1] & 0xFFFFffffu;
+  return to;
+}
+
+static u16 *STK_MemSetU16(i64 *restrict stk) {
+  u16 *to = (u16 *)stk[0];
+  for (i64 i = 0; i < stk[2]; i++)
+    to[i] = stk[1] & 0xFFFFu;
+  return to;
+}
+
+static i64 STK_StrCmp(char **stk) {
+  return strcmp(stk[0], stk[1]);
+}
+
+static void STK_StrCpy(char **stk) {
+  strcpy(stk[0], stk[1]);
+}
+
+static u64 STK_StrLen(char **stk) {
+  return strlen(stk[0]);
+}
+
+#define MATHRT(nam, fun)           \
+  static u64 STK_##nam(f64 *stk) { \
+    union {                        \
+      f64 f;                       \
+      u64 i;                       \
+    } u = {.f = fun(stk[0])};      \
+    return u.i;                    \
+  }
+
+#define MATHRT2(nam, fun)             \
+  static u64 STK_##nam(f64 *stk) {    \
+    union {                           \
+      f64 f;                          \
+      u64 i;                          \
+    } u = {.f = fun(stk[0], stk[1])}; \
+    return u.i;                       \
+  }
+
+forceinline static f64 dbl(f64 f) {
+  return f * f;
+}
+
+// pow10 removed in glibc 2.27
+forceinline static f64 mypow10(f64 f) {
+  return pow(f, 10);
+}
+
+// we can use copysign but just using this is faster
+// -1.: 0x3ff0000000000000 ──┬── +0x8000000000000000 (sign bit)
+//  1.: 0xbff0000000000000 ──┘
+static u64 STK_Sign(u64 *stk) {
+  u64 u = stk[0], signbit;
+  signbit = u & (1ull << 63);
+  bool notzero = u & ~signbit; // &~(1<<63) for negative zero
+  return (signbit + 0x3ff0000000000000ull) * notzero;
+}
+
+MATHRT(Sqrt, sqrt);
+MATHRT(Abs, fabs);
+MATHRT(Cos, cos);
+MATHRT(Sin, sin);
+MATHRT(ATan, atan);
+MATHRT(Sqr, dbl);
+MATHRT(Tan, tan);
+MATHRT(Ceil, ceil);
+MATHRT(Ln, log);
+MATHRT(Log10, log10);
+MATHRT(Log2, log2);
+MATHRT(Pow10, mypow10);
+MATHRT(Round, round);
+MATHRT(Trunc, trunc);
+MATHRT(Floor, floor);
+MATHRT(Exp, exp);
+MATHRT2(Pow, pow);
+MATHRT2(Arg, atan2);
+
 static void STK_MPSetProfilerInt(i64 *stk) {
   MPSetProfilerInt((void *)stk[0], stk[1], stk[2]);
 }
@@ -471,7 +563,6 @@ void BootstrapLoader(void) {
       S(__AwakeCore, 1),
       S(SetKBCallback, 1),
       S(SetMSCallback, 1),
-      S(__GetTicks, 0),
       S(__BootstrapForeachSymbol, 1),
       S(DrawWindowUpdate, 1),
       R("DrawWindowNew", DrawWindowNew, 0),
@@ -500,6 +591,35 @@ void BootstrapLoader(void) {
       S(DyadSetListenCallback, 4),
       S(DyadSetTimeout, 2),
       S(DyadSetNoDelay, 2),
+      S(MemCmp, 3),
+      S(MemCpy, 3),
+      S(MemSet, 3),
+      S(MemSetI64, 3),
+      S(MemSetU32, 3),
+      S(MemSetU16, 3),
+      R("MemSetU8", STK_MemSet, 3),
+      S(StrCpy, 2),
+      S(StrCmp, 2),
+      S(StrLen, 1),
+      S(Sqrt, 1),
+      S(Sqr, 1),
+      S(Sin, 1),
+      S(Cos, 1),
+      S(Abs, 1),
+      S(ATan, 1),
+      S(Tan, 1),
+      S(Ceil, 1),
+      S(Ln, 1),
+      S(Log10, 1),
+      S(Log2, 1),
+      S(Arg, 2),
+      S(Pow, 2),
+      S(Pow10, 1),
+      S(Round, 1),
+      S(Sign, 1),
+      S(Trunc, 1),
+      S(Exp, 1),
+      S(Floor, 1),
       S(VFsFTrunc, 2),
       S(VFsSetPwd, 1),
       S(VFsFExists, 1),
@@ -520,7 +640,6 @@ void BootstrapLoader(void) {
       R("VFsGetDrv", VFsGetDrv, 0),
       S(SetVolume, 1),
       S(GetVolume, 0),
-      S(__GetTicksHP, 0),
       S(_GrPaletteColorSet, 2),
   };
   genthunks(ffis, Arrlen(ffis));

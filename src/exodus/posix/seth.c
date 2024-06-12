@@ -177,7 +177,8 @@ static void irq0(argign int sig) {
 
 /* emulate PIT interrupt (IRQ 0) */
 static void *pit_thrd(argign void *arg) {
-  sigaction(SIGALRM, &(struct sigaction){.sa_handler = irq0}, NULL);
+  const struct sigaction sa = {.sa_handler = irq0};
+  sigaction(SIGALRM, &sa, NULL);
   struct sigevent ev = {
       .sigev_notify = SIGEV_THREAD_ID,
       .sigev_signo = SIGALRM,
@@ -197,9 +198,13 @@ static void *pit_thrd(argign void *arg) {
 }
 
 void InitIRQ0(void) {
+  static bool init;
+  if (init)
+    return;
   pthread_t t;
   pthread_create(&t, NULL, pit_thrd, NULL);
   pthread_setname_np(t, "PIT (IRQ 0)");
+  init = true;
 }
 
 #ifdef __linux__

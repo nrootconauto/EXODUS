@@ -14,7 +14,7 @@ for(ln=1;ln_txt=DocLineRead(UNFOUND_F,ln);ln++) {
   Free(ln_txt);
 }
 CDoc *headers=DocNew("Headers.HH");
-U8 *kernelb=FileRead("/KERNELB.HH");
+U8 *kernelb=FileRead("/KernelB.HH");
 U0 TrimComment(U8 *str) {
   if(str=StrMatch("//",str)) {
     *str=0;
@@ -127,7 +127,7 @@ found_end:
         goto found_end;
       }
     } else if(HashFind(buf2,tab,HTT_FRAME_PTR)) {
-//KERNELB.HHhas the assembly nuggets
+//KernelB.HHhas the assembly nuggets
       if(!StrMatch(buf2,kernelb))
         goto found;
     }

@@ -107,11 +107,13 @@ U0 FaultCB(U8 **rbp,U8 *fptr) {
     }
     //Exit;
 }
-U0 GetDebuggedProcess() {
+
+CTask *GetDebuggedProcess() {
   CHashGlblVar *dtask=HashFind("DFs",Fs->hash_table,HTT_GLBL_VAR);
-  if(dtask) return dtask->data_addr(CTask**)[0];
+  if (dtask) return dtask->data_addr(CTask**)[0];
   return Fs;
-} 
+}
+ 
 U0 CallerRep(U8 **rbp=NULL,CTask *task=NULL)
 {//Prints a report of calling routines.
   I64 **ptr;
@@ -558,6 +560,8 @@ U0 StkRep(CTask *task=NULL)
   '\n';
   Fs->hash_table=old_hash;
 }
+
+
 U0 Dr(CTask *task=NULL)
 {//Dump regs
   I64 i;
@@ -566,6 +570,7 @@ U0 Dr(CTask *task=NULL)
     "%3Z:%016X\n",i,"ST_U64_REGS",*TaskRegAddr(task,i);
   "RIP:%016X\n",task->rip;
 }
+
 U0 D(U8 *addr,I64 cnt=0x80,Bool show_offset=TRUE)
 {//Dump mem, showing offsets.
 //See $LK,"DocD",A="MN:DocD"$() for a live dump.

@@ -3940,7 +3940,7 @@ public class CInsReg
 			"\dDA-TRM,A=\"This Machine Num (Choose Any):%d\"\d\n";
 };
 #ifdef FPTRS
-#include "COMPILER.HH"
+#include "Compiler/Compiler.HH"
 public _intern IC_CARRY I64 Carry();
 public _intern IC_GET_RAX I64 GetRAX(); //Get RAX register value.
 public _intern IC_GET_RBP U8 *GetRBP(); //Get RBP register value.
@@ -3978,7 +3978,6 @@ public extern I64 BCnt(I64 d);//Count set bits in I64.
 #help_index ""
 
 public _intern IC_TOUPPER I64 ToUpper(U8 ch); //Cvt char to upper case.
-public _intern IC_STRLEN I64 StrLen(U8 *st); //String length.
 public _intern IC_QUE_INIT U0 QueInit(
 	CQue *head); //Init queue head links.
 public _intern IC_QUE_INS U0 QueIns(
@@ -3987,21 +3986,15 @@ public _intern IC_QUE_INS_REV U0 QueInsRev(
 	CQue *entry,CQue *succ);//Revd insert into que.
 //Ins item into que before successor.
 public _intern IC_QUE_REM U0 QueRem(CQue *entry); //Remove item from queue.
-public _intern IC_ATAN F64 ATan(F64 d); //Arc Tan (Inverse Tan).
-public _intern IC_ABS F64 Abs(F64 d); //Absolute F64.
 public _intern IC_ABS_I64 I64 AbsI64(I64 i); //Absolute I64.
-public _intern IC_COS F64 Cos(F64 d); //Cosine.
 public _intern IC_MAX_I64 I64 MaxI64(I64 n1,I64 n2); //Max of two I64s.
 public _intern IC_MAX_U64 U64 MaxU64(U64 n1,U64 n2); //Max of two U64s.
 public _intern IC_MIN_I64 I64 MinI64(I64 n1,I64 n2); //Min of two I64s.
 public _intern IC_MIN_U64 U64 MinU64(U64 n1,U64 n2); //Min of two U64s.
 public _intern IC_MOD_U64 U64 ModU64(U64 *q,U64 d); //Div and return U64 Modulo.
 public _intern IC_SIGN_I64 I64 SignI64(I64 i); //Sign of I64: -1,0,1.
-public _intern IC_SIN F64 Sin(F64 d); //Sine.
-public _intern IC_SQR F64 Sqr(F64 d); //Square of F64.
 public _intern IC_SQR_I64  I64 SqrI64(I64 i); //Square of I64.
 public _intern IC_SQR_U64  U64 SqrU64(U64 i); //Square of U64.
-public _intern IC_SQRT F64 Sqrt(F64 d); //Square head of F64.
 public _intern IC_SWAP_I64 U0 SwapI64(
 	I64 *n1,I64 *n2); //Swap two I64s. Not atomic.
 public _intern IC_SWAP_U16 U0 SwapU16(
@@ -4010,7 +4003,6 @@ public _intern IC_SWAP_U32 U0 SwapU32(
 	U32 *n1,U32 *n2); //Swap two U32s. Not atomic.
 public _intern IC_SWAP_U8  U0 SwapU8(
 	U8 *n1,U8 *n2); //Swap two U8s. Not atomic.
-public _intern IC_TAN F64 Tan(F64 d); //Tangent.
 public _intern IC_TO_BOOL Bool ToBool(I64 i); //Convert to Boolean.
 public _intern IC_TO_F64 F64 ToF64(I64 i); //Convert to F64.
 public _intern IC_TO_I64 I64 ToI64(F64 d);  //Convert to I64. Truncates.
@@ -7199,7 +7191,7 @@ extern Bool MyPutKey(I64 ch,I64 sc);
 extern Bool MyPutS(U8 *);
 extern Bool InSetMsPlot(I64 mS,I64 x,I64 y,I64 z);
 extern U0 FaultCB(U8 **rbp,U8 *fptr) ;
-extern U0 GetDebuggedProcess() ;
+extern CTask *GetDebuggedProcess() ;
 extern U0 DebuggerSpawn(CTask *debugee) ;
 extern U0 DebuggerLandWin(I64 sig,I64 *gps) ;
 extern U0 DebuggerLand(I64 sig,I64 *gps) ;
@@ -7362,7 +7354,6 @@ extern U0 PutS(U8 *s) ;
 extern U0 ScanFlags(U8 *_dst_flags,U8 *lst,U8 *src);
 extern U8 *StrPrintFlags(U8 *dst,U8 *lst,I64 flags);
 extern U0 GetOutOfDollar();
-extern I64 GetTicks() ;
 extern I64 DEPtrCompare(CDocEntry **e1,CDocEntry **e2);
 extern I64 DocWordsFile(CDoc *doc_out=NULL,U8 *filename,U32 *char_bmp);
 extern I64 Words(U8 *files_find_mask="*",U32 *char_bmp,	U8 *fu_flags=NULL);
@@ -7519,20 +7510,46 @@ import U0 __BootstrapForeachSymbol(U8 *fptr);
 import U0i DrawWindowUpdate(U8i *);
 import U0 DrawWindowNew();
 import U0 PCSpkInit();
-import U64i __GetTicks();
 import U0i SetKBCallback(U8i *);
 import U0i SetMSCallback(U8i *fp);
-public import U0i __Sleep(I64i mS);
+import U0i __Sleep(I64i mS);
 import U8i *__CmdLineBootText();
 import U0i UnblockSignals();
-import U64i __GetTicksHP();
 import U0i MPIntsInit();
+import I64 MemCmp(U8 *ptr1,U8 *ptr2,I64 cnt); //Compare chunk of memory.
+import U8 *MemCpy(U8 *dst,U8 *src,I64 cnt); //Copy chunk of memory. Only goes fwd.
+import U8 *MemSet(U8 *dst,I64 val,I64 cnt); //Set chunk of U8s to value.
+import I64 *MemSetI64(I64 *dst,I64 val,I64 I64cnt); //Set chunk of I64s to value.
+import U16 *MemSetU16(U16 *dst,I64 val,I64 U16cnt); //Set chunk of U16s to value.
+import U32 *MemSetU32(U32 *dst,I64 val,I64 U32cnt); //Set chunk of U32s to value.
+import U8 *MemSetU8(U8 *dst,I64 val,I64 U8cnt); //Set chunk of U8s to value.
+import U0 StrCpy(U8 *dst,U8 *src); //Copy string.
+import I64 StrCmp(U8 *st1,U8 *st2); //Compare two strings.
+import I64 StrLen(U8 *st); //String length.
+import F64 Sqrt(F64);
+import F64 Abs(F64 d); //Absolute F64.
+import F64 Cos(F64 d); //Cosine.
+import F64 Sin(F64 d); //Sine.
+import F64 Sqr(F64 d); //Square of F64.
+import F64 ATan(F64 d); //Arc Tan (Inverse Tan).
+import F64 Tan(F64 d); //Tangent.
+import F64 Arg(F64 x,F64 y); //Polar coordinate angle.
+import F64 Ceil(F64 d); //Ceiling of F64.
+import F64 Ln(F64 d); //Logarithm.
+import F64 Log10(F64 d); //Log base 10.
+import F64 Log2(F64 d); //Log base 2.
+import F64 Pow(F64 base,F64 power); //F64 base to a power.
+import F64 Pow10(F64 d); //Ten to the dth power.
+import F64 Round(F64 d); //Round F64 to whole number.
+import F64 Sign(F64 d); //Sign of F64: -1,0,1
+import F64 Trunc(F64 d); //Truncate F64.
+import F64 Exp(F64 d); //Exponential function.
+import F64 Floor(F64 d); //Floor of F64.
 #else
 extern U0 MPSetProfilerInt(U8*,U8*,I64);
 extern U0 _GrPaletteColorSet(I64i,I64i);
 extern U0 __SleepHP(U64);
 extern U0 __AwakeCore(U64);
-extern U64i __GetTicksHP();
 extern U8i __IsValidPtr(U8i *ptr);
 extern U64i UnixNow();
 extern U0i UnblockSignals();
@@ -7590,7 +7607,6 @@ extern U0 __BootstrapForeachSymbol(U8 *fptr);
 extern U0i DrawWindowUpdate(U8i *);
 extern U0 DrawWindowNew();
 extern U0 PCSpkInit();
-extern U64i __GetTicks();
 extern U0i SetKBCallback(U8i *);
 extern U0i SetMSCallback(U8i *fp);
 public extern U0i __Sleep(I64i mS);
@@ -7600,6 +7616,42 @@ public extern Bool FBlkWrite(CFile *f,U8 *buf,I64 blk=FFB_NEXT_BLK,I64 cnt=1);
 public extern U0 FClose(CFile *f);
 public extern U8i *FOpen(U8i *filename,U8i *flags,I64i cnt=0,U8i *mem_task=0);
 extern U0i MPIntsInit();
+public extern I64 MemCmp(
+	U8 *ptr1,U8 *ptr2,I64 cnt); //Compare chunk of memory.
+public extern U8 *MemCpy(
+	U8 *dst,U8 *src,I64 cnt); //Copy chunk of memory. Only goes fwd.
+public extern U8 *MemSet(
+	U8 *dst,I64 val,I64 cnt); //Set chunk of U8s to value.
+public extern I64 *MemSetI64(
+	I64 *dst,I64 val,I64 I64cnt); //Set chunk of I64s to value.
+public extern U16 *MemSetU16(
+	U16 *dst,I64 val,I64 U16cnt); //Set chunk of U16s to value.
+public extern U32 *MemSetU32(
+	U32 *dst,I64 val,I64 U32cnt); //Set chunk of U32s to value.
+public extern U8 *MemSetU8(
+	U8 *dst,I64 val,I64 U8cnt); //Set chunk of U8s to value.
+public extern U0 StrCpy(U8 *dst,U8 *src); //Copy string.
+public extern I64 StrCmp(U8 *st1,U8 *st2); //Compare two strings.
+public extern I64 StrLen(U8 *st); //String length.
+public extern F64 Sqrt(F64 d); //Square head of F64.
+public extern F64 Abs(F64 d); //Absolute F64.
+public extern F64 Cos(F64 d); //Cosine.
+public extern F64 Sin(F64 d); //Sine.
+public extern F64 Sqr(F64 d); //Square of F64.
+public extern F64 ATan(F64 d); //Arc Tan (Inverse Tan).
+public extern F64 Tan(F64 d); //Tangent.
+public extern F64 Arg(F64 x,F64 y); //Polar coordinate angle.
+public extern F64 Ceil(F64 d); //Ceiling of F64.
+public extern F64 Ln(F64 d); //Logarithm.
+public extern F64 Log10(F64 d); //Log base 10.
+public extern F64 Log2(F64 d); //Log base 2.
+public extern F64 Pow(F64 base,F64 power); //F64 base to a power.
+public extern F64 Pow10(F64 d); //Ten to the dth power.
+public extern F64 Round(F64 d); //Round F64 to whole number.
+public extern F64 Sign(F64 d); //Sign of F64: -1,0,1
+public extern F64 Trunc(F64 d); //Truncate F64.
+public extern F64 Exp(F64 d); //Exponential function.
+public extern F64 Floor(F64 d); //Floor of F64.
 #endif
 #define DYAD_EVENT_LINE    #exe{StreamPrint("%d",_DyadGetCallbackMode("DYAD_EVENT_LINE"));}
 #define DYAD_EVENT_DATA    #exe{StreamPrint("%d",_DyadGetCallbackMode("DYAD_EVENT_DATA"));}

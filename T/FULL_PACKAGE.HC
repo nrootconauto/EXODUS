@@ -36,17 +36,17 @@ static U0 BootstrapImportSymbol(U8 *name,U8 *ptr,U64 type) {
 
 asm { // embed KERNEL*.HH to speedup boot
   _KERNELA_BIN::
-  BINFILE "KERNELA.HH";
+  BINFILE "KernelA.HH";
   DU8 0;
   _KERNELB_BIN::
-  BINFILE "KERNELB.HH";
+  BINFILE "KernelB.HH";
   DU8 0;
 };
 
 U0 LoadImps() {
   try {
     ExePutS2("#define FPTRS;\n");
-    ExePutS2(_KERNELA_BIN,"KERNELA.HH");
+    ExePutS2(_KERNELA_BIN,"KernelA.HH");
     __BootstrapForeachSymbol(&BootstrapImportSymbol);
 #ifdef GEN_HEADERS
     DocWrite(unfound);
@@ -54,7 +54,7 @@ U0 LoadImps() {
 #endif
 //Load asm externs second
     ExePutS2("#define BOOT_EXODUS;\n");
-    ExePutS2(_KERNELB_BIN,"KERNELB.HH");
+    ExePutS2(_KERNELB_BIN,"KernelB.HH");
   } catch {
     TOSPrint("BOOT ERROR:%c\n",Fs->except_ch);
     Fs->catch_except=TRUE;
@@ -66,13 +66,13 @@ U0 StartUpTasks()
   try {
     ExeFile("WallPaper.HC");
     ExePrint("WallPaperInit;;");
-    ExePrint("#include \"AMOUSE.HC\";;");
+    ExePrint("#include \"Adam/AMouse.HC\";;");
   } catch PutExcept;
   CTask *u=User;
   WinTileVert;
   if (FileFind("Once.HC")) XTalk(u,"#include \"Once\";\n");
   Silent;
-  ACInit("PUBLIC.HC;KERNEL*.HH");
+  ACInit("PUBLIC.HC;Kernel*.HH");
   Silent(OFF);
   AutoComplete(ON);
 }

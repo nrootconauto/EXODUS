@@ -21,7 +21,7 @@ U0 ProfTimerInt(U8 *rip)
     }
 }
 
-public U0 Prof(I64 depth=10,I64 cpu_num=0)
+public U0 Prof(I64 depth=10,I64 cpu_num=0)
 {/*Start collecting profiler statistics.
 Profilers report where time is spent
 by sampling RIP during the $TX,"",D="DD_JIFFY_HZ"$

@@ -27,9 +27,11 @@ void *NewVirtualChunk(u64 sz, bool exec) {
   sz = ALIGNNUM(sz, pagsz);
   u8 *ret;
   if (exec) {
+#ifdef MAP_32BIT
     ret = MMAP(NULL, sz, PROT | PROT_EXEC, FLAGS | MAP_32BIT);
     if (verylikely(ret != MAP_FAILED))
       return ret;
+#endif
     /* Refer to posix/shims.c */
     u64 res = findregion(sz);
     if (veryunlikely(res == -1ul))

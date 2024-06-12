@@ -1,6 +1,6 @@
 #exe {Cd(__DIR__);;};;
 #define FPTRS 1
-#include "KERNELA.HH"
+#include "KernelA.HH"
 asm {
   ALIGN 16,0; //MUST ALIGN SYS_FIXED_AREA TO 16 TO AVOID SEGUALTS WITH FXSAVE
 };
@@ -64,7 +64,7 @@ CTask *adam_task=Fs;
 #include "Kernel/KMATH.HC"
 #include "Kernel/HASH.HC"
 #include "Kernel/STR.HC"
-#include "KERNELB.HH"
+#include "KernelB.HH"
 #include "GR/Gr.HH"
 #include "Kernel/KDate.HC"
 #include "Compiler/CHASH.HC"

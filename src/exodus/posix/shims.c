@@ -198,12 +198,6 @@ bool writefile(char const *path, u8 const *data, i64 sz) {
   return sz == write(fd, data, sz);
 }
 
-i64 getticksus(void) {
-  struct timespec ts;
-  clock_gettime(CLOCK_MONOTONIC, &ts);
-  return ts.tv_nsec / INT64_C(1000) + ts.tv_sec * INT64_C(1000000);
-}
-
 bool seekfd(int fd, i64 off) {
   return -1 != lseek(fd, off, SEEK_SET);
 }
@@ -253,50 +247,42 @@ bool isvalidptr(void *p) {
  * through the mapped entries and return the first we can find.
  */
 #define DFTADDR      0x10000u // minimum MAP_FIXED possible alloc addr on both
-#define MAXADDR      ((u64)(UINT32_MAX >> 1))
+#define MAXADDR      ((UINT32_MAX >> 1) - 1)
 
 u64 findregion(u64 sz) {
 #ifdef __linux__
   static u64 mmap_min_addr, pagsz;
+  static char *buf;
   if (veryunlikely(!mmap_min_addr)) {
     int fd = open("/proc/sys/vm/mmap_min_addr", O_RDONLY);
-    char buf[0x20];
+    char numbuf[0x20];
     if (fd != -1) {
-      buf[read(fd, buf, 0x1f)] = 0;
-      sscanf(buf, "%ju", &mmap_min_addr);
+      numbuf[read(fd, numbuf, 0x1f)] = 0;
+      sscanf(numbuf, "%ju", &mmap_min_addr);
       close(fd);
     } else
       mmap_min_addr = DFTADDR;
     pagsz = sysconf(_SC_PAGESIZE);
   }
   sz = ALIGNNUM(sz, pagsz);
-  i64 readb;
-  u64 start, end, prev = ALIGNNUM(mmap_min_addr, pagsz);
-  int fd = open("/proc/self/maps", O_RDONLY);
-  char buf[BUFSIZ + 1], *cur = buf, *nl;
-  if (veryunlikely(fd == -1)) {
+  u64 start, end, prev = ALIGNNUM(mmap_min_addr, pagsz), ret;
+  FILE *fp = fopen("/proc/self/maps", "r");
+  if (!fp) {
     flushprint(stderr, ST_ERR_ST ": /proc/self/maps not found\n");
     return -1ul;
   }
-  while (cur < buf + BUFSIZ && //
-         (readb = read(fd, cur, BUFSIZ - (cur - buf))) > 0)
-    cur += readb;
-  *cur = 0;
-  close(fd);
-  cur = buf;
-  while ((nl = strchr(cur, '\n')) && nl < buf + BUFSIZ) {
-    *nl = 0;
-    puts(cur);
-    sscanf(cur, "%jx-%jx", &start, &end);
-    if (start - prev >= sz) {
-      if ((i64)(MAXADDR - prev) < 0)
-        return -1ul;
-      return prev;
+  while (getline(&buf, &(u64){0}, fp) > 0) {
+    sscanf(buf, "%jx-%jx", &start, &end);
+    if (start > prev && start - prev >= sz) {
+      ret = (i64)(MAXADDR - prev) < 0 ? -1ul : prev;
+      goto fin;
     }
     prev = ALIGNNUM(end, pagsz);
-    cur = nl + 1;
   }
-  return -1ul;
+  ret = -1ul;
+fin:
+  fclose(fp);
+  return ret;
 #elif defined(__FreeBSD__)
   static struct procstat *ps;
   static struct kinfo_proc *kproc;

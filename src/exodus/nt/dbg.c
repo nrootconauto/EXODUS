@@ -3,6 +3,7 @@
 // Copyright 2024 1fishe2fishe
 // Refer to the LICENSE file for license info.
 // Any citation links are provided at the end of the file.
+#define WIN32_LEAN_AND_MEAN
 #define _WIN32_WINNT 0x501 /* [2] */
 #include <windows.h>
 #include <winnt.h>

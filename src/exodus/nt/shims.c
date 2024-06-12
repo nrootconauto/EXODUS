@@ -3,6 +3,7 @@
 // Copyright 2024 1fishe2fishe
 // Refer to the LICENSE file for license info.
 // Any citation links are provided at the end of the file.
+#define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #include <wincon.h>
 #include <winerror.h>
@@ -170,9 +171,7 @@ static bool traversedir(char const *path, void cb(FileInfo *d, void *_user0),
   CloseHandle(h);
   /* we've reached the end if st == STATUS_NO_MORE_FILES,
    * if anything else, it's a failure */
-  if (st != STATUS_NO_MORE_FILES)
-    return false;
-  return true;
+  return st == STATUS_NO_MORE_FILES;
 }
 
 /* mbsrtowcs/wcsrtombs are too weird to use
@@ -254,29 +253,21 @@ bool writefile(char const *path, u8 const *data, i64 sz) {
   return sz == _write(fd, data, sz);
 }
 
-i64 getticksus(void) {
-  static LARGE_INTEGER freq;
-  if (veryunlikely(!freq.QuadPart)) {
-    QueryPerformanceFrequency(&freq);
-    freq.QuadPart /= INT64_C(1000000);
-  }
-  LARGE_INTEGER ticks;
-  QueryPerformanceCounter(&ticks);
-  return ticks.QuadPart / freq.QuadPart;
-}
-
 bool seekfd(int fd, i64 off) {
   return -1 != _lseeki64(fd, off, SEEK_SET);
 }
 
-noret static BOOL WINAPI ctrlchndlr(argign DWORD dw) {
+noret static BOOL __stdcall ctrlchndlr(DWORD dw) {
+  (void)dw;
   terminate(ERROR_CONTROL_C_EXIT);
 }
 
 void prepare(void) {
-  SetConsoleCtrlHandler(&ctrlchndlr, 1);
+  SetConsoleCtrlHandler(ctrlchndlr, 1);
   setlocale(LC_ALL, "C.UTF-8");
   _setmbcp(_MB_CP_LOCALE); /* [3] */
+  SetConsoleCP(CP_UTF8);
+  SetConsoleOutputCP(CP_UTF8);
 }
 
 u64 mp_cnt(void) {

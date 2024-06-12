@@ -27,26 +27,14 @@ public _extern _CPUID U0 CPUId(
 _extern SYS_MP_CNT_LOCK I64 mp_cnt_lock;
 _extern SYS_SEMAS CSema sys_semas[SEMA_SEMAS_NUM];
 
-public _extern _ARG F64 Arg(F64 x,F64 y); //Polar coordinate angle.
-public _extern _CEIL F64 Ceil(F64 d); //Ceiling of F64.
 public _extern _CLAMP_I64 I64 ClampI64(
 	I64 num,I64 lo,I64 hi); //Clamp to I64 [] range.
 public _extern _CLAMP_U64 U64 ClampU64(
 	U64 num,U64 lo,U64 hi); //Clamp to U64 [] range.
-public _extern _EXP F64 Exp(F64 d); //Exponential function.
 _extern _FCLEX U0 Fclex();
 _extern _FLDCW U0 Fldcw(U16 w);
-public _extern _FLOOR F64 Floor(F64 d); //Floor of F64.
 _extern _FSTCW U16 Fstcw();
 _extern _FSTSW U16 Fstsw();
-public _extern _LN  F64 Ln(F64 d); //Logarithm.
-public _extern _LOG10 F64 Log10(F64 d); //Log base 10.
-public _extern _LOG2 F64 Log2(F64 d); //Log base 2.
-public _extern _POW F64 Pow(F64 base,F64 power); //F64 base to a power.
-public _extern _POW10 F64 Pow10(F64 d); //Ten to the dth power.
-public _extern _ROUND F64 Round(F64 d); //Round F64 to whole number.
-public _extern _SIGN F64 Sign(F64 d); //Sign of F64: -1,0,1
-public _extern _TRUNC F64 Trunc(F64 d); //Truncate F64.
 
 public _extern _D3_ADD CD3 *D3Add(CD3 *sum,CD3 *d1,CD3 *d2); //sum=d1+d2
 public _extern _D3_ADD_EQU CD3 *D3AddEqu(CD3 *sum,CD3 *d); //sum+=d
@@ -79,40 +67,14 @@ public _extern _XCHG_I64 I64 XchgI64(I64 *dst,I64 d); //eXchange I64s.
 public _extern _XCHG_U16 U16 XchgU16(U16 *dst,U16 d); //eXchange U16s.
 public _extern _XCHG_U32 U32 XchgU32(U32 *dst,U32 d); //eXchange U32s.
 public _extern _XCHG_U8  U8 XchgU8(U8 *dst,U8 d); //eXchange U8s.
-public _extern _ARG F64 Arg(F64 x,F64 y); //Polar coordinate angle.
-public _extern _CEIL F64 Ceil(F64 d); //Ceiling of F64.
 public _extern _CLAMP_I64 I64 ClampI64(
 	I64 num,I64 lo,I64 hi); //Clamp to I64 [] range.
 public _extern _CLAMP_U64 U64 ClampU64(
 	U64 num,U64 lo,U64 hi); //Clamp to U64 [] range.
-public _extern _EXP F64 Exp(F64 d); //Exponential function.
 _extern _FCLEX U0 Fclex();
 _extern _FLDCW U0 Fldcw(U16 w);
-public _extern _FLOOR F64 Floor(F64 d); //Floor of F64.
 _extern _FSTCW U16 Fstcw();
 _extern _FSTSW U16 Fstsw();
-public _extern _LN  F64 Ln(F64 d); //Logarithm.
-public _extern _LOG10 F64 Log10(F64 d); //Log base 10.
-public _extern _LOG2 F64 Log2(F64 d); //Log base 2.
-public _extern _POW F64 Pow(F64 base,F64 power); //F64 base to a power.
-public _extern _POW10 F64 Pow10(F64 d); //Ten to the dth power.
-public _extern _ROUND F64 Round(F64 d); //Round F64 to whole number.
-public _extern _SIGN F64 Sign(F64 d); //Sign of F64: -1,0,1
-public _extern _TRUNC F64 Trunc(F64 d); //Truncate F64.
-public _extern _MEMCMP I64 MemCmp(
-	U8 *ptr1,U8 *ptr2,I64 cnt); //Compare chunk of memory.
-public _extern _MEMCPY U8 *MemCpy(
-	U8 *dst,U8 *src,I64 cnt); //Copy chunk of memory. Only goes fwd.
-public _extern _MEMSET U8 *MemSet(
-	U8 *dst,I64 val,I64 cnt); //Set chunk of U8s to value.
-public _extern _MEMSET_I64 I64 *MemSetI64(
-	I64 *dst,I64 val,I64 I64cnt); //Set chunk of I64s to value.
-public _extern _MEMSET_U16 U16 *MemSetU16(
-	U16 *dst,I64 val,I64 U16cnt); //Set chunk of U16s to value.
-public _extern _MEMSET_U32 U32 *MemSetU32(
-	U32 *dst,I64 val,I64 U32cnt); //Set chunk of U32s to value.
-public _extern _MEMSET U8 *MemSetU8(
-	U8 *dst,I64 val,I64 U8cnt); //Set chunk of U8s to value.
 public _extern _HASH_REM_DEL Bool HashRemDel(CHash *tmph,CHashTable *table,
 	I64 instance=1);//instance must match tmph's
 
@@ -132,8 +94,6 @@ _extern _HASH_ADD U0 HashAdd(CHash *tmph,
 _extern _HASH_REM_DEL Bool HashRemDel(CHash *tmph,CHashTable *table,
                                       I64 instance=1);//Remove hash entry and del. Instance must match.
 
-_extern _STRCMP I64 StrCmp(
-	U8 *st1,U8 *st2); //Compare two strings.
 _extern _STRICMP I64 StrICmp(
 	U8 *st1,U8 *st2); //Compare two strings, ignoring case.
 _extern _STRNCMP I64 StrNCmp(
@@ -144,8 +104,6 @@ _extern _STRMATCH U8 *StrMatch(
 	U8 *needle,U8 *haystack_str); //Scan for string in string.
 _extern _STRIMATCH U8 *StrIMatch(
 	U8 *needle,U8 *haystack_str);//Scan for string in string, ignoring case.
-_extern _STRCPY U0 StrCpy(
-	U8 *dst,U8 *src); //Copy string.
 _extern _FREE U0 Free(U8 *addr); //Free $LK,"MAlloc",A="MN:MAlloc"$()ed memory chunk.
 _extern _MSIZE I64 MSize(U8 *src); //Size of heap object.
 _extern _MSIZE2 I64 MSize2(U8 *src); //Internal size of heap object.
@@ -200,7 +158,7 @@ _extern _SAVE_EXCEPT_REGS U0 SaveExceptRegs(CExcept *t);
 _extern _TASK_CONTEXT_RESTORE U0 TaskContextRestore();
 _extern _TASK_END_NOW U0 TaskEndNow();
 _extern _LAST_FUN I64 LastFun(I64 argc,I64 *argv);
-_extern _TASK_CONTEXT_RESTORE U0 TaskContextRestore();
+_extern _TASK_CONTEXT_RESTORE U0 TaskContextRestore();
 _extern _YIELD U0 _Yield();
 _extern _LAST_FUN I64 LastFun(I64 argc,I64 *argv);
 #endif
