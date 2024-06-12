@@ -343,23 +343,21 @@ _SQR::
 	POP	RBP
 	RET1	8
 //************************************
+//  1.: 0x3FF0000000000000ÄÂÄ|0x8000000000000000 (sign bit)
+// -1.: 0xBFF0000000000000ÄÙ
+// -0.==0|0x8000000000000000, so remove sign bit and test
 _SIGN::
-	PUSH	RBP
-	MOV	RBP,RSP
-	FLD	U64 SF_ARG1[RBP]
-	FTST
-	FSTSW
-	FFREE	ST0
-	FINCSTP
-	MOV	RDX,RAX
-	XOR	RAX,RAX
-	BT	RDX,14
-	JC	@@05
-	MOV	RAX,1.0
-	BT	RDX,8
-	JNC	@@05
-	MOV	RAX,-1.0
-@@05:	POP	RBP
+	MOV	RAX,0x8[RSP]
+	MOV	RCX,RAX
+	//SHR	RAX,63 //faster on older processors
+	//SHL	RAX,63
+	MOV	RDX,-0. // faster on newer ones
+	AND	RAX,RDX
+	MOV	RDX,1.
+	OR	RAX,RDX
+	BTR	RCX,63//sign bit
+	TEST	RCX,RCX
+	CMOVZ	RAX,RCX
 	RET1	8
 //************************************
 _ARG::

@@ -71,6 +71,7 @@ public _extern _CLAMP_I64 I64 ClampI64(
 	I64 num,I64 lo,I64 hi); //Clamp to I64 [] range.
 public _extern _CLAMP_U64 U64 ClampU64(
 	U64 num,U64 lo,U64 hi); //Clamp to U64 [] range.
+public _extern _SIGN F64 Sign(F64 d); //Sign of F64: -1,0,1
 _extern _FCLEX U0 Fclex();
 _extern _FLDCW U0 Fldcw(U16 w);
 _extern _FSTCW U16 Fstcw();

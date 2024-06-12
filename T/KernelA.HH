@@ -7541,7 +7541,6 @@ import F64 Log2(F64 d); //Log base 2.
 import F64 Pow(F64 base,F64 power); //F64 base to a power.
 import F64 Pow10(F64 d); //Ten to the dth power.
 import F64 Round(F64 d); //Round F64 to whole number.
-import F64 Sign(F64 d); //Sign of F64: -1,0,1
 import F64 Trunc(F64 d); //Truncate F64.
 import F64 Exp(F64 d); //Exponential function.
 import F64 Floor(F64 d); //Floor of F64.
@@ -7648,7 +7647,6 @@ public extern F64 Log2(F64 d); //Log base 2.
 public extern F64 Pow(F64 base,F64 power); //F64 base to a power.
 public extern F64 Pow10(F64 d); //Ten to the dth power.
 public extern F64 Round(F64 d); //Round F64 to whole number.
-public extern F64 Sign(F64 d); //Sign of F64: -1,0,1
 public extern F64 Trunc(F64 d); //Truncate F64.
 public extern F64 Exp(F64 d); //Exponential function.
 public extern F64 Floor(F64 d); //Floor of F64.
