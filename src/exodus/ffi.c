@@ -503,13 +503,13 @@ forceinline static f64 mypow10(f64 f) {
 }
 
 // we can use copysign but just using this is faster
-// -1.: 0x3ff0000000000000 ──┬── +0x8000000000000000 (sign bit)
-//  1.: 0xbff0000000000000 ──┘
+//  1.: 0x3ff0000000000000 ──┬── |0x8000000000000000 (sign bit)
+// -1.: 0xbff0000000000000 ──┘
 static u64 STK_Sign(u64 *stk) {
   u64 u = stk[0], signbit;
   signbit = u & (1ull << 63);
   bool notzero = u & ~signbit; // &~(1<<63) for negative zero
-  return (signbit + 0x3ff0000000000000ull) * notzero;
+  return (signbit | 0x3ff0000000000000ull) * notzero;
 }
 
 MATHRT(Sqrt, sqrt);
