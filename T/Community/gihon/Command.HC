@@ -56,11 +56,18 @@
 #define IRCD_CMD_WHO    55
 #define IRCD_CMD_WHOIS  56
 #define IRCD_CMD_WHOWAS 57
+#define IRCD_CMD_CAP 58
+#define IRCD_CMD_TAGMSG 59
 
-#define IRCD_CMDS_MAX    58
+#define IRCD_CMDS_MAX    60
 
 U8 **ircd_commands = CAlloc(sizeof(U64) * IRCD_CMDS_MAX);
 
+// Nroot additions
+//https://ircv3.net/specs/extensions/capability-negotiation
+ircd_commands[IRCD_CMD_CAP] = "CAP";
+ircd_commands[IRCD_CMD_TAGMSG] = "TAGMSG";
+// End of Nroot additions
 ircd_commands[IRCD_CMD_ADMIN] = "ADMIN";
 ircd_commands[IRCD_CMD_AWAY] = "AWAY";
 ircd_commands[IRCD_CMD_CNOTICE] = "CNOTICE";
@@ -122,116 +129,234 @@ ircd_commands[IRCD_CMD_WHOWAS] = "WHOWAS";
 
 I64 IrcMatchCommand(U8 *str)
 {
-    I64 i;
-    for (i=0; i<IRCD_CMDS_MAX; i++)
+  I64 i;
+  for (i=0; i<IRCD_CMDS_MAX; i++)
     {
-        if (!StrICmp(str, ircd_commands[i])) return i;
+    if (!StrICmp(str, ircd_commands[i])) return i;
+  }
+  return -1;
+}
+
+U0 IrcPass(IrcClient *client,U8 *str) {
+  str=StrIMatch("PASS",str);
+  if(!str||client->account) return;
+  str+=4;
+  StrCpy(client->password,str);
+  StrUtil(client->password,SUF_REM_TRAILING|SUF_REM_LEADING);
+}
+
+U0 IrcCap(IrcClient *client,U8 *str) {
+  I64 argc,a,a2,argc2;
+  U8 **argv,**argv2,*caps;
+  U8 *buf=MAlloc(4096);
+  U8 *buf2=MAlloc(4096);
+  U8 *str2;
+  I64 fail_cnt=0;
+  Bool on;
+  argv = ParseArgs(str, &argc);
+  caps=StrOcc(str,":");
+  if(!caps)
+    caps=":";
+  a=1;
+  if(a<argc) {
+    if(!StrCmp(argv[a],"LS")||!StrCmp(argv[a],"LIST")) {
+      GihonFifoIns(client->msgs,MStrPrint(":%s CAP * %s :server_time message_tags typing\r\n",ircd_hostname,argv[a]));
+      argv2 = ParseArgs(caps+1,&argc2);
+      if(a+1<argc&&!argc2) {
+        if(Str2I64(argv[a+1])>=302) {
+	  client->caps|=IRCD_CAP_MESSAGE_TAGS;
+	  client->caps|=IRCD_CAP_SERVER_TIME;
+	  client->caps|=IRCD_CAP_TYPING;
+        }
+      }
+      if(argc2) {
+        for(a2=0;a2!=argc2;a2++) {
+	  if(!StrICmp("server-time",argv2[a2])) {
+	    client->caps|=IRCD_CAP_MESSAGE_TAGS;
+	    client->caps|=IRCD_CAP_SERVER_TIME;
+	  } else if(!StrICmp("message-tags",argv2[a2])) {
+	    client->caps|=IRCD_CAP_MESSAGE_TAGS;
+	  } else if(!StrICmp("typing",argv2[a2])) {
+	    client->caps|=IRCD_CAP_TYPING;
+	  }
+        }
+        FreeArgs(argc2, argv2);
+      }
+      if(!StrCmp(argv[a],"REQ")) {
+        argv2 = ParseArgs(caps+1,&argc2);
+        StrPrint(buf,":%s CAP * ACK:",ircd_hostname);
+        StrPrint(buf,":%s CAP * NAK:",ircd_hostname);
+        for(a2=0;a2!=argc2;a2++) {
+	  str2=argv2[a2];
+	  on=TRUE;
+	  if(*str2=='-') {
+	    on=FALSE;
+	    str2++;
+	  }
+	  if(!StrICmp("server-time",str2)) {
+	    if(!on) client->caps&=~(IRCD_CAP_MESSAGE_TAGS|IRCD_CAP_SERVER_TIME);
+pass_cap:  
+	    if(on) CatPrint(buf,"%s ",str2);
+	    else {
+	      CatPrint(buf2,"%s ",str2);
+	      fail_cnt++;
+	    }
+	  } else if(!StrICmp("message-tags",str2)) {
+	    if(!on) client->caps&=~IRCD_CAP_MESSAGE_TAGS;
+	    goto pass_cap;
+	  } else if(!StrICmp("typing",str2)) {
+	    if(!on) client->caps&=~IRCD_CAP_TYPING;
+	    goto pass_cap;
+	  } else {
+	    CatPrint(buf2,"%s ",str2);
+	    CatPrint(buf,"-%s ",str2);
+	    fail_cnt++;
+	  }
+        }
+        FreeArgs(argc2, argv2);
+        GihonFifoIns(client->msgs,StrNew(buf));
+        if(fail_cnt)
+	  GihonFifoIns(client->msgs,StrNew(buf2));
+      }
     }
-    return -1;
+  }
+  Free(buf2);
+  Free(buf);
 }
 
 U0 IrcParseCommand(IrcClient *client, U8 *str)
 {
-    U8 **argv;
-    I64 argc = NULL;
-    I64 cmd = -1;
-    argv = ParseArgs(str, &argc);
-    if (argc)
+//Skip message tags(For now)
+  if(*str=='@') {
+    Free(client->client_tags);
+    client->client_tags=IrcGetClientMsgs(str);
+   str=StrFirstOcc(str," ");
+   if(!str) return;
+   else str++;
+  }
+  U8 **argv;
+  I64 argc = NULL;
+  I64 cmd = -1;
+  argv = ParseArgs(str, &argc);
+  if (argc)
     {
-        cmd = IrcMatchCommand(argv[0]);
-        switch (cmd)
-        {
-        case IRCD_CMD_JOIN:
-            if (argc==2)
-            {
-                IrcChannelJoin(argv[1], client);
-                				IrcClientTopic(client, argv[1]);
-                IrcClientNames(client, argv[1]);
-            }
-            break;
-        case IRCD_CMD_KICK:
-            if (argc>3)
-            {
-                IrcChannelKick(argv[1], client, argv[2], StrFirstOcc(str, ":")+1);
-            }
-            else
-            {
-                IrcChannelKick(argv[1], client, argv[2], argv[2]);
-            }
-            break;
-        case IRCD_CMD_MODE:
-            if (argc==3)
-            {
-                IrcChannelMode(argv[1], client, argv[2]);
-            }
-            if (argc==4)
-            {
-                IrcChannelMode(argv[1], client, argv[2], argv[3]);
-            }
-            break;
-        case IRCD_CMD_NICK:
-            if (argc==2)
-            {
-                IrcClientSetNick(client, argv[1]);
-            }
-            break;
-        case IRCD_CMD_PART:
-            if (argc==2)
-            {
-                IrcChannelPart(argv[1], client);
-            }
-
-            if (argc>2)
-            {
-                IrcChannelPart(argv[1], client, StrFirstOcc(str, ":")+1);
-            }
-            break;
-        case IRCD_CMD_PING:
-            if (argc==2)
-            {
-                IrcClientPing(client, argv[1]);
-            }
-            break;
-        case IRCD_CMD_PRIVMSG:
-            if (argc>2)
-            {
-		TOSPrint("LOOK:%s,%p\n",client->nick,client->s);
-                IrcClientPrivMsg(client, argv[1], StrFirstOcc(str, ":")+1);
-            }
-            break;
-        case IRCD_CMD_QUIT:
-            if (argc==1)
-            {
-                IrcChannelsQuit(client);
-            }
-            if (argc>1)
-            {
-                IrcChannelsQuit(client, StrFirstOcc(str, ":")+1);
-            }
-            break;
-        case IRCD_CMD_TOPIC:
-            if (argc>2)
-            {
-                IrcChannelTopic(argv[1], client, StrFirstOcc(str, ":")+1);
-            }
-            break;
-        case IRCD_CMD_USER:
-            if (argc>4)
-            {
-                IrcClientSetUser(client, argv[1], argv[2], argv[3], StrFirstOcc(str, ":")+1); // for now
-                IrcClientMotd(client);
-            }
-            break;
-        case IRCD_CMD_WHO:
-            if (argc==2)
-            {
-                IrcClientWho(client, argv[1]);
-            }
-            break;
-        default:
-            break;
+    cmd = IrcMatchCommand(argv[0]);
+    switch (cmd)
+      {
+      case IRCD_CMD_JOIN:
+        if (argc==2)
+	  {
+	  IrcChannelJoin(argv[1], client);
+	  IrcClientTopic(client, argv[1]);
+	  IrcClientNames(client, argv[1]);
         }
-        FreeArgs(argc, argv);
+        break;
+      case IRCD_CMD_KICK:
+	break; //TODO
+        if (argc>3&&StrOcc(str,':'))
+	  {
+	  IrcChannelKick(argv[1], client, argv[2], StrFirstOcc(str, ":")+1);
+        }
+        else
+	  {
+	  IrcChannelKick(argv[1], client, argv[2], argv[2]);
+        }
+        break;
+      case IRCD_CMD_MODE:
+	break; //TODO
+        if (argc==3)
+	  {
+	  IrcChannelMode(argv[1], client, argv[2]);
+        }
+        if (argc==4)
+	  {
+	  IrcChannelMode(argv[1], client, argv[2], argv[3]);
+        }
+        break;
+      case IRCD_CMD_NICK:
+        if (argc==2)
+	  {
+	  IrcClientSetNick(client, argv[1]);
+        }
+        break;
+      case IRCD_CMD_PART:
+        if (argc==2)
+	  {
+	  IrcChannelPart(argv[1], client);
+        }
+
+        if (argc>2&&StrOcc(str,':'))
+	  {
+	  IrcChannelPart(argv[1], client, StrFirstOcc(str, ":")+1);
+        }
+        break;
+      case IRCD_CMD_PING:
+        if (argc==2)
+	  {
+	  IrcClientPing(client, argv[1]);
+        }
+        break;
+      case IRCD_CMD_PRIVMSG:
+        if (argc>2&&StrOcc(str,':'))
+	  {
+	  IrcClientPrivMsg(client, argv[1], StrFirstOcc(str, ":")+1);
+        }
+        break;
+      caseIRCD_CMD_TAGMSG:
+	if(argc>=2) {
+	  IrcClientTagMsg(client, argv[1]);
+	}
+	break;
+      case IRCD_CMD_QUIT:
+        if (argc==1)
+	  {
+	  IrcChannelsQuit(client);
+        }
+        if (argc>1&&StrOcc(str,':'))
+	  {
+	  IrcChannelsQuit(client, StrFirstOcc(str, ":")+1);
+        }
+        client->disconnected = TRUE;
+        break;
+      case IRCD_CMD_TOPIC:
+        if (argc>2&&StrOcc(str,':'))
+	  {
+	  IrcChannelTopic(argv[1], client, StrFirstOcc(str, ":")+1);
+        }
+        break;
+      case IRCD_CMD_USER:
+        if (argc>4&&StrOcc(str,':'))
+	  {
+	  IrcClientSetUser(client, argv[1], argv[2], argv[3], StrFirstOcc(str, ":")+1); // for now
+	  if(client->account) //Dont message of the Day If we didnt login
+	    IrcClientMotd(client);
+         }
+         IrcCap(client,"CAP LS 302");
+        break;
+      case IRCD_CMD_WHO:
+        if (argc==2)
+	  {
+	  IrcClientWho(client, argv[1]);
+        }
+        break;
+      case IRCD_CMD_PONG:
+        client->missed_pings--;
+	//???
+	if(client->missed_pings<0)
+	   client->missed_pings=0;
+      case IRCD_CMD_LIST:
+	IrcList(client);
+	break;
+      case IRCD_CMD_CAP:
+        if(client->account) //Wait for a connection first
+          IrcCap(client,str);
+        break;
+      case IRCD_CMD_PASS:
+        IrcPass(client,str);
+      default:
+        break;
     }
-    client->idle = cnts.jiffies;
+    FreeArgs(argc, argv);
+  }
+  client->idle = cnts.jiffies;
 }

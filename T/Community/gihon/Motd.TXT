@@ -1,2 +1,14 @@
-This is an example file.
-You can edit this file to display the message of the day.
+Yeah welcome to aiwnios.com's motherfuckin IRC server
+Time 2 get lit
+
+  Oh and be sure to disable SSL,this is a 1990's style server(aiwnios doesnt like SSL)
+
+  Set a password in your client before connect next time(use a burner one as traffic is logged here currently). This password cannot change for now so dont mess it up.
+
+  I only store Password hashes in the Registry,so hackers will have to decipher the Aiwnios HashStr thing. Probably unlikley to happen. You can also not use a password too.
+
+  See https://aiwnios.com/gihon for more details.
+
+Type:
+  /JOIN #main to get start talkin
+  /LIST to get a server list motherfucker 
