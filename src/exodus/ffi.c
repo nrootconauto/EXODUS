@@ -506,6 +506,10 @@ forceinline static f64 mypow10(f64 f) {
   return pow(f, 10);
 }
 
+forceinline static f64 Arg(f64 a, f64 b) {
+  return atan2(b, a);
+}
+
 MATHRT(Sqrt, sqrt);
 MATHRT(Abs, fabs);
 MATHRT(Cos, cos);
@@ -523,7 +527,7 @@ MATHRT(Trunc, trunc);
 MATHRT(Floor, floor);
 MATHRT(Exp, exp);
 MATHRT2(Pow, pow);
-MATHRT2(Arg, atan2);
+MATHRT2(Arg, Arg);
 
 static void STK_MPSetProfilerInt(i64 *stk) {
   MPSetProfilerInt((void *)stk[0], stk[1], stk[2]);
