@@ -8,6 +8,7 @@
 #include <winternl.h>
 #include <libloaderapi.h>
 #include <memoryapi.h>
+#include <ntdef.h>
 #include <process.h>
 #include <processthreadsapi.h>
 #include <synchapi.h>
@@ -89,20 +90,19 @@ void CreateCore(vec_void_t ptrs) {
   *c = (CCore){
       .funcptrs = ptrs,
       .core_num = nproc,
-      .thread = CreateThread(NULL, 0x10000, Seth, c, CREATE_SUSPENDED, NULL),
-      .timer = CreateWaitableTimerEx(NULL, NULL, 0, TIMER_ALL_ACCESS),
+      .thread = CreateThread(NULL, 0x10000, Seth, c, 0, NULL),
       // Windows doesn't like malloced memory for stacks
       .altstack = VirtualAlloc(NULL, SIGSTKSZ, MEM_RESERVE | MEM_COMMIT,
                                PAGE_READWRITE),
   };
+  NtCreateTimer(&c->timer, TIMER_ALL_ACCESS, NULL, SynchronizationTimer);
   SetThreadPriority(c->thread, THREAD_PRIORITY_HIGHEST);
-  ResumeThread(c->thread);
   nproc++;
 }
 
 void WakeCoreUp(u64 core) {
   CCore *c = cores + core;
-  SetWaitableTimer(c->timer, &(LARGE_INTEGER){0}, 0, NULL, NULL, FALSE);
+  NtSetTimer(c->timer, &(LARGE_INTEGER){0}, NULL, NULL, FALSE, 0, NULL);
 }
 
 static u32 inc;
@@ -183,7 +183,7 @@ static void profcb(u32 id, u32 msg, u64 userptr, u64 dw1, u64 dw2) {
 void SleepMillis(u64 ms) {
   CCore *c = self;
   LARGE_INTEGER delay = {.QuadPart = -ms * 10000 /* 1ms = 10000 units */};
-  SetWaitableTimer(c->timer, &delay, 0, NULL, NULL, FALSE);
+  NtSetTimer(c->timer, &delay, NULL, NULL, FALSE, 0, NULL);
   WaitForSingleObject(c->timer, INFINITE);
 }
 

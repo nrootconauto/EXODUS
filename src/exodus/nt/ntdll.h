@@ -60,7 +60,7 @@ NTSTATUS
 NTAPI
 NtContinue(IN PCONTEXT ContextRecord, IN BOOLEAN TestAlert);
 
-// use a negative integer because this thing does absolute deadlines for positive
+// use a negative integer because positive values are absolute
 NTSYSCALLAPI
 NTSTATUS
 NTAPI
@@ -71,5 +71,19 @@ NtDelayExecution(IN BOOLEAN Alertable, IN PLARGE_INTEGER DelayInterval);
 NTSYSCALLAPI
 NTSTATUS
 NTAPI
-NtSetTimerResolution(IN ULONG req, IN BOOLEAN set,
-                     OUT PULONG real);
+NtSetTimerResolution(IN ULONG req, IN BOOLEAN set, OUT PULONG real);
+
+NTSYSCALLAPI
+NTSTATUS
+NTAPI
+NtCreateTimer(OUT PHANDLE TimerHandle, IN ACCESS_MASK DesiredAccess,
+              IN POBJECT_ATTRIBUTES ObjectAttributes OPTIONAL,
+              IN TIMER_TYPE TimerType);
+
+NTSYSCALLAPI
+NTSTATUS
+NTAPI
+NtSetTimer(IN HANDLE TimerHandle, IN PLARGE_INTEGER DueTime,
+           IN PTIMERAPCROUTINE TimerApcRoutine OPTIONAL,
+           IN PVOID TimerContext OPTIONAL, IN BOOLEAN ResumeTimer,
+           IN LONG Period OPTIONAL, OUT PBOOLEAN PreviousState OPTIONAL);

@@ -12,6 +12,7 @@
 #include <io.h>     /* _chsize_s */
 #include <mbctype.h>
 #include <memoryapi.h>
+#include <ntdef.h>
 #include <processthreadsapi.h>
 #include <profileapi.h>
 #include <shlwapi.h>
