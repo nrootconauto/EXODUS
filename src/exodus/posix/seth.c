@@ -226,15 +226,15 @@ void WakeCoreUp(u64 core) {
     _umtx_op(l, UMTX_OP_WAIT_UINT, val, (void *)sizeof(struct timespec), t)
 #endif
 
-void SleepUs(u64 us) {
+void SleepMillis(u64 ms) {
   CCore *c = self;
   /* Cannot call the Sleep function if we are sleeping.
    * So to remove extra code, just store 1 */
   LBts(&c->is_sleeping, 0);
   Sleep(&c->is_sleeping, 1u,
         &(struct timespec){
-            .tv_nsec = (us % 1000000) * 1000,
-            .tv_sec = us / 1000000,
+            .tv_nsec = (ms % 1000) * 1e6,
+            .tv_sec = ms / 1e3,
         });
 }
 

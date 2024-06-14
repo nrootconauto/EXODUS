@@ -11,7 +11,7 @@ void InterruptCore(u64 core);
 void CreateCore(vec_void_t ptrs);
 
 void WakeCoreUp(u64 n);
-void SleepUs(u64 us);
+void SleepMillis(u64 ms);
 
 void InitIRQ0(void);
 void MPSetProfilerInt(void *fp, i64 idx, i64 freq);

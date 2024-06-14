@@ -71,5 +71,5 @@ NtDelayExecution(IN BOOLEAN Alertable, IN PLARGE_INTEGER DelayInterval);
 NTSYSCALLAPI
 NTSTATUS
 NTAPI
-ZwSetTimerResolution(IN ULONG req, IN BOOLEAN set,
+NtSetTimerResolution(IN ULONG req, IN BOOLEAN set,
                      OUT PULONG real);

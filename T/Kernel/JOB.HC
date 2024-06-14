@@ -572,7 +572,7 @@ next:
     }
     if (mS>0) {
       Gs->idle_pt_hits+=mS;
-      __SleepHP(mS*1000);
+      __Sleep(mS);
     }
     Yield;
     LBtr(&Fs->task_flags,TASKf_IDLE);

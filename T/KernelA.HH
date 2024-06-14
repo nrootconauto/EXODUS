@@ -7459,7 +7459,6 @@ extern class CDyadStream;
 #ifdef IMPORT_BUILTINS
 import U0 MPSetProfilerInt(U8*,U8*,I64);
 import U0 _GrPaletteColorSet(I64i,I64i);
-import U0 __SleepHP(U64);
 import U0 __AwakeCore(U64);
 import U0 SetVolume(F64);
 import F64 GetVolume();
@@ -7555,7 +7554,6 @@ import I64 HPET();
 #else
 extern U0 MPSetProfilerInt(U8*,U8*,I64);
 extern U0 _GrPaletteColorSet(I64i,I64i);
-extern U0 __SleepHP(U64);
 extern U0 __AwakeCore(U64);
 extern U8i __IsValidPtr(U8i *ptr);
 extern U64i UnixNow();

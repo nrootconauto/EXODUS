@@ -286,13 +286,8 @@ static void STK___AwakeCore(u64 *stk) {
   WakeCoreUp(stk[0]);
 }
 
-// μs nap
-static void STK___SleepHP(u64 *stk) {
-  SleepUs(stk[0]);
-}
-
 static void STK___Sleep(u64 *stk) {
-  SleepUs(stk[0] * 1000);
+  SleepMillis(stk[0]);
 }
 
 static void STK_SndFreq(u64 *stk) {
@@ -557,7 +552,6 @@ void BootstrapLoader(void) {
       S(SetClipboardText, 1),
       S(SndFreq, 1),
       S(__Sleep, 1),
-      S(__SleepHP, 1),
       S(__AwakeCore, 1),
       S(SetKBCallback, 1),
       S(SetMSCallback, 1),

@@ -31,17 +31,13 @@
 #include <exodus/vfs.h>
 #include <exodus/x86.h>
 
-enum { // sigaltstack isn't a thing on NT, look at profcb
-  SIGSTKSZ = 0x2000,
-#define SIGSTKSZ SIGSTKSZ
-};
+// sigaltstack isn't a thing on NT, look at profcb
+#define SIGSTKSZ 8192
 
 typedef struct {
   CONTEXT ctx;
-  HANDLE thread, event;
-  SRWLOCK mtx;
+  HANDLE thread, timer;
   u8 *altstack;
-  u64 awakeat;
   i64 core_num;
   u8 *profiler_int;
   u64 profiler_freq, next_prof_int;
@@ -53,6 +49,7 @@ static _Thread_local CCore *self;
 static u64 nproc;
 static u64 pf_prof_active;
 static MMRESULT pf_prof_timer;
+static bool iswine;
 
 static DWORD __stdcall Seth(void *arg) {
   self = arg;
@@ -92,13 +89,12 @@ void CreateCore(vec_void_t ptrs) {
   *c = (CCore){
       .funcptrs = ptrs,
       .core_num = nproc,
-      .event = CreateEvent(NULL, FALSE, FALSE, NULL),
       .thread = CreateThread(NULL, 0x10000, Seth, c, CREATE_SUSPENDED, NULL),
+      .timer = CreateWaitableTimerEx(NULL, NULL, 0, TIMER_ALL_ACCESS),
       // Windows doesn't like malloced memory for stacks
       .altstack = VirtualAlloc(NULL, SIGSTKSZ, MEM_RESERVE | MEM_COMMIT,
                                PAGE_READWRITE),
   };
-  InitializeSRWLock(&c->mtx);
   SetThreadPriority(c->thread, THREAD_PRIORITY_HIGHEST);
   ResumeThread(c->thread);
   nproc++;
@@ -106,12 +102,7 @@ void CreateCore(vec_void_t ptrs) {
 
 void WakeCoreUp(u64 core) {
   CCore *c = cores + core;
-  /* the timeSetEvent callback will automatiacally
-   * wake things up so just wait for the event */
-  AcquireSRWLockExclusive(&c->mtx);
-  NtSetEvent(c->event, NULL);
-  c->awakeat = 0;
-  ReleaseSRWLockExclusive(&c->mtx);
+  SetWaitableTimer(c->timer, &(LARGE_INTEGER){0}, 0, NULL, NULL, FALSE);
 }
 
 static u32 inc;
@@ -120,46 +111,16 @@ static void incinit(void) {
   static bool init;
   if (verylikely(init))
     return;
-  // timeSetEvent internally calls timeBeginPeriod which calls this
-  // but do this just to be sure (1e4 is 1ms for this routine)
-  ZwSetTimerResolution(10000, true, &(ULONG){0});
+  iswine = GetProcAddress(GetModuleHandle("ntdll.dll"), "wine_get_version");
+  NtSetTimerResolution(iswine ? 10000 : 5000, TRUE, &(ULONG){0});
   TIMECAPS tc = {0};
   timeGetDevCaps(&tc, sizeof tc);
   inc = tc.wPeriodMin;
   init = true;
 }
 
-static u64 ticks;
-
-/* We need this for accurate millisecond ticks, and just passing millisecnds to
- * WaitForSingleObject in SleepUs is inaccurate enough to mess with input */
-static void tickscb(u32 id, u32 msg, u64 userptr, u64 dw1, u64 dw2) {
-  (void)id;
-  (void)msg;
-  (void)userptr;
-  (void)dw1;
-  (void)dw2;
-  ticks += inc;
-  for (u64 i = 0; i < nproc; ++i) {
-    CCore *c = cores + i;
-    u64 wake = c->awakeat;
-    if (ticks >= wake && wake > 0) {
-      AcquireSRWLockExclusive(&c->mtx);
-      NtSetEvent(c->event, NULL);
-      c->awakeat = 0;
-      ReleaseSRWLockExclusive(&c->mtx);
-    }
-  }
-}
-
 static u64 elapsedms(void) {
-  incinit();
-  static bool init;
-  if (veryunlikely(!init)) {
-    timeSetEvent(inc, inc, tickscb, 0, TIME_PERIODIC);
-    init = true;
-  }
-  return ticks;
+  return getticksus() / 1e3;
 }
 
 static void irq0(u32 id, u32 msg, u64 userptr, u64 dw1, u64 dw2) {
@@ -201,41 +162,35 @@ static void profcb(u32 id, u32 msg, u64 userptr, u64 dw1, u64 dw2) {
     if (!Bt(&pf_prof_active, i))
       continue;
     CCore *c = cores + i;
-    if (ticks < c->next_prof_int || !c->profiler_int)
+    if (elapsedms() < c->next_prof_int || !c->profiler_int)
       continue;
     CONTEXT ctx = {.ContextFlags = CONTEXT_FULL};
-    AcquireSRWLockExclusive(&c->mtx);
     SuspendThread(c->thread);
     GetThreadContext(c->thread, &ctx);
     if (ctx.Rip > INT32_MAX) // crude check for HolyC
       goto rel;
     c->ctx = ctx;
     ctx.Rsp = (u64)c->altstack + SIGSTKSZ; // sigaltstack()
-    *(u64 *)(ctx.Rsp -= 8) = ctx.Rip; // return addr
+    *(u64 *)(ctx.Rsp -= 8) = ctx.Rip;      // return addr
     ctx.Rip = (u64)proftramp;
     SetThreadContext(c->thread, &ctx);
   rel:
     ResumeThread(c->thread);
-    c->next_prof_int = c->profiler_freq / 1e3 + ticks;
-    ReleaseSRWLockExclusive(&c->mtx);
+    c->next_prof_int = c->profiler_freq + elapsedms();
   }
 }
 
-void SleepUs(u64 us) {
+void SleepMillis(u64 ms) {
   CCore *c = self;
-  u64 curticks = elapsedms();
-  AcquireSRWLockExclusive(&c->mtx);
-  c->awakeat = curticks + us / 1e3;
-  ReleaseSRWLockExclusive(&c->mtx);
-  WaitForSingleObject(c->event, us / 1e3); // failsafe for tickscb()
+  LARGE_INTEGER delay = {.QuadPart = -ms * 10000 /* 1ms = 10000 units */};
+  SetWaitableTimer(c->timer, &delay, 0, NULL, NULL, FALSE);
+  WaitForSingleObject(c->timer, INFINITE);
 }
 
 void MPSetProfilerInt(void *fp, i64 idx, i64 freq) {
-  incinit();
   CCore *c = cores + idx;
   if (fp) {
-    AcquireSRWLockExclusive(&c->mtx);
-    c->profiler_freq = freq;
+    c->profiler_freq = freq / 1e3;
     c->profiler_int = fp;
     c->next_prof_int = 0;
     if (!pf_prof_timer) {
@@ -247,7 +202,6 @@ void MPSetProfilerInt(void *fp, i64 idx, i64 freq) {
       }
     }
     LBts(&pf_prof_active, idx);
-    ReleaseSRWLockExclusive(&c->mtx);
   } else if (LBtr(&pf_prof_active, idx)) {
     timeKillEvent(pf_prof_timer);
     pf_prof_timer = 0;
