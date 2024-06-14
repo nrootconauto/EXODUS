@@ -4594,6 +4594,15 @@ public extern CBlkDevGlbls blkdev;
 extern U0 UserTaskCont();
 extern I64 Char2ScanCode(I64 ch,I64 sc_flags=0);
 extern CDirEntry *FilesFind(U8 *files_find_mask,I64 fuf_flags=0);
+public extern I64 Size(U8 *files_find_mask="/*",U8 *fu_flags=NULL,I64 round_to=0);
+extern I64 Size1(CDirEntry *tmpde,I64 *_fuf_flags,I64 round_to);
+extern U0 FOFlatten(CDirEntry *tmpde,CDirEntry **a,I64 *i);
+public extern CDirEntry *DirTreeUnserialize(U8 *src);
+extern U8 *DirTreeUnserialize2(U8 *src,CDirEntry **tmpde);
+public extern U8 *DirTreeSerialize(CDirEntry *tmpde,I64 *_size=NULL);
+extern I64 DirTreeSerializeSize(CDirEntry *tmpde);
+extern I64 DirTreeSerializeFill(CDirEntry *tmpde,U8 *dst);
+public extern I64 FileCnt(CDirEntry *tmpde);
 extern I64 ExeFile2(U8 *name,I64 ccf_flags=0);
 #define BIBLE_FILENAME	"::/Misc/Bible.TXT"
 extern U0 GodBiblePassage(I64 num_lines=20);
@@ -4871,8 +4880,6 @@ extern U0 DirContextDel(CDirContext *dirc,Bool restore=TRUE);
 extern Bool Cd2(U8 *to,Bool make=FALSE);
 public extern CDirContext *DirContextNew(U8 *mask,
 	Bool make_mask=FALSE,Bool make_dirs=FALSE,Bool no_mask=FALSE);
-extern CDirEntry *FilesFind__(U8 *files_find_mask,I64 fuf_flags=0,
-                       CDirEntry *parent=NULL);
 extern CDirEntry *FilesFind2(U8 *files_find_mask,I64 fuf_flags);
 extern CDirEntry *FilesFind(U8 *files_find_mask,I64 fuf_flags=0);
 extern Bool FileFind(U8 *filename,CDirEntry *_de=NULL,I64 fuf_flags=FUF_Z_OR_NOT_Z);

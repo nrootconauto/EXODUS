@@ -96,7 +96,7 @@ static void newwindow(void) {
   win.sz_y = 480;
   /* let TempleOS manage the cursor */
   SDL_ShowCursor(SDL_DISABLE);
-  SDL_SetWindowKeyboardGrab(win.window, SDL_TRUE);
+  SDL_SetWindowKeyboardGrab(win.window, SdlGrab());
   SDL_UnlockMutex(win.screen_mutex);
   LBts(&win.ready, 0);
 }

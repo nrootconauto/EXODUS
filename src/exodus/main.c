@@ -3,6 +3,7 @@
 // Copyright 2024 1fishe2fishe
 // Refer to the LICENSE file for license info.
 // Any citation links are provided at the end of the file.
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -27,12 +28,16 @@ __attribute__((constructor)) static void init(void) {
   strcpy(bin_path, "HCRT.BIN");
 }
 
-static struct arg_lit *help, *_60fps, *cli;
+static struct arg_lit *help, *_60fps, *cli, *grab;
 static struct arg_file *clifiles, *drv, *hcrt;
 static struct arg_end *end;
 
 u64 IsCmdLine(void) {
   return !!cli->count;
+}
+
+bool SdlGrab(void) {
+  return !grab->count;
 }
 
 char *CmdLineBootText(void) {
@@ -47,6 +52,7 @@ int main(int argc, char **argv) {
   prepare();
   void *argtable[] = {
       help = arg_lit0("h", "help", "This help message"),
+      grab = arg_lit0("g", "degrab", "Disable cursor/keyboard grab"),
       _60fps = arg_lit0("6", "60fps", "Run in 60 FPS"),
       cli = arg_lit0("c", "com", "Command line mode"),
       hcrt = arg_file0("f", "hcrtfile", NULL, "Specify HolyC runtime"),
