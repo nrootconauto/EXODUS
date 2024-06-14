@@ -15,28 +15,37 @@ U0 InitFX() {
 InitFX;
 CCPU cpu_structs[MP_PROCESSORS_NUM];
 U32 SYS_CTRL_ALT_FLAGS=0;
-//Due to Microsoft and WINE agreeing on different ways of using the TEB
-//I had to resort to "ArbitraryUserPointer" that guarantees consistency unofficially
-//and "ActiveRpcHandle" where it's not touched by anything according to Windows/WINE/ReactOS source code
-//Using C side thread-local storage with FFI reduces headache but also performance
+//[0xE8,0x100) is a UserReserved block in TEB
+//it's used by WinSrv/NTFS driver but not touched in usermode
+//using C side thread-local storage with FFI reduces headache but also perf
 asm {
 _GET_FS::
 	XOR	EAX,EAX
-	MOV	RAX,GS:0x28[RAX]
+	MOV	RAX,GS:0xE8[RAX]
 	RET
 _SET_FS::
+	PUSH	RBP
+	MOV	RBP,RSP
 	XOR	EAX,EAX
-	MOV	RCX,8[RSP]
-	MOV	GS:0x28[RAX],RCX
+	PUSH	RSI
+	MOV	RSI,SF_ARG1[RBP]
+	MOV	GS:0xE8[RAX],RSI
+	POP	RSI
+	POP	RBP
 	RET1	8
 _GET_GS::
 	XOR	EAX,EAX
-	MOV	EAX,GS:0x50[RAX]
+	MOV	RAX,GS:0xF0[RAX]
 	RET
 _SET_GS::
+	PUSH	RBP
+	MOV	RBP,RSP
 	XOR	EAX,EAX
-	MOV	RCX,8[RSP]
-	MOV	GS:0x50[RAX],RCX
+	PUSH	RSI
+	MOV	RSI,SF_ARG1[RBP]
+	MOV	GS:0xF0[RAX],RSI
+	POP	RSI
+	POP	RBP
 	RET1	8
 }
 _extern _GET_FS CTask* GetFs();

@@ -342,7 +342,7 @@ void preparetls(void) {
   /* we store pointers (not the struct itself)
    * to Fs on gs:0x28 and Gs on gs:0x50
    * blame Microsoft for this */
-#define Fsgs (p = ((u8 *)malloc(0x30) - 0x28))
+#define Fsgs (p = ((u8 *)malloc(0x10) - 0xe8))
   void *p;
 #ifdef __linux__
   int ret = syscall(SYS_arch_prctl, ARCH_SET_GS, (u64)Fsgs);
