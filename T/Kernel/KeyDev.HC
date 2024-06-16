@@ -119,7 +119,7 @@ Bool KDInputFilterPutS(U8 *st)
 
 U0 CtrlAltDel(I64)
 {
-  //LBts(sys_ctrl_alt_flags,CTRL_ALT_DEL); TODO URGENT RESTORE
+  //LBts(sys_ctrl_alt_flags,CTRL_ALT_DEL);
 }
 
 U0 CtrlAltC(I64)

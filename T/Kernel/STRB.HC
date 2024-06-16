@@ -365,15 +365,14 @@ U8 *MStrUtil(U8 *src,I64 flags,F64 indent_scale_factor=0)
 Bool YorN()
 {//Wait for user to answer Y or N.
   I64 ch;
-  U8 *s;
   "(y or n)? ";
-  ch=*(s=GetStr);
-  Free(s);
   while (TRUE) {
-    ch=ToUpper(s);
+    ch=ToUpper(GetChar(,FALSE));
     if (ch=='Y') {
+      "$$PT$$YES$$FG$$\n";
       return TRUE;
     } else if (ch=='N') {
+      "$$PT$$NO$$FG$$\n";
       return FALSE;
     }
   }

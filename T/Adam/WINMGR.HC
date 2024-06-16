@@ -683,7 +683,7 @@ wmt_start:
 	      if (DocPut(task))
 	        TaskMsg(task,0,MSG_KEY_DOWN,CH_SHIFT_ESC,0,0);
 	      else
-	        ;//Kill(task,FALSE); TODO RESTORE
+	        Kill(task,FALSE);
 	      old_ms.lb=FALSE;
 	      goto wmt_start;
 	    }

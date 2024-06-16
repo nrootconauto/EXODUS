@@ -581,13 +581,12 @@ mo_got_msg:
 		break;
 	      case CH_CTRLO:
 		PsmPopMode;
-		/*RegOneTimePopUp(ARf_PSALMODY_JUKEBOX, TODO URGENT RESTORE
+		RegOneTimePopUp(ARf_PSALMODY_JUKEBOX,
 		      "Sel a song and preview it.\n"
 		      "$$GREEN$$<SHIFT-ESC>$$FG$$ to load it into Psalmody.\n\n"
 		      ST_WARN_ST " Graphics and other embelishments\n"
 		      "will be lost because Psalmody can't\n"
 		      "parse HolyC programs completely.\n");
-		*/
 		Free(filename);
 		filename=NULL;
 		JukeBox(dirname,&filename);

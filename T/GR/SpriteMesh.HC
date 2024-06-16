@@ -57,7 +57,7 @@ CMeshEdTri *MeshTriNew(CMeshFrame *e,CColorROPU32 color,
 {
   static I64 cpu_num=0;
   CMeshEdTri *tmpt=CAlloc(sizeof(CMeshEdTri));
-  tmpt->cpu_num=0;// cpu_num++%mp_cnt; TODO URGENT RESTORE
+  tmpt->cpu_num=cpu_num++%mp_cnt;
   tmpt->mt.color=color;
   tmpt->t[0]=v1;
   tmpt->t[1]=v2;
@@ -1043,17 +1043,17 @@ $WW,0$*/
   SettingsPush; //See $LK,"SettingsPush",A="MN:SettingsPush"$
   AutoComplete;
   OneTimePopUp(sys_msg_flags,ARf_MESH_ED,
-	"$GREEN$Right Mouse$FG$: Hold and move to shift cursor z\n"
-	"$GREEN$'j'$FG$: Jump cursor Z to nearest vertex's Z\n"
-	"$GREEN$'v'$FG$: Place Vertex Mode\n"
-	"$GREEN$'m'$FG$: Move Vertex Mode\n"
-	"$GREEN$'M'$FG$: Move Vertex Z\n"
-	"$GREEN$'t'$FG$: Form Triangle Mode\n"
-	"$GREEN$'n'$FG$: Polygon Mode\n"
-	"$GREEN$'f'$FG$: Fence Mode\n"
-	"$GREEN$'p'$FG$: Prism Mode\n"
-	"$GREEN$'c'$FG$: Set color\n"
-	"$GREEN$'s'$FG$: Set snap\n"
+	"$FG,2$Right Mouse$FG$: Hold and move to shift cursor z\n"
+	"$FG,2$'j'$FG$: Jump cursor Z to nearest vertex's Z\n"
+	"$FG,2$'v'$FG$: Place Vertex Mode\n"
+	"$FG,2$'m'$FG$: Move Vertex Mode\n"
+	"$FG,2$'M'$FG$: Move Vertex Z\n"
+	"$FG,2$'t'$FG$: Form Triangle Mode\n"
+	"$FG,2$'n'$FG$: Polygon Mode\n"
+	"$FG,2$'f'$FG$: Fence Mode\n"
+	"$FG,2$'p'$FG$: Prism Mode\n"
+	"$FG,2$'c'$FG$: Set color\n"
+	"$FG,2$'s'$FG$: Set snap\n"
 	"\nSee menu at top of scrn for more.\n");
 
   Fs->win_inhibit=WIG_TASK_DFT|WIF_SELF_DOC-WIF_SELF_FOCUS-WIF_SELF_BORDER

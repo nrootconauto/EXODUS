@@ -286,23 +286,14 @@ I64 TaskInit(CTask *task,I64 stk_size)
   task->hash_table=HashTableNew(TASK_HASH_TABLE_SIZE,task);
   task->text_attr	=WHITE<<4+BLUE;
   task->border_src	=BDS_CONST;
-  //task->border_attr	=DrvTextAttrGet(':'); RESTORE
-  task->border_attr=WHITE<<4+BLUE; //TODO PLACEHOLDER REMOVE
+  task->border_attr	=DrvTextAttrGet(':');
   task->title_src	=TTS_CONST;
   task->win_left	=1;
   task->win_right	=text.cols-2;
   task->win_top		=13;
   task->win_bottom	=text.rows-2;
-/*
-  if (blkdev.home_dir) {//Beware Adam $LK,"TaskInit",A="FF:::/Kernel/KStart64.HC,TaskInit"$. I guess ok until $LK,"DskChg",A="FF:::/Kernel/KMain.HC,DskChg"$().
-    task->cur_dv=blkdev.let_to_drv[*blkdev.home_dir-'A'];
-    task->cur_dir=StrNew(blkdev.home_dir+2,task);
-  } else
-    task->cur_dir=StrNew("/Home",task);
-*/
-  /*task->cur_dv=Fs->cur_dv;
-  task->cur_dir=StrNew(Fs->cur_dir,task);*/
-  if (Fs->cur_dv) {
+
+  if (Fs->cur_dv) {
     task->cur_dv=Fs->cur_dv;
     task->cur_dir=StrNew(Fs->cur_dir,task);
   /*Seth tasks are the first,
@@ -310,7 +301,11 @@ I64 TaskInit(CTask *task,I64 stk_size)
   } else if (dv=Let2Drv('T',FALSE)) { 
     task->cur_dv=dv;
     task->cur_dir=StrNew("/",task);
-  }
+  } else if (blkdev.home_dir) {//Beware Adam $LK,"TaskInit",A="FF:::/Kernel/KStart64.HC,TaskInit"$. I guess ok until $LK,"DskChg",A="FF:::/Kernel/KMain.HC,DskChg"$().
+    task->cur_dv=blkdev.let_to_drv[*blkdev.home_dir-'A'];
+    task->cur_dir=StrNew(blkdev.home_dir+2,task);
+  } else
+    task->cur_dir=StrNew("/Home",task);
   return task;
 }
 CTask *Spawn(U0 (*fp_start_addr)(U8 *data),U8 *data=NULL,U8 *task_name=NULL,
@@ -475,20 +470,3 @@ U0 TaskKillDying()
     Gs->kill_jiffy=cnts.jiffies+DYING_JIFFIES;
   }
 }
-
-/*U0 TaskKillDying() {
-  while (LBts(&(Gs->cpu_flags),CPUf_DYING_TASK_QUE))
-    PAUSE
-  CTaskDying *task=Gs->next_dying,*task1;
-  while (task!=&(Gs->next_dying)) {
-    task1=task->next;
-    if (task->wake_jiffy<cnts.jiffies) { 
-      QueRem(task);
-      HeapCtrlDel(task(CTask*)->data_heap);
-      HeapCtrlDel(task(CTask*)->code_heap);
-      Free(task);
-    }
-    task=task1;
-  }
-  LBtr(&Gs->cpu_flags,CPUf_DYING_TASK_QUE);
-}*/

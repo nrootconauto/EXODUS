@@ -221,7 +221,6 @@ U0 WinMsUpdate()
   } else
     ms.speed*=0.95;
   if (gr.scrn_zoom!=1) {
-  /* TODO RESTORE
     if (gr.continuous_scroll)
       GrScaleZoom(1.0);
     else {
@@ -234,7 +233,6 @@ U0 WinMsUpdate()
 	  GrScaleZoom(1.0);
       }
     }
-    */
   }
 }
 

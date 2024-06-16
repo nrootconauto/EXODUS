@@ -195,12 +195,12 @@ U0 DocUpdateTaskDocs(CTask *task)
   CDoc *doc;
   CD3I64 saved_scroll;
   if (task->border_src==BDS_CUR_DRV && task->cur_dv)
-    ;//task->border_attr=DrvTextAttrGet(Drv2Let(task->cur_dv)); //TODO URGENT RESTORE
+    task->border_attr=DrvTextAttrGet(Drv2Let(task->cur_dv));
   if (task->title_src==TTS_TASK_NAME)
     StrCpy(task->task_title,task->task_name);
   if ((doc=DocDisplay(task)) && !(doc->flags&DOCF_DONT_SHOW)) {
     if (task->border_src==BDS_ED_FILENAME_DRV)
-      ;//task->border_attr=DrvTextAttrGet(*doc->filename.name); //TODO URGENT RESTORE
+      task->border_attr=DrvTextAttrGet(*doc->filename.name);
     if (task->title_src==TTS_ED_FILENAME)
       MemCpy(task->task_title,doc->filename.name,STR_LEN-1);
     DocRecalc(doc,RECALCt_TO_SCRN|RECALCF_HAS_CURSOR);
