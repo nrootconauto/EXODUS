@@ -30,16 +30,15 @@
 #include <exodus/seth.h>
 #include <exodus/shims.h>
 #include <exodus/vfs.h>
-#include <exodus/x86.h>
 
 // sigaltstack isn't a thing on NT, look at profcb
 #define SIGSTKSZ 8192
 
 typedef struct {
   CONTEXT ctx;
-  HANDLE thread, timer;
+  HANDLE thread;
   u8 *altstack;
-  i64 core_num;
+  i32 sleeping, core_num;
   u8 *profiler_int;
   u64 profiler_freq, next_prof_int;
   vec_void_t funcptrs;
@@ -95,28 +94,38 @@ void CreateCore(vec_void_t ptrs) {
       .altstack = VirtualAlloc(NULL, SIGSTKSZ, MEM_RESERVE | MEM_COMMIT,
                                PAGE_READWRITE),
   };
-  NtCreateTimer(&c->timer, TIMER_ALL_ACCESS, NULL, SynchronizationTimer);
   SetThreadPriority(c->thread, THREAD_PRIORITY_HIGHEST);
   nproc++;
 }
 
+void apcnop(u64 arg) {
+  (void)arg;
+}
+
 void WakeCoreUp(u64 core) {
   CCore *c = cores + core;
-  NtSetTimer(c->timer, &(LARGE_INTEGER){0}, NULL, NULL, FALSE, 0, NULL);
+  if (!LBtr(&c->sleeping, 0))
+    return;
+  // q.v. SleepMillis
+  // APCs execute immediately if thread is alertable
+  QueueUserAPC(apcnop, c->thread, 0);
+}
+
+void SleepMillis(u64 ms) {
+  LBts(&self->sleeping, 0);
+  // 10000 = 1ms, negative for relative time (q.v. ntdll.h)
+  LARGE_INTEGER delay = {.QuadPart = -ms * 10000};
+  NtDelayExecution(TRUE /* alertable so APCs can interrupt */, &delay);
 }
 
 static u32 inc;
 
-static void incinit(void) {
-  static bool init;
-  if (verylikely(init))
-    return;
+__attribute__((constructor)) static void init(void) {
   iswine = GetProcAddress(GetModuleHandle("ntdll.dll"), "wine_get_version");
   NtSetTimerResolution(iswine ? 10000 : 5000, TRUE, &(ULONG){0});
-  TIMECAPS tc = {0};
+  TIMECAPS tc;
   timeGetDevCaps(&tc, sizeof tc);
   inc = tc.wPeriodMin;
-  init = true;
 }
 
 static u64 elapsedms(void) {
@@ -137,7 +146,6 @@ static void irq0(u32 id, u32 msg, u64 userptr, u64 dw1, u64 dw2) {
 
 void InitIRQ0(void) {
   static bool init;
-  incinit();
   if (init)
     return;
   timeSetEvent(inc, inc, irq0, 0, TIME_PERIODIC);
@@ -178,13 +186,6 @@ static void profcb(u32 id, u32 msg, u64 userptr, u64 dw1, u64 dw2) {
     ResumeThread(c->thread);
     c->next_prof_int = c->profiler_freq + elapsedms();
   }
-}
-
-void SleepMillis(u64 ms) {
-  CCore *c = self;
-  LARGE_INTEGER delay = {.QuadPart = -ms * 10000 /* 1ms = 10000 units */};
-  NtSetTimer(c->timer, &delay, NULL, NULL, FALSE, 0, NULL);
-  WaitForSingleObject(c->timer, INFINITE);
 }
 
 void MPSetProfilerInt(void *fp, i64 idx, i64 freq) {

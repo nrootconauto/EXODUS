@@ -228,8 +228,6 @@ void WakeCoreUp(u64 core) {
 
 void SleepMillis(u64 ms) {
   CCore *c = self;
-  /* Cannot call the Sleep function if we are sleeping.
-   * So to remove extra code, just store 1 */
   LBts(&c->is_sleeping, 0);
   Sleep(&c->is_sleeping, 1u,
         &(struct timespec){
