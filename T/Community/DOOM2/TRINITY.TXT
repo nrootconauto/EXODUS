@@ -1,0 +1,105 @@
+================================================================
+Title                   : The Unholy Trinity
+Filename                : TRINITY2.WAD
+Authors                 : Steve McCrea, Simon Wall, & Elias Papavassilopoulos
+Email Address           : sm@eng.cam.ac.uk
+Misc. Author Info       : -
+
+Description             : A reasonable representation of Trinity College,
+                          Cambridge. "Oh no, not again," I hear you cry.
+                          "Some lamers' first WAD. Prob'ly got a cyber
+                          in there." But wait! Read on. Much cannon fodder.
+                          Many new graphics. Cool bits. Guaranteed
+                          entertainment or your money back (see below
+                          for terms and conditions of this offer).
+                          And NO cyberdemon! Well... oh, never mind.
+                          Although designed for single player, has
+                          multiplayer weapons and starts, and large,
+                          well interconnected areas.
+                          Version 2 fixes a bug and some ugly bits.
+
+Additional Credits to   : Peter Morgan for the camera
+                          Olivier Montanuy for the wraparound sky idea
+
+Release Date            : Version 1: 22nd August 1994
+                          Version 2: 4th September 1994
+================================================================
+
+* Play Information *
+
+Episode and Level #     : E1M1
+Single Player           : Yes
+Cooperative 2-4 Player  : Yes
+Deathmatch 2-4 Player   : Yes
+Difficulty Settings     : Yes
+New Sounds              : No
+New Graphics            : Yes
+New Music               : Yes
+Demos Replaced          : None
+
+* Construction *
+
+Base                    : New level from scratch
+Build Time              : 1 Month or so
+Editor(s) used          : DEU 5.21 (GCC), IDBSP (Watcom), Midi2Mus,
+                          DoomTex 1.0b, DMGraph 1.1, WAD Tools 1.0,
+                          BSP12x, RMB 1.0
+Known Bugs              : Minor hall of mirrors with DOOM 1.2
+
+   (This version fixes the V_BadDrawPatchDirect bug which plagued the
+    previous version. There are also some minor cosmetic fixes.)
+
+Level layout and graphics : Steve
+Logic and UV setting      : Simon and Steve
+Other difficulty settings : Elias
+
+The new textures were put together using DoomTex, available at
+infant2 as dmtex10b.zip. As you can see, it works. I highly
+recommend it. But then, I'm biased.
+
+One area has a HOM in DOOM 1.2 which goes away with 1.6.
+To use 1.6:
+        registered 1.2 WAD => doom12.wad
+        shareware 1.6 WAD  => doom.wad
+        doom16 -file doom12.wad trinity.wad
+Multiplayer 1.6 has an extra sprite called IFOG. Get your local
+Doom guru to sort this out, or read the available info on
+patching 1.6.
+When 1.666 comes out, it _should_ be directly compatible.
+
+Elias has looked at the Bad V_DrawPatchDirect problem.
+It is gone.
+
+I always told myself if I was going to write a level that it
+would not have really slow bits, but the setting demands that
+one area is slow, at least on my machine. Oops. Sorry, me.
+
+One thing that really pisses me off is that the GUS sound code
+gets slower with every incarnation of DOOM. Why oh why? I hope
+Paul "sound-dork" Radek is twitching on a spike outside the
+iD offices.
+
+* Copyright / Permissions *
+
+You MAY use this level as a base to build additional
+levels. However, due credit should be given in the .TXT file
+accompanying the WAD. Especially if you rip off any textures.
+
+You MAY distribute this WAD, provided you include this file, with
+no modifications.  You may distribute this file in any electronic
+format (BBS, Diskette, CD, etc) as long as you include this file 
+intact. However, if you include the WAD on CD or floppy disk, you
+may not make _any_ kind of money from the sale of the product,
+unless you send me free copies. Note that this includes the so-
+called copying charges of shareware vendors.
+
+* Where to get this WAD *
+
+Official BBS Distribution Site:
+ ÖÄÄÄÄÄÄ ÖÄÄ¿ ÖÄÒÄ¿ ÒÄÄ¿  ÒÄÄÄÄÄ¿ ÖÄÄ¿ Ò    ÖÄÄ¿ ÖÄÄ¿ ÒÄÄ¿
+ º       ÇÄÄ´ º º ³ ÇÄ    º     ³ ÇÄÄ´ º    ÇÄÄ´ º    ÇÄ
+ º   ÚÄ¿ Ğ  Á Ğ Ğ Á ĞÄÄÙ  ÇÄÄÄÄÄÙ Ğ  Á ĞÄÄÙ Ğ  Á ÓÄÄÙ ĞÄÄÙ
+ º     ³                  º                       BBS
+ ÓÄÄÄÄÄÙ                  Ğ                  (305) 587 4258
+
+FTP sites : infant2.sphs.indiana.edu - /pub/doom... - trinity2.zip

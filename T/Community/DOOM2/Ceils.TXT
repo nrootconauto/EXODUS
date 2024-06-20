@@ -1,0 +1,20 @@
+43	Reg	SR	Dn	Fast	None	--	No	No	Floor
+41	Reg	S1	Dn	Fast	None	--	No	No	Floor
+152	Ext	WR	Dn	Fast	None	--	No	No	Floor
+145	Ext	W1	Dn	Fast	None	--	No	No	Floor
+186	Ext	SR	Up	Slow	None	--	No	No	Highest Neighbor Ceiling
+166	Ext	S1	Up	Slow	None	--	No	No	Highest Neighbor Ceiling
+151	Ext	WR	Up	Slow	None	--	No	No	Highest Neighbor Ceiling
+40	Reg	W1	Up	Slow	None	--	No	No	Highest Neighbor Ceiling
+187	Ext	SR	Dn	Slow	None	--	No	No	8 Above Floor
+167	Ext	S1	Dn	Slow	None	--	No	No	8 Above Floor
+72	Reg	WR	Dn	Slow	None	--	No	No	8 Above Floor
+44	Reg	W1	Dn	Slow	None	--	No	No	8 Above Floor
+205	Ext	SR	Dn	Slow	None	--	No	No	Lowest Neighbor Ceiling
+203	Ext	S1	Dn	Slow	None	--	No	No	Lowest Neighbor Ceiling
+201	Ext	WR	Dn	Slow	None	--	No	No	Lowest Neighbor Ceiling
+199	Ext	W1	Dn	Slow	None	--	No	No	Lowest Neighbor Ceiling
+206	Ext	SR	Dn	Slow	None	--	No	No	Highest Neighbor Floor
+204	Ext	S1	Dn	Slow	None	--	No	No	Highest Neighbor Floor
+202	Ext	WR	Dn	Slow	None	--	No	No	Highest Neighbor Floor
+200	Ext	W1	Dn	Slow	None	--	No	No	Highest Neighbor Floor

@@ -1,0 +1,16 @@
+184	Ext	SR	Slow	No	No	Start
+49	Reg	S1	Slow	No	No	Start
+73	Reg	WR	Slow	No	No	Start
+25	Reg	W1	Slow	No	No	Start
+183	Ext	SR	Fast	No	No	Start
+164	Ext	S1	Fast	No	No	Start
+77	Reg	WR	Fast	No	No	Start
+6	Reg	W1	Fast	No	No	Start
+185	Ext	SR	Slow	No	Yes	Start
+165	Ext	S1	Slow	No	Yes	Start
+150	Ext	WR	Slow	No	Yes	Start
+141	Reg	W1	Slow	No	Yes	Start
+188	Ext	SR	----	--	--	Stop
+168	Ext	S1	----	--	--	Stop
+74	Reg	WR	----	--	--	Stop
+57	Reg	W1	----	--	--	Stop

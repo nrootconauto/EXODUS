@@ -1,0 +1,12 @@
+230	Ext	SR	Fast	Next Highest Floor
+229	Ext	S1	Fast	Next Highest Floor
+228	Ext	WR	Fast	Next Highest Floor
+227	Ext	W1	Fast	Next Highest Floor
+234	Ext	SR	Fast	Next Lowest Floor
+233	Ext	S1	Fast	Next Lowest Floor
+232	Ext	WR	Fast	Next Lowest Floor
+231	Ext	W1	Fast	Next Lowest Floor
+238	Ext	SR	Fast	Current Floor
+237	Ext	S1	Fast	Current Floor
+236	Ext	WR	Fast	Current Floor
+235	Ext	W1	Fast	Current Floor

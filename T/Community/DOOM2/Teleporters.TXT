@@ -1,0 +1,20 @@
+195	Ext	SR	No	Yes	Yes	Set	TP thing in tagged sector
+174	Ext	S1	No	Yes	Yes	Set	TP thing in tagged sector
+97	Reg	WR	No	Yes	Yes	Set	TP thing in tagged sector
+39	Reg	W1	No	Yes	Yes	Set	TP thing in tagged sector
+126	Reg	WR	No	Yes	No	Set	TP thing in tagged sector
+125	Reg	W1	No	Yes	No	Set	TP thing in tagged sector
+269	Ext	WR	Yes	Yes	No	Set	TP thing in tagged sector
+268	Ext	W1	Yes	Yes	No	Set	TP thing in tagged sector
+210	Ext	SR	Yes	Yes	Yes	Preserve	TP thing in tagged sector
+209	Ext	S1	Yes	Yes	Yes	Preserve	TP thing in tagged sector
+208	Ext	WR	Yes	Yes	Yes	Preserve	TP thing in tagged sector
+207	Ext	W1	Yes	Yes	Yes	Preserve	TP thing in tagged sector
+244	Ext	WR	Yes	Yes	Yes	Preserve	Line with same tag
+243	Ext	W1	Yes	Yes	Yes	Preserve	Line with same tag
+263	Ext	WR	Yes	Yes	Yes	Preserve	Line with same tag (reversed)
+262	Ext	W1	Yes	Yes	Yes	Preserve	Line with same tag (reversed)
+267	Ext	WR	Yes	Yes	No	Preserve	Line with same tag
+266	Ext	W1	Yes	Yes	No	Preserve	Line with same tag
+265	Ext	WR	Yes	Yes	No	Preserve	Line with same tag (reversed)
+264	Ext	W1	Yes	Yes	No	Preserve	Line with same tag (reversed)
