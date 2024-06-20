@@ -98,7 +98,7 @@ void CreateCore(vec_void_t ptrs) {
   nproc++;
 }
 
-void apcnop(u64 arg) {
+static void apcnop(u64 arg) {
   (void)arg;
 }
 
@@ -116,6 +116,7 @@ void SleepMillis(u64 ms) {
   // 10000 = 1ms, negative for relative time (q.v. ntdll.h)
   LARGE_INTEGER delay = {.QuadPart = -ms * 10000};
   NtDelayExecution(TRUE /* alertable so APCs can interrupt */, &delay);
+  LBtr(&self->sleeping, 0);
 }
 
 static u32 inc;
