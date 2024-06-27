@@ -27,31 +27,9 @@ public F64 Wrap(F64 é,F64 base=-ã)
 }
 
 public I64 DistSqrI64(I64 x1,I64 y1,I64 x2,I64 y2)
-{//Distance-squared between 2 points.
+{//Distance-squared between 2 points.
   I64 dx=x1-x2,dy=y1-y2;
   return dx*dx+dy*dy;
-}
-
-public F64 ASin(F64 s)
-{//Arc Sin (Inverse Sin).
-  F64 c;
-  c=s*s;
-  if (c>=1.0)
-    return ã/2.0;
-  c=Sqrt(1.0-c);
-  return ATan(s/c);
-}
-
-public F64 ACos(F64 c)
-{//Arc Cos (Inverse Cos).
-  F64 s;
-  if (!c)
-    return ã/2.0;
-  s=c*c;
-  if (s>=1.0)
-    return 0.0;
-  s=Sqrt(1.0-s);
-  return ATan(s/c);
 }
 
 public F64 Sinh(F64 x)

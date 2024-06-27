@@ -498,7 +498,7 @@ forceinline static f64 dbl(f64 f) {
 
 // pow10 removed in glibc 2.27
 forceinline static f64 mypow10(f64 f) {
-  return pow(f, 10);
+  return pow(10, f);
 }
 
 forceinline static f64 Arg(f64 a, f64 b) {
@@ -506,13 +506,15 @@ forceinline static f64 Arg(f64 a, f64 b) {
 }
 
 MATHRT(Sqrt, sqrt);
+MATHRT(Exp, exp);
 MATHRT(Abs, fabs);
+MATHRT(Tan, tan);
 MATHRT(Cos, cos);
 MATHRT(Sin, sin);
 MATHRT(ATan, atan);
+MATHRT(ACos, acos);
+MATHRT(ASin, asin);
 MATHRT(Sqr, dbl);
-MATHRT(Tan, tan);
-MATHRT(Ceil, ceil);
 MATHRT(Ln, log);
 MATHRT(Log10, log10);
 MATHRT(Log2, log2);
@@ -520,7 +522,8 @@ MATHRT(Pow10, mypow10);
 MATHRT(Round, round);
 MATHRT(Trunc, trunc);
 MATHRT(Floor, floor);
-MATHRT(Exp, exp);
+MATHRT(Ceil, ceil);
+
 MATHRT2(Pow, pow);
 MATHRT2(Arg, Arg);
 
@@ -593,13 +596,15 @@ void BootstrapLoader(void) {
       S(StrCpy, 2),
       S(StrCmp, 2),
       S(StrLen, 1),
-      S(Sqrt, 1),
       S(Sqr, 1),
+      S(Sqrt, 1),
+      S(Tan, 1),
       S(Sin, 1),
       S(Cos, 1),
-      S(Abs, 1),
       S(ATan, 1),
-      S(Tan, 1),
+      S(ACos, 1),
+      S(ASin, 1),
+      S(Abs, 1),
       S(Ceil, 1),
       S(Ln, 1),
       S(Log10, 1),

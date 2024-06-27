@@ -4160,8 +4160,6 @@ public extern U0 P2R(F64 *_x=NULL,F64 *_y=NULL,F64 mag,F64 arg);
 public extern F64 Wrap(F64 e,F64 base=-pi);
 public extern I64 DistSqrI64(I64 x1,I64 y1,I64 x2,I64 y2);
 public extern I64 DistSqrI64(I64 x1,I64 y1,I64 x2,I64 y2);
-public extern F64 ASin(F64 s);
-public extern F64 ACos(F64 c);
 public extern F64 Sinh(F64 x);
 public extern F64 Cosh(F64 x);
 public extern U0 SndTaskEndCB();
@@ -7538,6 +7536,8 @@ import F64 Cos(F64 d); //Cosine.
 import F64 Sin(F64 d); //Sine.
 import F64 Sqr(F64 d); //Square of F64.
 import F64 ATan(F64 d); //Arc Tan (Inverse Tan).
+import F64 ASin(F64 s);//Arc Sin (Inverse Sin).
+import F64 ACos(F64 c);//Arc Cos (Inverse Cos).
 import F64 Tan(F64 d); //Tangent.
 import F64 Arg(F64 x,F64 y); //Polar coordinate angle.
 import F64 Ceil(F64 d); //Ceiling of F64.
@@ -7644,6 +7644,8 @@ public extern F64 Cos(F64 d); //Cosine.
 public extern F64 Sin(F64 d); //Sine.
 public extern F64 Sqr(F64 d); //Square of F64.
 public extern F64 ATan(F64 d); //Arc Tan (Inverse Tan).
+public extern F64 ASin(F64 s);//Arc Sin (Inverse Sin).
+public extern F64 ACos(F64 c);//Arc Cos (Inverse Cos).
 public extern F64 Tan(F64 d); //Tangent.
 public extern F64 Arg(F64 x,F64 y); //Polar coordinate angle.
 public extern F64 Ceil(F64 d); //Ceiling of F64.
