@@ -2,11 +2,10 @@
 
 ![EXODUS](img/Exodus.png)
 
-EXODUS is a port of the TempleOS kernel to user space for Linux, Windows and FreeBSD.
-EXODUS makes HolyC a user-space general programming language that
-isn't just an exclusivity of virtual machines. It contains a mostly
-full-featured GUI from stock TempleOS, and a CLI mode which has found
-uses for running the networked servers automatically and building
+EXODUS is a port of the TempleOS kernel to user space for x86_64 Linux, Windows
+and FreeBSD, so that you can run TempleOS without a virtual machine.  It
+contains a mostly full-featured GUI from stock TempleOS, and a CLI mode
+which has found uses for running the networked servers automatically and building
 EXODUS' kernel itself.
 
 # Building EXODUS
@@ -38,8 +37,9 @@ so here is a more detailed instruction:
 
 1. Install [msys2](https://msys2.org)
 2. Run "MSYS2 MINGW64" (NOTE: ***MUST*** BE MINGW64, NO SUPPORT FOR OTHER ENVIRONMENTS)
-3. Run `pacman -Sy mingw-w64-x86_64-{gcc,SDL2,cmake}`
-4. Run the following after navigating to the directory(Ignore any `WARN`s):
+3. Run `pacman -Sy git mingw-w64-x86_64-{gcc,SDL2,cmake}`
+4. Clone this repository
+5. Run the following after navigating to the directory(Ignore any `WARN`s):
 ```
 mkdir build
 cd build

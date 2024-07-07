@@ -69,7 +69,7 @@ static void updatescrn(u8 *px) {
 }
 
 static void newwindow(void) {
-  if (SDL_Init(SDL_INIT_VIDEO)) {
+  if (SDL_Init(SDL_INIT_VIDEO) < 0) {
     flushprint(stderr,
                "Failed to init SDL_video: "
                "\"%s\"\n",
@@ -90,7 +90,8 @@ static void newwindow(void) {
   win.palette = SDL_AllocPalette(256);
   SDL_SetSurfacePalette(win.surf, win.palette);
   SDL_SetWindowMinimumSize(win.window, 640, 480);
-  win.rend = SDL_CreateRenderer(win.window, -1, SDL_RENDERER_ACCELERATED);
+  // SDL_RENDERER_ACCELERATED will not fall back to software
+  win.rend = SDL_CreateRenderer(win.window, -1, 0);
   win.margin_y = win.margin_x = 0;
   win.sz_x = 640;
   win.sz_y = 480;
@@ -538,7 +539,7 @@ int SDLCALL MSCallback(argign void *arg, SDL_Event *e) {
 }
 
 void EventLoop(void) {
-  if (SDL_Init(SDL_INIT_EVENTS)) {
+  if (SDL_Init(SDL_INIT_EVENTS) < 0) {
     flushprint(stderr, "%s\n", SDL_GetError());
     terminate(1);
   }

@@ -40,7 +40,7 @@ static void AudioCB(argign void *ud, u8 *_out, int _len) {
 }
 
 void InitSound(void) {
-  if (SDL_Init(SDL_INIT_AUDIO)) {
+  if (SDL_Init(SDL_INIT_AUDIO) < 0) {
     flushprint(stderr,
                "Failed to init SDL_Audio: "
                "\"%s\"\n",
