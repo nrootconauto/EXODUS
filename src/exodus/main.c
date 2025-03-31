@@ -80,6 +80,8 @@ int main(int argc, char **argv) {
   }
   VFsMountDrive('Z', ".");
   vec_char_t boot = {0};
+  if (_60fps->count)
+    vec_pushstr(&boot, "SetFPS(60.);\n");
   if (cli->count) {
     ic_set_history(NULL, -1);
     ic_enable_auto_tab(true);
@@ -95,9 +97,9 @@ int main(int argc, char **argv) {
       *s++ = '/';
     (void)vec_pop(&boot);
 #endif
+    if (clifiles->count)
+      vec_pushstr(&boot, "Exit;\n");
   }
-  if (_60fps->count)
-    vec_pushstr(&boot, "SetFPS(60.);\n");
   vec_push(&boot, '\0');
   boot_str = boot.data;
   if (hcrt->count)
